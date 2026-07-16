@@ -4,3 +4,4 @@ pytest
 httpx
 pydantic
 openai
+jinja2

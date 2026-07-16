@@ -1,0 +1,16 @@
+# .gitignore
+# Standard Python & Web patterns
+__pycache__/
+*.py[cod]
+*$buildconfig
+.env
+.venv
+venv/
+env/
+.DS_Store
+node_modules/
+dist/
+build/
+.git/
+.vscode/
+.idea/

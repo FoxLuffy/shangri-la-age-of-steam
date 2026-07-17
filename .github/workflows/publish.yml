@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write # 1. Added permission to allow pushing to GHCR
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -34,11 +35,17 @@ jobs:
           pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      # 2. Convert repository name to lowercase to prevent Docker format errors
+      - name: Lowercase Repository Name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+      # 3. Tag images with the full ghcr.io path
       - name: Build Backend Image
-        run: docker build -t shangri-la-backend:latest -f Dockerfile.backend .
+        run: docker build -t ghcr.io/${{ env.REPO_LOWER }}/backend:latest -f Dockerfile.backend .
 
       - name: Build Frontend Image
-        run: docker build -t shangri-la-frontend:latest -f Dockerfile.frontend .
+        run: docker build -t ghcr.io/${{ env.REPO_LOWER }}/frontend:latest -f Dockerfile.frontend .
 
       - name: Login to Registry
         uses: docker/login-action@v3
@@ -47,7 +54,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # 4. Push the correctly prefixed images
       - name: Push Images
         run: |
-          docker push shangri-la-backend:latest
-          docker push shangri-la-frontend:latest
+          docker push ghcr.io/${{ env.REPO_LOWER }}/backend:latest
+          docker push ghcr.io/${{ env.REPO_LOWER }}/frontend:latest

@@ -20,13 +20,12 @@ class NarrativeEngine:
         
         # Inject Mood and Exploration instructions
         if action.mood:
-            prompt_str += f"\n[Mood: {action.mood}]"
+            prompt_str += f"\n\n[Mood: {action.mood}]"
             
         if action.is_exploration:
-            prompt_str += "\nProvide a detailed description of the surroundings."
+            prompt_str += "\n\nProvide a detailed description of the surroundings."
         
         # 2. Call vllm_client.generate()
-        # Note: We assume vllm_client.generate returns a dict { "text": "...", "tool_calls": [...] }
         raw_data = self.vllm_client.generate(prompt_str)
         raw_response = RawResponse(**raw_data)
         
@@ -42,9 +41,17 @@ class NarrativeEngine:
             # Save the updated state
             self.repository.save_state(self.state)
         
+        # 5. Handle Dynamic Events
+        events = []
+        if raw_response.events:
+            events = raw_response.events
+            # Simple implementation: just log events for now
+            # Future: logic to process 'effects' and update state
+            print(f"Dynamic Events Triggered: {events}")
+
         return NarrativeResult(
             narration=narration,
             state_updates=state_updates,
-            active_npcs=[npc.name for npc in self.state.active_npcs]
+            active_npcs=[npc.name for npc in self.state.active_npcs],
+            events=events
         )
-

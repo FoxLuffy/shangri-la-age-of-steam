@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  backend:
+    image: ghcr.io/<your-github-username>/shangri-la-backend:latest
+    container_name: shangri-la-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - BACKEND_PORT=8000
+      - VLLM_API_KEY=${VLLM_API_KEY}
+    volumes:
+      - /mnt/tank/saos_data:/data
+
+  frontend:
+    image: ghcr.io/<your-github-username>/shangri-la-frontend:latest
+    container_name: shangri-la-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - FRONTEND_PORT=5173
+      - VLLM_SERVER_URL=http://<YOUR_TRUENAS_HOST_IP>:<VLLM_PORT>
+    volumes:
+      - /mnt/tank/saos_data:/data

@@ -26,17 +26,36 @@ To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for 
 | `saos_data` | `/mnt/tank/saos_data` | `/data` |
 
 ### Dockerfile / Image Configuration
-For a production-ready deployment, it is recommended to build the images using the provided Dockerfiles or host the frontend as a static site:
+For a production-ready deployment, use the following `docker-compose.yml` configuration:
 
-**Backend Container:**
-- Image: `shangri-la-backend:latest`
-- Ports: `8000:8000`
-- Volume: `/data`
+```yaml
+version: "3.8"
 
-**Frontend Container:**
-- Image: `shangri-la-frontend:latest`
-- Ports: `5173:5173`
-- Volume: `/data`
+services:
+  backend:
+    image: ghcr.io/<your-github-username>/shangri-la-backend:latest
+    container_name: shangri-la-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - BACKEND_PORT=8000
+      - VLLM_API_KEY=${VLLM_API_KEY}
+    volumes:
+      - /mnt/tank/saos_data:/data
+
+  frontend:
+    image: ghcr.io/<your-github-username>/shangri-la-frontend:latest
+    container_name: shangri-la-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - FRONTEND_PORT=5173
+      - VLLM_SERVER_URL=http://<YOUR_TRUENAS_HOST_IP>:<VLLM_PORT>
+    volumes:
+      - /mnt/tank/saos_data:/data
+```
 
 *Note: Ensure your vLLM server is accessible to these containers. You may need to use the host's local IP address in the frontend configuration.*
 

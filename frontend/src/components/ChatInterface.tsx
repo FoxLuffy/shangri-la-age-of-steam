@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { sendAction } from './api';
+import { sendAction } from '../api';
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);

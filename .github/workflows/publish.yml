@@ -1,0 +1,53 @@
+name: Publish Artifacts
+
+on:
+  workflow_dispatch:
+    description: "Publish project artifacts"
+    inputs:
+      environment:
+        description: "Deployment environment"
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Build Backend Image
+        run: docker build -t shangri-la-backend:latest -f Dockerfile.backend .
+
+      - name: Build Frontend Image
+        run: docker build -t shangri-la-frontend:latest -f Dockerfile.frontend .
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+
+      - name: Push Images
+        run: |
+          docker push shangri-la-backend:latest
+          docker push shangri-la-frontend:latest

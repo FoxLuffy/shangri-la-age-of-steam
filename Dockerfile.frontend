@@ -2,9 +2,9 @@
 # Stage 1: Build
 FROM node:20-slim AS builder
 WORKDIR /app
-COPY package*.json ./
+COPY frontend/package*.json ./
 RUN npm install
-COPY . .
+COPY frontend/ .
 RUN npx vite build
 
 # Stage 2: Run

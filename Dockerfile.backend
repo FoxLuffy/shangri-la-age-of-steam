@@ -15,15 +15,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
+# We assume the build context is the repository root.
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade-pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+# Copy the contents of the backend folder to /app/
+COPY backend/ .
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the app
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Since we copied the contents of 'backend' to the workdir, 'main.py' is now at the root.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

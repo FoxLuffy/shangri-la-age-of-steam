@@ -9,6 +9,6 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
     
     return template.render(
         location=state.current_location,
-        active_npcs=[npc.traits for npc in state.active_npcs],
+        active_npcs=state.active_npcs,
         action_text=action.action_text
     )

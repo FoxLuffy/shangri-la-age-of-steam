@@ -21,6 +21,8 @@ class WorldState(BaseModel):
 class PlayerAction(BaseModel):
     action_text: str
     current_location_id: str
+    mood: Optional[str] = None
+    is_exploration: bool = False
 
 class Prompt(BaseModel):
     system_prompt: str

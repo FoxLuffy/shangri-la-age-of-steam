@@ -18,6 +18,13 @@ class NarrativeEngine:
         # 1. Build prompt using prompt_utils
         prompt_str = build_narrative_prompt(self.state, action)
         
+        # Inject Mood and Exploration instructions
+        if action.mood:
+            prompt_str += f"\n[Mood: {action.mood}]"
+            
+        if action.is_exploration:
+            prompt_str += "\nProvide a detailed description of the surroundings."
+        
         # 2. Call vllm_client.generate()
         # Note: We assume vllm_client.generate returns a dict { "text": "...", "tool_calls": [...] }
         raw_data = self.vllm_client.generate(prompt_str)
@@ -34,7 +41,7 @@ class NarrativeEngine:
             
             # Save the updated state
             self.repository.save_state(self.state)
-
+        
         return NarrativeResult(
             narration=narration,
             state_updates=state_updates,

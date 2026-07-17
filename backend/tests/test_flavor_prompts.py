@@ -25,7 +25,13 @@ def test_flavor_prompt_complex_inputs():
         "terrified of the man watching them from the corner."
     )
         
-    action = PlayerAction(action_text=long_action, current_location_id="loc-1")
+    # Test with mood and exploration
+    action = PlayerAction(
+        action_text=long_action, 
+        current_location_id="loc-1", 
+        mood="tense", 
+        is_exploration=True
+    )
         
     # Build the prompt
     prompt = build_narrative_prompt(state, action)
@@ -40,6 +46,10 @@ def test_flavor_prompt_complex_inputs():
             
     # Check if the action text is present
     assert "reflection in the polished wood" in prompt
+        
+    # Check for mood and exploration instructions
+    assert "[Mood: tense]" in prompt
+    assert "Provide a detailed description of the surroundings" in prompt
         
     # Check for system instructions
     assert "You are the narrator" in prompt

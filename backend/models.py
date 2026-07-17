@@ -12,11 +12,14 @@ class NPC(BaseModel):
     name: str
     traits: List[str]
     current_dialogue: Optional[str] = None
+    disposition: float = 0.0  # Range -1.0 (Hostile) to 1.0 (Friendly)
+    memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
 
 class WorldState(BaseModel):
     current_location: Location
     active_npcs: List[NPC]
     global_event: Optional[str] = None
+    world_memories: List[Dict[str, str]] = []  # General world history/events
 
 class PlayerAction(BaseModel):
     action_text: str
@@ -28,12 +31,20 @@ class Prompt(BaseModel):
     system_prompt: str
     user_content: str
 
+class WorldEvent(BaseModel):
+    event_id: str
+    description: str
+    trigger_condition: str
+    effects: List[Dict[str, Any]]
+
 class RawResponse(BaseModel):
     text: str
     tool_calls: Optional[List[Dict[str, Any]]] = None
     state_updates: Optional[Dict[str, Any]] = None
+    events: Optional[List[Dict[str, Any]]] = None  # List of events triggered by AI
 
 class NarrativeResult(BaseModel):
     narration: str
     state_updates: Optional[Dict[str, Any]] = None
     active_npcs: List[str]
+    events: Optional[List[Dict[str, Any]]] = None  # Events triggered

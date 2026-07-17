@@ -19,23 +19,24 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
-    npcs: List["NPC"] = Relationship(back_populates="location")
+    npcs: List[str] = []
 
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     traits: str = Field(default="", sa_column=Column(Text))
     current_dialogue: Optional[str] = None
+    disposition: float = Field(default=0.0)
     location_id: str = Field(index=True, foreign_key="location.id")
-    location: Location = Relationship(back_populates="npcs")
+    location: Optional[Location] = Relationship(back_populates="npcs")
 
 class WorldState(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     current_location_id: str
     active_npcs_ids: str = Field(default="", sa_column=Column(Text))
     global_event: Optional[str] = None
+    world_memories: str = Field(default="", sa_column=Column(Text))
 
-# Narrative results and prompts
 class PlayerAction(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     action_text: str
@@ -57,3 +58,4 @@ class NarrativeResult(SQLModel, table=True):
     narration: str
     state_updates: Optional[str] = Field(default=None, sa_column=Column(Text))
     active_npcs: str = Field(default="", sa_column=Column(Text))
+    events: Optional[str] = Field(default=None, sa_column=Column(Text))

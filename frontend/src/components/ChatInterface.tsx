@@ -63,20 +63,20 @@ const ChatInterface: React.FC = () => {
             [SYSTEM]: Processing...
           </div>
         )}
-      </div>
+      </div
 
       <form onSubmit={handleSendMessage} className="flex gap-2 border-t border-green-900 pt-4">
         <span className="opacity-50">#</span>
         <input
-          type=\"text\"
+          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className=\"flex-1 bg-black border border-green-900 text-green-500 px-4 py-2 focus:outline-none focus:border-green-500\"
-          placeholder=\"Enter your action...\"
-          autoComplete=\"off\"
+          className="flex-1 bg-black border border-green-900 text-green-500 px-4 py-2 focus:outline-none focus:border-green-500"
+          placeholder="Enter your action..."
+          autoComplete="off"
         />
         <button
-          type=\"submit\"
+          type="submit"
           disabled={isLoading}
           className={`px-4 py-2 font-bold transition-colors ${
             isLoading ? 'bg-gray-800 text-gray-500' : 'bg-green-900 text-black hover:bg-green-800'

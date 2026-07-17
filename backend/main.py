@@ -7,10 +7,8 @@ from backend.models import WorldState, Location
 
 app = FastAPI()
 
-# This would typically be initialized via a dependency injection or global state
-# For now, we'll instantiate them here or in a startup event
+# Mock client for demonstration/testing; in production, this would be configured via env vars
 mock_client = VLLMClient(api_base="http://localhost:8000/v1")
-# Note: In a production app, WorldState would be persisted in a DB
 dummy_state = WorldState(
     current_location=Location(id="1", name="Forest", description="A dark forest", npcs=[]),
     active_npcs=[]

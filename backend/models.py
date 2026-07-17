@@ -31,12 +31,6 @@ class Prompt(BaseModel):
     system_prompt: str
     user_content: str
 
-class WorldEvent(BaseModel):
-    event_id: str
-    description: str
-    trigger_condition: str
-    effects: List[Dict[str, Any]]
-
 class RawResponse(BaseModel):
     text: str
     tool_calls: Optional[List[Dict[str, Any]]] = None

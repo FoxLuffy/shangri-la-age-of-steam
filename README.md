@@ -2,8 +2,13 @@
 
 A text-driven RPG powered by vLLM backends.
 
-## Project Overview
-This project implements a text-driven RPG where players interact with a dynamic world. The core experience is driven by a vLLM-powered backend that handles NPC logic, environment descriptions, and state management.
+## Architecture & Key Features
+This project uses a modern, production-ready architecture designed for low-latency, persistent AI narrative interactions:
+
+- **vLLM Integration:** The backend leverages vLLM for high-throughput, scalable inference, enabling the system to handle multiple concurrent NPC interactions efficiently.
+- **Persistent NPC Memories:** A new persistent memory system allows NPCs to retain information across sessions. Each NPC has a unique set of "memories" stored in a database, updated dynamically based on player interactions.
+- **State-Aware Environment:** The world state is managed as a core JSON schema, synchronized across the backend and frontend to ensure a consistent narrative experience.
+- **Real-time React Frontend:** A responsive terminal-style UI built with React and Vite, optimized for low-latency interaction with the AI backend.
 
 ## Tech Stack
 - **Backend:** Python, FastAPI, vLLM

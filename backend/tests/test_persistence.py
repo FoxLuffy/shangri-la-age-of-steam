@@ -1,8 +1,10 @@
 import pytest
 from sqlmodel import Session, SQLModel
-from backend.database import engine, Location, NPC, WorldState
+from backend.database import engine, Location, NPC, WorldState, create_db_and_tables
 
 def test_persistence():
+    SQLModel.metadata.drop_all(engine)
+    create_db_and_tables()
     # Setup
     with Session(engine) as session:
         # Create Location
@@ -19,7 +21,7 @@ def test_persistence():
         npc = NPC(
             id="npc_1",
             name="Barnaby",
-            traits="brave,drunk",
+            traits=["brave", "drunk"],
             location_id="loc_1"
         )
         session.add(npc)
@@ -40,7 +42,7 @@ def test_persistence():
         
         retrieved_npc = session.get(NPC, "npc_1")
         assert retrieved_npc.name == "Barnaby"
-        assert retrieved_npc.traits == "brave,drunk"
+        assert retrieved_npc.traits == ["brave", "drunk"]
         assert retrieved_npc.location.name == "The Rusty Anchor"
 
         retrieved_state = session.get(WorldState, state.id)

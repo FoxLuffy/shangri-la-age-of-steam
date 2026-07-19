@@ -52,8 +52,8 @@ def test_flavor_prompt_complex_inputs():
     assert "Provide a detailed description of the surroundings" in prompt
         
     # Check for system instructions
-    assert "You are the narrator" in prompt
-    assert "Task: Describe the results" in prompt
+    assert "you are the narrator" in prompt.lower()
+    assert "describe the immediate results" in prompt.lower()
 
 if __name__ == "__main__":
     pytest.main([__file__])

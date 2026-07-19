@@ -9,9 +9,19 @@ class StateRepository:
         self.session = session
 
     def get_latest_state(self) -> Optional[WorldState]:
-        # For now, we return the first state found, 
-        # but we'll refine this to find the most recent one.
-        return self.session.query(WorldState).order_by(WorldState.id.desc()).first()
+        # Get the most recent state
+        state = self.session.query(WorldState).order_by(WorldState.id.desc()).first()
+        if state:
+            # Dynamically fetch and attach current location
+            loc = self.session.query(Location).filter(Location.id == state.current_location_id).first()
+            object.__setattr__(state, 'current_location', loc)
+            # Dynamically fetch and attach active NPCs
+            if state.active_npcs_ids:
+                npcs = self.session.query(NPC).filter(NPC.id.in_(state.active_npcs_ids)).all()
+                object.__setattr__(state, 'active_npcs', npcs)
+            else:
+                object.__setattr__(state, 'active_npcs', [])
+        return state
 
     def save_state(self, state: WorldState) -> WorldState:
         self.session.add(state)

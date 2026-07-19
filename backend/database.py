@@ -1,15 +1,28 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 from typing import List, Optional, Dict, Any
 from sqlalchemy import Column, String, Integer, Text, JSON
+from contextlib import contextmanager
+
+import os
 
 # Database setup
+db_dir = os.getenv("DATABASE_DIR", "")
+if not db_dir and os.path.exists("/data"):
+    db_dir = "/data"
+
 sqlite_file_name = "saos.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+if db_dir:
+    sqlite_path = os.path.join(db_dir, sqlite_file_name)
+else:
+    sqlite_path = sqlite_file_name
+
+sqlite_url = f"sqlite:///{sqlite_path}"
 engine = create_engine(sqlite_url, echo=False)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+@contextmanager
 def get_session():
     with Session(engine) as session:
         yield session
@@ -29,7 +42,7 @@ class NPC(SQLModel, table=True):
     disposition: float = Field(default=0.0)
     memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
     location_id: str = Field(index=True, foreign_key="location.id")
-    location: Optional[Location] = Relationship(back_populates="npcs")
+    location: Optional[Location] = Relationship()
 
 class WorldState(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

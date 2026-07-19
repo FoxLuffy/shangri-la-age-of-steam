@@ -4,10 +4,11 @@ from backend.models import PlayerAction, NarrativeResult
 from backend.engine import NarrativeEngine
 from backend.client import VLLMClient
 from backend.models import WorldState, Location
+from backend.database import get_session
 
 app = FastAPI()
 
-# Mock client for demonstration/testing; in production, this would be configured via env vars
+# Simple mock for demonstration; in production, this would be configured via env vars
 mock_client = VLLMClient(api_base="http://localhost:8000/v1")
 dummy_state = WorldState(
     current_location=Location(id="1", name="Forest", description="A dark forest", npcs=[]),

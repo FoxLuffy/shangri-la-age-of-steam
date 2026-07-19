@@ -3,6 +3,10 @@ from sqlmodel import Session, SQLModel
 from backend.database import engine, Location, NPC, WorldState
 
 def test_persistence():
+    # Recreate tables to isolate this test from the seed data
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
+    
     # Setup
     with Session(engine) as session:
         # Create Location

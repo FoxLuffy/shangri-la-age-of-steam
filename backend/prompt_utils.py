@@ -8,8 +8,9 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
     template = Template(template_str)
     
     npc_contexts = []
-    for npc in state.active_npcs:
-        memories = ", ".join([f"{m['key']}: {m['value']}" for m in npc.memories])
+    active_npcs = state.active_npcs if state.active_npcs is not None else []
+    for npc in active_npcs:
+        memories = ", ".join([f"{m['key']}: {m['value']}" for m in npc.memories]) if npc.memories else ""
         memories_str = memories if memories else "None"
         npc_contexts.append({
             "name": npc.name,
@@ -18,9 +19,18 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
             "memories": memories_str
         })
 
-    return template.render(
+    prompt_str = template.render(
         location=state.current_location,
-        active_npcs=state.active_npcs,
+        active_npcs=active_npcs,
         npc_contexts=npc_contexts,
         action_text=action.action_text
     )
+
+    # Inject Mood and Exploration instructions
+    if action.mood:
+        prompt_str += f"\n\n[Mood: {action.mood}]"
+        
+    if action.is_exploration:
+        prompt_str += "\n\nProvide a detailed description of the surroundings."
+
+    return prompt_str

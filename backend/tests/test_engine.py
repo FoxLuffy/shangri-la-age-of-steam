@@ -11,6 +11,12 @@ def test_narrative_engine_processing():
     
     # Mock VLLMClient
     mock_vllm_client = MagicMock()
+    mock_vllm_client.generate.return_value = {
+        "text": "I walk into the forest",
+        "state_updates": {},
+        "active_npcs": [],
+        "events": []
+    }
     
     # Initialize engine with mock
     engine = NarrativeEngine(state, mock_vllm_client)

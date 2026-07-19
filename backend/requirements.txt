@@ -5,3 +5,5 @@ httpx
 pydantic
 openai
 jinja2
+sqlmodel
+pytest-asyncio

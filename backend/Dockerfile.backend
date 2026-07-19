@@ -2,32 +2,32 @@
 FROM python:3.13-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \\
-    PYTHONUNBUFFERED=1 \\
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
     APP_HOME=/app
 
 # Set workdir
 WORKDIR $APP_HOME
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \\
-    build-essential \\
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 # The build context is the repository root.
 COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir --upgrade pip && \\
+RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-# Copy the contents of the backend folder to /app/
-COPY backend/ .
+# Copy the contents of the backend folder to /app/backend/
+COPY backend/ ./backend/
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the app
-# Since we copied the contents of 'backend' to '/', we refer to main.py directly
 # We use entrypoint.sh to handle DB initialization
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["./backend/entrypoint.sh"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

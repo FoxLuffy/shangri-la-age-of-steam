@@ -5,7 +5,7 @@ class Location(BaseModel):
     id: str
     name: str
     description: str
-    npcs: List[str]
+    npcs: str
 
 class NPC(BaseModel):
     id: str
@@ -16,10 +16,10 @@ class NPC(BaseModel):
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
 
 class WorldState(BaseModel):
-    current_location: Location
-    active_npcs: List[NPC]
+    current_location_id: str
+    active_npcs_ids: str = ""
     global_event: Optional[str] = None
-    world_memories: List[Dict[str, str]] = []  # General world history/events
+    world_memories: str = ""  # General world history/events
 
 class PlayerAction(BaseModel):
     action_text: str
@@ -40,5 +40,5 @@ class RawResponse(BaseModel):
 class NarrativeResult(BaseModel):
     narration: str
     state_updates: Optional[Dict[str, Any]] = None
-    active_npcs: List[str]
+    npcs: str
     events: Optional[List[Dict[str, Any]]] = None  # Events triggered

@@ -1,7 +1,6 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 from typing import List, Optional, Dict, Any
-from sqlalchemy import Column, String, Integer, Text
-from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy import Column, String, Integer, Text, JSON
 
 # Database setup
 sqlite_file_name = "saos.db"
@@ -20,24 +19,24 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
-    npcs: str = ""  # Store as comma-separated string or JSON
+    npcs: List[str] = Field(default=[], sa_column=Column(JSON))
 
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
-    traits: List[str] = Field(default=[], sa_column=Column(Text))
+    traits: List[str] = Field(default=[], sa_column=Column(JSON))
     current_dialogue: Optional[str] = None
     disposition: float = Field(default=0.0)
-    memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(Text))
+    memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
     location_id: str = Field(index=True, foreign_key="location.id")
     location: Optional[Location] = Relationship(back_populates="npcs")
 
 class WorldState(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     current_location_id: str
-    active_npcs_ids: str = Field(default="", sa_column=Column(Text))
+    active_npcs_ids: List[str] = Field(default=[], sa_column=Column(JSON))
     global_event: Optional[str] = None
-    world_memories: str = Field(default="", sa_column=Column(Text))
+    world_memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
 
 class PlayerAction(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -52,12 +51,12 @@ class Prompt(SQLModel, table=True):
 class RawResponse(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     text: str
-    tool_calls: Optional[str] = Field(default=None, sa_column=Column(Text))
-    state_updates: Optional[str] = Field(default=None, sa_column=Column(Text))
+    tool_calls: Optional[str] = Field(default=None, sa_column=Column(JSON))
+    state_updates: Optional[str] = Field(default=None, sa_column=Column(JSON))
 
 class NarrativeResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     narration: str
-    state_updates: Optional[str] = Field(default=None, sa_column=Column(Text))
-    npcs: str = Field(default="", sa_column=Column(Text))
-    events: Optional[str] = Field(default=None, sa_column=Column(Text))
+    state_updates: Optional[str] = Field(default=None, sa_column=Column(JSON))
+    npcs: List[str] = Field(default=[], sa_column=Column(JSON))
+    events: Optional[str] = Field(default=None, sa_column=Column(JSON))

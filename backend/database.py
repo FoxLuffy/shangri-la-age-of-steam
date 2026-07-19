@@ -25,9 +25,10 @@ class Location(SQLModel, table=True):
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
-    traits: str = Field(default="", sa_column=Column(Text))
+    traits: List[str] = Field(default=[], sa_column=Column(Text))
     current_dialogue: Optional[str] = None
     disposition: float = Field(default=0.0)
+    memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(Text))
     location_id: str = Field(index=True, foreign_key="location.id")
     location: Optional[Location] = Relationship(back_populates="npcs")
 
@@ -58,5 +59,5 @@ class NarrativeResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     narration: str
     state_updates: Optional[str] = Field(default=None, sa_column=Column(Text))
-    active_npcs: str = Field(default="", sa_column=Column(Text))
+    npcs: str = Field(default="", sa_column=Column(Text))
     events: Optional[str] = Field(default=None, sa_column=Column(Text))

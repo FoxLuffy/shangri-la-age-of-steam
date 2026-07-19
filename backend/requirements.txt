@@ -1,7 +1,9 @@
 fastapi
+fastapi
 uvicorn
 pytest
 httpx
 pydantic
 openai
 jinja2
+sqlmodel

@@ -27,5 +27,6 @@ async def health_check():
 
 @app.post("/chat", response_model=NarrativeResult)
 async def chat(action: PlayerAction):
-    result = engine.process_action(action)
-    return result
+    with get_session() as session:
+        result = engine.process_action(action, session)
+        return result

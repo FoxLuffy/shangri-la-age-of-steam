@@ -1,6 +1,7 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 from typing import List, Optional, Dict, Any
 from sqlalchemy import Column, String, Integer, Text
+from sqlalchemy.dialects.sqlite import JSON
 
 # Database setup
 sqlite_file_name = "saos.db"
@@ -19,7 +20,7 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
-    npcs: List[str] = []
+    npcs: str = ""  # Store as comma-separated string or JSON
 
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)

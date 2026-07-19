@@ -11,10 +11,10 @@ app = FastAPI()
 # Simple mock for demonstration; in production, this would be configured via env vars
 mock_client = VLLMClient(api_base="http://localhost:8000/v1")
 dummy_state = WorldState(
-    current_location=Location(id="1", name="Forest", description="A dark forest", npcs=[]),
-    active_npcs=[]
+    current_location=Location(id="1", name="Forest", description="A dark forest", npcs=""),
+    active_npcs_ids=""
 )
-engine = NarrativeEngine(dummy_state, mock_client)
+engine = NarrativeEngine(mock_client)
 
 @app.get("/health")
 async def health_check():

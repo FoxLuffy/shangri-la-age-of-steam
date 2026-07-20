@@ -13,6 +13,7 @@ services:
     environment:
       - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
+      - VLLM_SERVER_URL=http://${TRUENAS_HOST_IP}:${VLLM_PORT}
       - DATABASE_PATH=/data/saos.db
     volumes:
       - /mnt/tank/saos_data:/data

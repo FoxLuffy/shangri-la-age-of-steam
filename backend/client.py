@@ -84,22 +84,22 @@ class VLLMClient:
         try:
             with httpx.Client(timeout=self.timeout) as client:
                 with client.stream("POST", endpoint, json=payload, headers=self.headers) as response:
-                    if response.status_code == 200:
-                        for line in response.iter_lines():
-                            line = line.decode('utf-8') if isinstance(line, bytes) else line
-                            if line.startswith("data: "):
-                                data_str = line[6:].strip()
-                                if data_str == "[DONE]":
-                                    break
-                                if data_str:
-                                    import json
-                                    try:
-                                        yield json.loads(data_str)
-                                    except Exception:
-                                        pass
-                            else:
-                                logger.error(f"VLLM returned status code {response.status_code}")
-                                raise RuntimeError(f"VLLM server returned non-200 status code: {response.status_code}")
+                    if response.status_code != 200:
+                        logger.error(f"VLLM returned status code {response.status_code}")
+                        raise RuntimeError(f"VLLM server returned non-200 status code: {response.status_code}")
+
+                    for line in response.iter_lines():
+                        line = line.decode('utf-8') if isinstance(line, bytes) else line
+                        if line.startswith("data: "):
+                            data_str = line[6:].strip()
+                            if data_str == "[DONE]":
+                                break
+                            if data_str:
+                                import json
+                                try:
+                                    yield json.loads(data_str)
+                                except Exception:
+                                    pass
         except Exception as e:
             logger.error(f"VLLM endpoint unavailable ({e})")
             raise RuntimeError(f"VLLM endpoint unavailable: {e}")

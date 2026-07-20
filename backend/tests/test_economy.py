@@ -5,8 +5,6 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 import math
 
-os.environ["DATABASE_PATH"] = ":memory:"
-
 from backend.main import app
 from backend.database import engine as db_engine, get_session, ResourceMarket, WorldEvent
 

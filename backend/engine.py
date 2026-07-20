@@ -181,7 +181,7 @@ async def scan_locations_and_trigger_interactions():
             # and call the LLM, then save a WorldEvent to the database.
             await trigger_npc_interaction(loc["location_id"], loc["npcs"])
 
-from sqlalchemy import select
+from sqlmodel import select
 from backend.database import ResourceMarket, WorldEvent
 
 def simulate_economy_tick(session: Session):

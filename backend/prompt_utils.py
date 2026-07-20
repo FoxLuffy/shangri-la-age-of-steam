@@ -55,3 +55,25 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         prompt_str += "\n\nProvide a detailed description of the surroundings."
 
     return prompt_str
+
+def build_npc_interaction_prompt(
+    npc1_name: str,
+    npc2_name: str,
+    location_name: str,
+    recent_events: list[str],
+    npc1_context: str,
+    npc2_context: str
+) -> str:
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "npc_interaction_prompt.j2")
+    with open(template_path, "r") as f:
+        template_str = f.read()
+    
+    template = Template(template_str)
+    return template.render(
+        npc1_name=npc1_name,
+        npc2_name=npc2_name,
+        location_name=location_name,
+        recent_events=recent_events,
+        npc1_context=npc1_context,
+        npc2_context=npc2_context
+    )

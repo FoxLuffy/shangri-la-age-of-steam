@@ -44,3 +44,18 @@ class NarrativeResult(BaseModel):
     state_updates: Optional[Dict[str, Any]] = None
     npcs: Union[List[str], str] = []
     events: Optional[List[Dict[str, Any]]] = None  # Events triggered
+
+from sqlalchemy import Column, Integer, String, DateTime, JSON
+from sqlalchemy.orm import declarative_base
+from datetime import datetime
+
+Base = declarative_base()
+
+class WorldEvent(Base):
+    __tablename__ = "world_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    location_id = Column(Integer, index=True)
+    event_text = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    involved_npc_ids = Column(JSON)

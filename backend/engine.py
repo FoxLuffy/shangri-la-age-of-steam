@@ -4,8 +4,11 @@ from typing import Any, Dict, Optional, List, Tuple
 from sqlalchemy.orm import Session
 from backend.models import WorldState, PlayerAction, NarrativeResult, Location, NPC
 from backend.client import VLLMClient
-from backend.prompt_utils import build_narrative_prompt
+import logging
+from backend.prompt_utils import build_narrative_prompt, build_npc_interaction_prompt
 from backend.repository import StateRepository
+
+logger = logging.getLogger(__name__)
 
 def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     """
@@ -136,3 +139,36 @@ class NarrativeEngine:
             npcs=npc_names,
             events=events or []
         )
+
+async def trigger_npc_interaction(location_id: int, npc_ids: List[int]):
+    """
+    Placeholder for triggering and processing an interaction.
+    """
+    # e.g., generate dialogue, create WorldEvent
+    logger.info(f"Interaction resolved for NPCs {npc_ids} at location {location_id}.")
+
+async def scan_locations_and_trigger_interactions():
+    """
+    Background logic to scan locations and trigger NPC-to-NPC interactions.
+    """
+    logger.info("Scanning locations for NPC interactions...")
+    # Mock fetching locations with multiple NPCs
+    locations_with_npcs = [
+        {"location_id": 1, "npcs": [101, 102]},
+        {"location_id": 2, "npcs": [201]}
+    ]
+
+    for loc in locations_with_npcs:
+        if len(loc["npcs"]) > 1:
+            logger.info(f"Triggering interaction at location {loc['location_id']} between NPCs {loc['npcs']}")
+            # Here we would normally build the prompt using prompt_utils
+            # and call the LLM, then save a WorldEvent to the database.
+            await trigger_npc_interaction(loc["location_id"], loc["npcs"])
+
+async def world_tick():
+    """
+    Runs the world simulation tick.
+    """
+    logger.info("World tick started.")
+    await scan_locations_and_trigger_interactions()
+    logger.info("World tick completed.")

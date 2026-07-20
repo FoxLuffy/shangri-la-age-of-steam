@@ -23,7 +23,7 @@
 ## Phase 5: Atmospheric Richness (Next)
 - [ ] **Environmental Storytelling**: Description of "decay" and "progress" in specific districts.
 - [ ] **Faction-Specific Dialogue**: NPCs using different dialects or slang based on guild affiliation.
-- [ ] **Dynamic World Events**: Narratively significant events (e.g., a factory strike or a boiler explosion).
+|- [x] **Dynamic World Events**: Narratively significant events (e.g., a factory strike or a boiler explosion).
 
 ## Phase 6: The Human Element (Future)
 - [ ] **Legacy & Reputation**: Permanent changes to the world based on player industrial influence.

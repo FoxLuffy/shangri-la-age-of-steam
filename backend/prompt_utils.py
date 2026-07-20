@@ -62,7 +62,8 @@ def build_npc_interaction_prompt(
     location_name: str,
     recent_events: list[str],
     npc1_context: str,
-    npc2_context: str
+    npc2_context: str,
+    active_event_descriptions: list[str] = None
 ) -> str:
     template_path = os.path.join(os.path.dirname(__file__), "templates", "npc_interaction_prompt.j2")
     with open(template_path, "r") as f:
@@ -75,5 +76,6 @@ def build_npc_interaction_prompt(
         location_name=location_name,
         recent_events=recent_events,
         npc1_context=npc1_context,
-        npc2_context=npc2_context
+        npc2_context=npc2_context,
+        active_event_descriptions=active_event_descriptions or []
     )

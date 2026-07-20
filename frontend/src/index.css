@@ -1,42 +1,80 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
 :root {
-  --bg: #0c0c0c;
-  --text: #d1d5db;
-  --text-h: #f9fafb;
-  --border: #1f2937;
-  --accent: #10b981;
-  --accent-bg: rgba(16, 185, 129, 0.1);
-  --accent-border: rgba(16, 185, 129, 0.3);
-  --shadow: rgba(0, 0, 0, 0.5) 0 10px 15px -3px;
-  --mono: 'Courier New', Courier, monospace;
+  --bg-dark: #07090e;
+  --panel-bg: rgba(15, 23, 42, 0.85);
+  --border-copper: #d97706;
+  --border-dim: #334155;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent-amber: #f59e0b;
+  --accent-steam: #38bdf8;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --font-mono: 'Courier New', Courier, monospace;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--mono);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
 }
 
-#root {
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Steampunk Glow Effects */
+.copper-glow {
+  box-shadow: 0 0 15px rgba(217, 119, 6, 0.25);
 }
 
-/* Custom Scrollbar */
+.steam-glow {
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+}
+
+.copper-border {
+  border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+.copper-gradient-text {
+  background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 50%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animations */
+@keyframes pulse-led {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.95); }
+}
+
+.animate-led {
+  animation: pulse-led 2s infinite ease-in-out;
+}
+
+@keyframes steam-rise {
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  50% { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-10px) scale(1.1); }
+}
+
+.animate-steam {
+  animation: steam-rise 3s infinite ease-out;
+}
+
+/* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #111;
+  background: #0f172a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: #b45309;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: #f59e0b;
 }

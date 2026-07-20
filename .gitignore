@@ -14,3 +14,5 @@ build/
 .git/
 .vscode/
 .idea/
+saos.db
+.pytest_cache/

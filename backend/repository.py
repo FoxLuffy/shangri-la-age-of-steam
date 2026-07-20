@@ -1,26 +1,74 @@
 from typing import List, Optional, Dict, Any
-from sqlalchemy.orm import Session
-from backend.database import engine, WorldState, Location, NPC
-from backend.database import get_session
-from sqlmodel import Session as SQLModelSession
+from sqlmodel import Session as SQLModelSession, select
+from backend.database import engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState
+from backend.models import WorldState, Location, NPC
+from backend.database_init import seed_data
 
 class StateRepository:
     def __init__(self, session: SQLModelSession):
         self.session = session
 
-    def get_latest_state(self) -> Optional[WorldState]:
-        # For now, we return the first state found, 
-        # but we'll refine this to find the most recent one.
-        return self.session.query(WorldState).order_by(WorldState.id.desc()).first()
+    def get_latest_state(self) -> WorldState:
+        db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
+        if not db_state:
+            seed_data()
+            db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
+
+        loc_id = db_state.current_location_id if db_state else "1"
+        db_loc = self.session.get(DBLocation, loc_id)
+        if not db_loc:
+            # Fallback location
+            current_location = Location(
+                id=loc_id,
+                name="The Rusty Anchor Tavern",
+                description="A dim, steam-filled tavern near the docks.",
+                npcs=[]
+            )
+        else:
+            current_location = Location(
+                id=db_loc.id,
+                name=db_loc.name,
+                description=db_loc.description,
+                npcs=db_loc.npcs or []
+            )
+
+        active_npc_ids = db_state.active_npcs_ids if db_state and db_state.active_npcs_ids else []
+        active_npcs: List[NPC] = []
+        for npc_id in active_npc_ids:
+            db_npc = self.session.get(DBNPC, npc_id)
+            if db_npc:
+                active_npcs.append(NPC(
+                    id=db_npc.id,
+                    name=db_npc.name,
+                    traits=db_npc.traits or [],
+                    current_dialogue=db_npc.current_dialogue,
+                    disposition=db_npc.disposition,
+                    memories=db_npc.memories or []
+                ))
+
+        return WorldState(
+            current_location_id=current_location.id,
+            active_npcs_ids=active_npc_ids,
+            global_event=db_state.global_event if db_state else None,
+            world_memories=db_state.world_memories if db_state else "",
+            current_location=current_location,
+            active_npcs=active_npcs
+        )
 
     def save_state(self, state: WorldState) -> WorldState:
-        self.session.add(state)
+        db_state = DBWorldState(
+            current_location_id=state.current_location_id,
+            active_npcs_ids=state.active_npcs_ids if isinstance(state.active_npcs_ids, list) else [],
+            global_event=state.global_event,
+            world_memories=state.world_memories if isinstance(state.world_memories, list) else []
+        )
+        self.session.add(db_state)
         self.session.commit()
-        self.session.refresh(state)
+        self.session.refresh(db_state)
         return state
 
-    def update_location(self, location_id: str, data: Dict[str, Any]) -> Optional[Location]:
-        location = self.session.query(Location).filter(Location.id == location_id).first()
+    def update_location(self, location_id: str, data: Dict[str, Any]) -> Optional[DBLocation]:
+        location = self.session.get(DBLocation, location_id)
         if location:
             for key, value in data.items():
                 if hasattr(location, key):
@@ -29,9 +77,15 @@ class StateRepository:
             self.session.refresh(location)
         return location
 
-# Example usage/integration check (internal)
-if __name__ == "__main__":
-    with get_session() as session:
-        repo = StateRepository(session)
-        # This is a placeholder for the NarrativeEngine integration
-        pass
+    def update_npc(self, npc_id: str, disposition_delta: Optional[float] = None, new_memory: Optional[Dict[str, str]] = None) -> Optional[DBNPC]:
+        npc = self.session.get(DBNPC, npc_id)
+        if npc:
+            if disposition_delta is not None:
+                npc.disposition = max(-1.0, min(1.0, npc.disposition + disposition_delta))
+            if new_memory:
+                memories = list(npc.memories or [])
+                memories.append(new_memory)
+                npc.memories = memories
+            self.session.commit()
+            self.session.refresh(npc)
+        return npc

@@ -1,29 +1,30 @@
 # Development Roadmap: Shangri-la: Age of Steam
 
-## Phase 1: Infrastructure & Foundation (Current)
-- [x] Project Repository Setup
-- [x] Environment Configuration (Python, FastAPI, SQLModel)
-- [x] Database Schema Implementation
-- [x] Basic Persistence Layer
-- [ ] Database Seeding & Initialization (Complete)
-- [ ] VLLM Integration (Pending)
+## Phase 1: Infrastructure & Foundation (Completed)
+- [x] Project Repository & Workspace Setup
+- [x] Environment Configuration (Python 3.13, FastAPI, SQLModel, Vite, React 19)
+- [x] Database Schema Implementation (`Location`, `NPC`, `WorldState`, `PlayerAction`)
+- [x] Database Seeding & Initialization System (`database_init.py` with 3 core locations and NPCs)
+- [x] CORS Middleware & FastAPI API endpoints (`/health`, `/state`, `/chat`, `/reset`)
+- [x] vLLM Client Integration with Fallback & Offline Resilience (`client.py`)
 
-## Phase 2: Narrative Engine & Core Logic
-- [ ] Prompt Engineering & Templates
-- [ ] VLLM Client Integration & Testing
-- [ ] State Management (Location, NPCs, World State)
-- [ ] Narrative Flow & Conflict Resolution
-- [ ] Persistence Layer Integration
+## Phase 2: Narrative Engine & Core Logic (Completed)
+- [x] Prompt Engineering & Templates (`narrative_prompt.j2`)
+- [x] vLLM Inference Integration with flexible OpenAI/vLLM completion parsing
+- [x] State Management & Persistence (`StateRepository`, `saos.db`)
+- [x] Player Mood & Exploration Mode integration
+- [x] Output Parsing (`[Narration]`, `[StateUpdates]`, `[Events]`)
 
-## Phase 3: Frontend & User Experience
-- [ ] React/Vite Frontend Setup
-- [ ] Chat Interface Implementation
-- [ ] Real-time State Updates
-- [ ] UI/UX Polishing
+## Phase 3: Frontend & User Experience (Completed)
+- [x] React 19 / Vite / Tailwind CSS Steampunk Industrial UI
+- [x] Interactive Terminal Narrative Feed with real-time state feedback
+- [x] Active NPCs Panel with Disposition Meters & Persistent Memories Drawer
+- [x] Environment Overview & Fast Travel Location Switcher
+- [x] Action Bar with Player Mood selector and Exploration Mode toggle
 
-## Phase 4: Advanced Features
-- [ ] Dynamic World Events
-- [ ] NPC Behavior Trees
-- [ ] Complex Relationship Systems
-- [ ] Multi-agent Orchestration
-- [ ] Persistent Story Memory
+## Phase 4: Next Major Milestones (Future Roadmap)
+- [ ] **Multi-Agent NPC Orchestration:** Enable real-time inter-NPC conversations in the same location.
+- [ ] **Dynamic Inventory & Quest Tracking:** Add item schemas, equipment management, and steam-tech crafting.
+- [ ] **VLLM Streaming Output (Server-Sent Events / WebSockets):** Token-by-token narrative streaming for ultra-low latency presentation.
+- [ ] **Complex Relationship & Faction System:** Deepen NPC disposition formulas with faction standing (e.g., Iron Syndicate vs Alchemists Guild).
+- [ ] **Audio Ambience & Sound Effects:** Add atmospheric steam/machinery audio clips and background music.

@@ -218,3 +218,12 @@ async def get_quests(character_id: int):
             select(QuestState).where(QuestState.character_id == character_id)
         ).all()
         return quests
+
+@app.get("/market")
+async def get_market_prices():
+    """Retrieve current market prices for all resources."""
+    from backend.models import ResourceMarket
+    with get_session() as session:
+        markets = session.exec(select(ResourceMarket)).all()
+        return markets
+

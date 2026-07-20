@@ -88,5 +88,13 @@ class DBWorldEvent(SQLModel, base=Base):
     severity: int = SQLModelField(default=1)
     affected_locations: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
     faction_impacts: Dict[str, float] = SQLModelField(default={}, sa_column=Column(JSON))
-    timestamp: datetime = SQLModelField(default=datetime.utcnow)
+    timestamp: datetime = SQLModelField(default_factory=datetime.utcnow)
     is_active: int = SQLModelField(default=1)
+
+class ResourceMarket(SQLModel, base=Base):
+    __tablename__ = "resource_market"
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    resource_name: str = SQLModelField(index=True, unique=True)
+    base_price: float = SQLModelField(default=10.0)
+    current_price: float = SQLModelField(default=10.0)
+    volatility: float = SQLModelField(default=0.1)

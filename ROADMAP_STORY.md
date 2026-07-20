@@ -20,10 +20,12 @@
 - [x] **Faction & Allegiance System**: NPC loyalties to specific industrial guilds.
 - [x] **Procedural Plot Hooks**: Generating new quests based on current world state.
 
-## Phase 5: Atmospheric Richness (Next)
+## Phase 5: Atmospheric & Gameplay Richness (Next)
 - [ ] **Environmental Storytelling**: Description of "decay" and "progress" in specific districts.
 - [ ] **Faction-Specific Dialogue**: NPCs using different dialects or slang based on guild affiliation.
-|- [x] **Dynamic World Events**: Narratively significant events (e.g., a factory strike or a boiler explosion).
+- [x] **Dynamic World Events**: Narratively significant events (e.g., a factory strike or a boiler explosion).
+- [ ] **Automata Lore**: Story arcs revolving around rogue AI clockwork companions and forbidden sentience.
+- [ ] **Corporate Espionage Arcs**: Intrigue and mystery plots involving theft of Alchemical formulas and sabotage.
 
 ## Phase 6: The Human Element (Future)
 - [ ] **Legacy & Reputation**: Permanent changes to the world based on player industrial influence.

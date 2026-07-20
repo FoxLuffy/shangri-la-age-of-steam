@@ -1,31 +1,31 @@
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Union
 
 class Location(BaseModel):
     id: str
     name: str
     description: str
-    npcs: List[str] = []
+    npcs: Union[List[str], str] = []
 
 class NPC(BaseModel):
     id: str
     name: str
-    traits: List[str]
+    traits: List[str] = []
     current_dialogue: Optional[str] = None
     disposition: float = 0.0  # Range -1.0 (Hostile) to 1.0 (Friendly)
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
 
 class WorldState(BaseModel):
-    current_location_id: Optional[str] = None
-    active_npcs_ids: List[str] = []
+    current_location_id: Optional[str] = "1"
+    active_npcs_ids: Union[List[str], str] = []
     global_event: Optional[str] = None
-    world_memories: List[Dict[str, str]] = []  # General world history/events
+    world_memories: Union[List[Dict[str, str]], str] = []
     current_location: Optional[Location] = None
     active_npcs: List[NPC] = []
 
 class PlayerAction(BaseModel):
     action_text: str
-    current_location_id: str
+    current_location_id: str = "1"
     mood: Optional[str] = None
     is_exploration: bool = False
 
@@ -42,5 +42,5 @@ class RawResponse(BaseModel):
 class NarrativeResult(BaseModel):
     narration: str
     state_updates: Optional[Dict[str, Any]] = None
-    npcs: List[str] = []
+    npcs: Union[List[str], str] = []
     events: Optional[List[Dict[str, Any]]] = None  # Events triggered

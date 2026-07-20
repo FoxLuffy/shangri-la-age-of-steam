@@ -1,9 +1,11 @@
-from backend.models import WorldState, PlayerAction
-from jinja2 import Template
+import os
 from typing import Dict, Any
+from jinja2 import Template
+from backend.models import WorldState, PlayerAction
 
 def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
-    with open("backend/templates/narrative_prompt.j2", "r") as f:
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "narrative_prompt.j2")
+    with open(template_path, "r") as f:
         template_str = f.read()
     
     template = Template(template_str)
@@ -21,7 +23,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
                     memories_list.append(str(m))
             memories_str = ", ".join(memories_list) if memories_list else "None"
         else:
-            memories_str = str(memories_raw)
+            memories_str = str(memories_raw) if memories_raw else "None"
 
         npc_contexts.append({
             "name": getattr(npc, "name", "Unknown NPC"),
@@ -32,11 +34,15 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
 
     current_loc = getattr(state, "current_location", None)
     if current_loc is None:
-        loc_id = getattr(state, "current_location_id", "Unknown Location")
-        current_loc = type("Location", (), {"name": str(loc_id), "description": "Unknown description"})()
+        loc_id = getattr(state, "current_location_id", "Steamworks")
+        loc_name = str(loc_id) if loc_id else "Steamworks"
+        loc_desc = ""
+    else:
+        loc_name = getattr(current_loc, "name", "Steamworks")
+        loc_desc = getattr(current_loc, "description", "")
 
     prompt_str = template.render(
-        location=current_loc,
+        location={"name": loc_name, "description": loc_desc},
         active_npcs=active_npcs,
         npc_contexts=npc_contexts,
         action_text=action.action_text
@@ -49,4 +55,3 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         prompt_str += "\n\nProvide a detailed description of the surroundings."
 
     return prompt_str
-

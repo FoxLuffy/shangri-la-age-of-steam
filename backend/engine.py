@@ -1,7 +1,8 @@
 import json
-from typing import Any, Dict, List, Tuple
+import re
+from typing import Any, Dict, Optional, List, Tuple
 from sqlalchemy.orm import Session
-from backend.models import WorldState, PlayerAction, NarrativeResult, Prompt, RawResponse
+from backend.models import WorldState, PlayerAction, NarrativeResult, Location, NPC
 from backend.client import VLLMClient
 from backend.prompt_utils import build_narrative_prompt
 from backend.repository import StateRepository
@@ -21,6 +22,8 @@ def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[s
             choice = raw_data["choices"][0]
             if isinstance(choice, dict):
                 narration = choice.get("text", "") or choice.get("message", {}).get("content", "")
+        elif "narration" in raw_data:
+            narration = str(raw_data["narration"])
     elif isinstance(raw_data, str):
         narration = raw_data
 
@@ -36,11 +39,31 @@ def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[s
                 if updates_str.startswith("json"):
                     updates_str = updates_str[4:]
                 updates_str = updates_str.strip()
-            try:
-                state_updates = json.loads(updates_str)
-            except Exception:
-                state_updates = {}
+            if "[Events]" in updates_str:
+                su_part, ev_part = updates_str.split("[Events]", 1)
+                try:
+                    state_updates = json.loads(su_part.strip())
+                except Exception:
+                    state_updates = {}
+                try:
+                    events = json.loads(ev_part.strip())
+                except Exception:
+                    events = []
+            else:
+                try:
+                    state_updates = json.loads(updates_str)
+                except Exception:
+                    state_updates = {}
         narration = narration_clean
+    else:
+        # Strip out any JSON block at the end if present
+        json_match = re.search(r'\{.*\}', narration, re.DOTALL)
+        if json_match:
+            try:
+                state_updates = json.loads(json_match.group(0))
+                narration = narration[:json_match.start()].strip()
+            except Exception:
+                pass
 
     # Override or supplement with direct dictionary keys if present (e.g. from mock return values)
     if isinstance(raw_data, dict):
@@ -53,26 +76,39 @@ def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[s
 
 
 class NarrativeEngine:
-    def __init__(self, vllm_client: VLLMClient):
-        self.vllm_client = vllm_client
+    def __init__(self, state_or_client: Any = None, vllm_client: Optional[VLLMClient] = None):
+        if isinstance(state_or_client, VLLMClient):
+            self.vllm_client = state_or_client
+            self.initial_state = None
+        elif state_or_client is not None and not isinstance(state_or_client, VLLMClient):
+            self.initial_state = state_or_client
+            self.vllm_client = vllm_client or VLLMClient()
+        else:
+            self.initial_state = None
+            self.vllm_client = vllm_client or VLLMClient()
 
-    def process_action(self, action: PlayerAction, session: Session) -> NarrativeResult:
-        repository = StateRepository(session)
+    def process_action(self, action: PlayerAction, session: Optional[Session] = None) -> NarrativeResult:
+        if session:
+            repository = StateRepository(session)
+            state = repository.get_latest_state()
+        elif self.initial_state:
+            repository = None
+            state = self.initial_state
+        else:
+            repository = None
+            state = WorldState(
+                current_location_id="1",
+                current_location=Location(id="1", name="Steamworks", description="A dark workshop.", npcs=[]),
+                active_npcs=[]
+            )
 
-        # 1. Fetch latest world state
-        state = repository.get_latest_state()
-
-        # 2. Build template prompt
         prompt_str = build_narrative_prompt(state, action)
 
-        # 3. Request generation from VLLM client
         raw_data = self.vllm_client.generate(prompt_str)
 
-        # 4. Parse narrative and state updates
         narration, state_updates, events = parse_vllm_response(raw_data)
 
-        # 5. Persist state updates if present
-        if state_updates:
+        if repository and state_updates:
             loc_id = state_updates.get("location_id") or getattr(state, "current_location_id", "1")
             if "location_name" in state_updates or "location_description" in state_updates:
                 loc_data = {}
@@ -91,7 +127,6 @@ class NarrativeEngine:
                 state.current_location_id = state_updates["location_id"]
                 repository.save_state(state)
 
-        # 6. Extract active NPC names
         active_npcs = getattr(state, "active_npcs", []) or []
         npc_names = [getattr(npc, "name", str(npc)) for npc in active_npcs]
 
@@ -99,6 +134,5 @@ class NarrativeEngine:
             narration=narration,
             state_updates=state_updates,
             npcs=npc_names,
-            events=events
+            events=events or []
         )
-

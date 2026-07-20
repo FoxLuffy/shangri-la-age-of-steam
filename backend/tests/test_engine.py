@@ -3,21 +3,18 @@ from backend.models import WorldState, Location, NPC, PlayerAction
 from unittest.mock import MagicMock, patch
 
 def test_narrative_engine_processing():
-    # Setup dummy state
     loc = Location(id="1", name="Forest", description="A dark forest", npcs=["Orc"])
     npcs = [NPC(id="1", name="Orc", traits=["strong", "aggressive"])]
-    state = WorldState(current_location=loc, active_npcs=npcs, global_event=None)
+    state = WorldState(current_location_id="1", current_location=loc, active_npcs=npcs)
     
-    # Mock VLLMClient
     mock_vllm_client = MagicMock()
     mock_vllm_client.generate.return_value = {
-        "text": "The player walks into the dark forest.",
+        "text": "You walk into the forest as steam rises.",
         "state_updates": {"location_id": "1"},
         "events": []
     }
     
-    # Initialize engine with mock client
-    engine = NarrativeEngine(mock_vllm_client)
+    engine = NarrativeEngine(state, mock_vllm_client)
     action = PlayerAction(action_text="I walk into the forest", current_location_id="1")
     
     mock_session = MagicMock()

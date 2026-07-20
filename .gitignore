@@ -13,6 +13,6 @@ build/
 .git/
 .vscode/
 .idea/
-.pytest_cache/
 saos.db
+.pytest_cache/
 

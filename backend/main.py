@@ -3,6 +3,7 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,7 @@ from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
 from backend.client import VLLMClient
-from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, QuestState, create_db_and_tables
+from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, create_db_and_tables
 from backend.repository import StateRepository
 from backend.database_init import seed_data
 
@@ -64,9 +65,18 @@ app.add_middleware(
 )
 
 VLLM_API_BASE = os.getenv("VLLM_SERVER_URL") or os.getenv("VLLM_API_BASE", "http://localhost:8000/v1")
-client = VLLMClient(api_base=VLLM_API_BASE)
-mock_client = client
-engine = NarrativeEngine(client)
+
+# Dependency injection for the engine
+engine = None
+
+def init_engine(client: Optional[VLLMClient] = None):
+    global engine
+    if client:
+        engine = NarrativeEngine(client)
+    else:
+        engine = NarrativeEngine(VLLMClient(api_base=VLLM_API_BASE))
+
+init_engine()
 
 dummy_state = WorldState(
     current_location_id="1",
@@ -97,9 +107,9 @@ async def chat(action: PlayerAction):
         with get_session() as session:
             for item in engine.process_action(action, session):
                 if isinstance(item, str):
-                    yield f"data: {json.dumps({'chunk': item})}\n\n"
+                    yield f"data: {json.dumps({'chunk': item})}\\n\\n"
                 elif isinstance(item, dict):
-                    yield f"data: {json.dumps({'result': item})}\n\n"
+                    yield f"data: {json.dumps({'result': item})}\\n\\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @app.post("/reset")
@@ -164,7 +174,7 @@ async def craft_item(character_id: int, recipe_id: int):
                     session.delete(inv_item)
                 else:
                     session.add(inv_item)
-                    
+                
             # Add resulting item to inventory
             result_inv_item = session.exec(
                 select(Inventory)
@@ -205,4 +215,3 @@ async def get_quests(character_id: int):
             select(QuestState).where(QuestState.character_id == character_id)
         ).all()
         return quests
-

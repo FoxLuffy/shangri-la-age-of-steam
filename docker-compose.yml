@@ -9,9 +9,9 @@ services:
     container_name: shangri-la-backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8003:8003"
     environment:
-      - BACKEND_PORT=8000
+      - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
       - DATABASE_PATH=/data/saos.db
     volumes:
@@ -29,5 +29,6 @@ services:
     environment:
       - FRONTEND_PORT=5173
       - VLLM_SERVER_URL=http://${TRUENAS_HOST_IP}:${VLLM_PORT}
+      - VITE_BACKEND_URL=http://localhost:8003
     volumes:
       - /mnt/tank/saos_data:/data

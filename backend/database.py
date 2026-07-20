@@ -1,6 +1,7 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, Relationship
 from typing import List, Optional, Dict, Any
 from sqlalchemy import Column, String, Integer, Text, JSON
+from contextlib import contextmanager
 
 # Database setup
 sqlite_file_name = "saos.db"
@@ -10,6 +11,7 @@ engine = create_engine(sqlite_url, echo=False)
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+@contextmanager
 def get_session():
     with Session(engine) as session:
         yield session
@@ -19,7 +21,7 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
-    npcs: List[str] = Field(default=[], sa_column=Column(JSON))
+    npcs: List["NPC"] = Relationship(back_populates="location")
 
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)

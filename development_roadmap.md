@@ -1,19 +1,19 @@
 # Development Roadmap: Shangri-la: Age of Steam
 
-## Phase 1: Infrastructure & Foundation (Current)
+## Phase 1: Infrastructure & Foundation (Complete)
 - [x] Project Repository Setup
 - [x] Environment Configuration (Python, FastAPI, SQLModel)
 - [x] Database Schema Implementation
 - [x] Basic Persistence Layer
-- [ ] Database Seeding & Initialization (Complete)
-- [ ] VLLM Integration (Pending)
+- [x] Database Seeding & Initialization (Complete)
+- [x] VLLM Integration (Complete)
 
-## Phase 2: Narrative Engine & Core Logic
-- [ ] Prompt Engineering & Templates
-- [ ] VLLM Client Integration & Testing
-- [ ] State Management (Location, NPCs, World State)
-- [ ] Narrative Flow & Conflict Resolution
-- [ ] Persistence Layer Integration
+## Phase 2: Narrative Engine & Core Logic (Complete)
+- [x] Prompt Engineering & Templates
+- [x] VLLM Client Integration & Testing
+- [x] State Management (Location, NPCs, World State)
+- [x] Narrative Flow & Conflict Resolution
+- [x] Persistence Layer Integration
 
 ## Phase 3: Frontend & User Experience
 - [ ] React/Vite Frontend Setup

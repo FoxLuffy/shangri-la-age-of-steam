@@ -1,15 +1,54 @@
 import os
+import asyncio
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
-from backend.engine import NarrativeEngine
+from backend.engine import NarrativeEngine, world_tick
 from backend.client import VLLMClient
 from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState
 from backend.repository import StateRepository
 from backend.database_init import seed_data
 
-app = FastAPI(title="Shangri-la: Age of Steam API")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Background task reference
+world_task = None
+
+async def world_simulation_loop():
+    while True:
+        try:
+            await world_tick()
+            await asyncio.sleep(60) # Tick every 60 seconds
+        except asyncio.CancelledError:
+            logger.info("World simulation loop cancelled.")
+            break
+        except Exception as e:
+            logger.error(f"Error in world simulation loop: {e}")
+            await asyncio.sleep(60)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start the background world tick
+    logger.info("Starting world simulation background task...")
+    global world_task
+    world_task = asyncio.create_task(world_simulation_loop())
+    
+    yield
+    
+    # Shutdown: Cancel the background task
+    logger.info("Stopping world simulation background task...")
+    if world_task:
+        world_task.cancel()
+        try:
+            await world_task
+        except asyncio.CancelledError:
+            pass
+
+app = FastAPI(title="Shangri-la: Age of Steam API", lifespan=lifespan)
 
 # Enable CORS for frontend integration
 app.add_middleware(

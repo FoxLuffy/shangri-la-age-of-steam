@@ -235,3 +235,11 @@ async def get_automata():
         automata = session.exec(select(AutomataCompanion)).all()
         return automata
 
+@app.get("/augmentations")
+async def get_augmentations(character_id: int = 1):
+    """Retrieve augmentations installed on a character."""
+    from backend.database import Augmentation
+    with get_session() as session:
+        augs = session.exec(select(Augmentation).where(Augmentation.character_id == character_id)).all()
+        return augs
+

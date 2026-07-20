@@ -153,3 +153,11 @@ class AutomataCompanion(SQLModel, table=True):
     modules: List[str] = Field(default=[], sa_column=Column(JSON))
     disposition: float = Field(default=1.0)
 
+class Augmentation(SQLModel, table=True):
+    __tablename__ = "augmentation"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    body_part: str = Field(index=True)
+    augmentation_name: str
+    stat_bonus: Dict[str, float] = Field(default={}, sa_column=Column(JSON))
+

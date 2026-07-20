@@ -25,6 +25,7 @@ class NPC(BaseModel):
 class WorldState(BaseModel):
     current_location_id: Optional[str] = "1"
     active_npcs_ids: Union[List[str], str] = []
+    active_automata_ids: List[int] = []
     global_event: Optional[str] = None
     world_memories: Union[List[Dict[str, str]], str] = []
     current_location: Optional[Location] = None

@@ -37,9 +37,11 @@ class NPC(SQLModel, table=True):
     location: Optional[Location] = Relationship()
 
 class WorldState(SQLModel, table=True):
+    __tablename__ = "world_state"
     id: Optional[int] = Field(default=None, primary_key=True)
     current_location_id: str = Field(default="1")
     active_npcs_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    active_automata_ids: List[int] = Field(default=[], sa_column=Column(JSON))
     global_event: Optional[str] = None
     world_memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
 
@@ -141,3 +143,13 @@ class ResourceMarket(SQLModel, table=True):
     base_price: float = Field(default=10.0)
     current_price: float = Field(default=10.0)
     volatility: float = Field(default=0.1)
+
+class AutomataCompanion(SQLModel, table=True):
+    __tablename__ = "automata"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    model_type: str = Field(default="scout")
+    core_power: float = Field(default=100.0)
+    modules: List[str] = Field(default=[], sa_column=Column(JSON))
+    disposition: float = Field(default=1.0)
+

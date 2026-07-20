@@ -107,25 +107,42 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
+      const narratorMsgId = `narrator-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: narratorMsgId,
+          sender: 'narrator',
+          content: '',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+
       const response = await sendAction({
         action_text: actionText,
         current_location_id: currentLocationId,
         mood: selectedMood || undefined,
         is_exploration: isExploration
+      }, (chunk) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === narratorMsgId
+              ? { ...msg, content: msg.content + chunk }
+              : msg
+          )
+        );
       });
 
-      const narrationText = response.narration || response.text || 'The steam engine hums in silence...';
+      if (response) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === narratorMsgId
+              ? { ...msg, stateUpdates: response.state_updates, events: response.events }
+              : msg
+          )
+        );
+      }
 
-      const narratorMsg: Message = {
-        id: `narrator-${Date.now()}`,
-        sender: 'narrator',
-        content: narrationText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        stateUpdates: response.state_updates,
-        events: response.events
-      };
-
-      setMessages((prev) => [...prev, narratorMsg]);
       await loadState();
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -175,20 +192,41 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
+      const narratorMsgId = `narrator-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: narratorMsgId,
+          sender: 'narrator',
+          content: '',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+
       const response = await sendAction({
         action_text: travelText,
         current_location_id: newLocId,
         is_exploration: true
+      }, (chunk) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === narratorMsgId
+              ? { ...msg, content: msg.content + chunk }
+              : msg
+          )
+        );
       });
 
-      const narratorMsg: Message = {
-        id: `narrator-${Date.now()}`,
-        sender: 'narrator',
-        content: response.narration || `You travel to ${locMatch?.name}.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        stateUpdates: response.state_updates
-      };
-      setMessages(prev => [...prev, narratorMsg]);
+      if (response) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === narratorMsgId
+              ? { ...msg, stateUpdates: response.state_updates, events: response.events }
+              : msg
+          )
+        );
+      }
+
       await loadState();
     } catch (err) {
       console.error('Travel failed:', err);

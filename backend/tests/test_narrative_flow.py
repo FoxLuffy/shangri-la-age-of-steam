@@ -9,11 +9,13 @@ def test_narrative_engine_vllm_call():
     state = WorldState(current_location_id="1", current_location=loc, active_npcs=[])
     
     mock_client = MagicMock(spec=VLLMClient)
-    mock_client.generate.return_value = {
-        "text": "The trees rustle.",
-        "state_updates": {"location_id": "1"},
-        "events": []
-    }
+    mock_client.generate_stream.return_value = [
+        {
+            "text": "The trees rustle.",
+            "state_updates": {"location_id": "1"},
+            "events": []
+        }
+    ]
     
     engine = NarrativeEngine(state, mock_client)
     action = PlayerAction(action_text="Look around", current_location_id="1")
@@ -23,6 +25,10 @@ def test_narrative_engine_vllm_call():
         mock_repo = MockRepoClass.return_value
         mock_repo.get_latest_state.return_value = state
         
-        result = engine.process_action(action, mock_session)
+        result = None
+        for chunk in engine.process_action(action, mock_session):
+            if isinstance(chunk, dict) and "narration" in chunk:
+                result = chunk
         
-    assert "trees rustle" in result.narration.lower()
+    assert result is not None
+    assert "trees rustle" in result["narration"].lower()

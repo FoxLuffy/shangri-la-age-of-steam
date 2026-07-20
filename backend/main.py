@@ -1,14 +1,16 @@
 import os
+import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
 from backend.client import VLLMClient
-from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState
+from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, QuestState, create_db_and_tables
 from backend.repository import StateRepository
 from backend.database_init import seed_data
 
@@ -32,7 +34,9 @@ async def world_simulation_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Start the background world tick
+    # Startup: Initialize DB and start the background world tick
+    logger.info("Initializing database...")
+    create_db_and_tables()
     logger.info("Starting world simulation background task...")
     global world_task
     world_task = asyncio.create_task(world_simulation_loop())
@@ -87,11 +91,16 @@ async def get_world_state():
             "all_npcs": all_npcs
         }
 
-@app.post("/chat", response_model=NarrativeResult)
+@app.post("/chat")
 async def chat(action: PlayerAction):
-    with get_session() as session:
-        result = engine.process_action(action, session)
-        return result
+    def event_stream():
+        with get_session() as session:
+            for item in engine.process_action(action, session):
+                if isinstance(item, str):
+                    yield f"data: {json.dumps({'chunk': item})}\n\n"
+                elif isinstance(item, dict):
+                    yield f"data: {json.dumps({'result': item})}\n\n"
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @app.post("/reset")
 async def reset_database():
@@ -100,3 +109,100 @@ async def reset_database():
         repo = StateRepository(session)
         state = repo.get_latest_state()
         return {"status": "reset", "state": state}
+
+@app.get("/inventory")
+async def get_inventory(character_id: int):
+    """Retrieve the inventory for a given character."""
+    with get_session() as session:
+        inventory_items = session.exec(
+            select(Inventory).where(Inventory.character_id == character_id)
+        ).all()
+        return inventory_items
+
+@app.post("/craft")
+async def craft_item(character_id: int, recipe_id: int):
+    """
+    Crafting Logic: 'Steam-Tech Crafting'
+    Atomically deducts required materials from character's inventory and adds the new item.
+    """
+    with get_session() as session:
+        recipe = session.get(Recipe, recipe_id)
+        if not recipe:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+            
+        requirements = session.exec(
+            select(RecipeRequirement).where(RecipeRequirement.recipe_id == recipe_id)
+        ).all()
+        
+        if not requirements:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Recipe has no requirements")
+        
+        # Check if character has enough materials
+        for req in requirements:
+            inv_item = session.exec(
+                select(Inventory)
+                .where(Inventory.character_id == character_id)
+                .where(Inventory.item_id == req.item_id)
+            ).first()
+            
+            if not inv_item or inv_item.quantity < req.quantity:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=f"Not enough materials for item_id {req.item_id}. Needed: {req.quantity}, Have: {inv_item.quantity if inv_item else 0}"
+                )
+                
+        try:
+            # Deduct materials
+            for req in requirements:
+                inv_item = session.exec(
+                    select(Inventory)
+                    .where(Inventory.character_id == character_id)
+                    .where(Inventory.item_id == req.item_id)
+                ).first()
+                inv_item.quantity -= req.quantity
+                if inv_item.quantity == 0:
+                    session.delete(inv_item)
+                else:
+                    session.add(inv_item)
+                    
+            # Add resulting item to inventory
+            result_inv_item = session.exec(
+                select(Inventory)
+                .where(Inventory.character_id == character_id)
+                .where(Inventory.item_id == recipe.result_item_id)
+            ).first()
+            
+            if result_inv_item:
+                result_inv_item.quantity += recipe.result_quantity
+                session.add(result_inv_item)
+            else:
+                new_inv_item = Inventory(
+                    character_id=character_id, 
+                    item_id=recipe.result_item_id, 
+                    quantity=recipe.result_quantity
+                )
+                session.add(new_inv_item)
+                
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail="Crafting transaction failed"
+            )
+            
+        return {
+            "message": "Crafting successful",
+            "result_item_id": recipe.result_item_id,
+            "quantity_added": recipe.result_quantity
+        }
+
+@app.get("/quests")
+async def get_quests(character_id: int):
+    """Retrieve all quests and their states for a given character."""
+    with get_session() as session:
+        quests = session.exec(
+            select(QuestState).where(QuestState.character_id == character_id)
+        ).all()
+        return quests
+

@@ -90,7 +90,7 @@ class NarrativeEngine:
             self.initial_state = None
             self.vllm_client = vllm_client or VLLMClient()
 
-    def process_action(self, action: PlayerAction, session: Optional[Session] = None) -> NarrativeResult:
+    def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:
             repository = StateRepository(session)
             state = repository.get_latest_state()
@@ -107,9 +107,23 @@ class NarrativeEngine:
 
         prompt_str = build_narrative_prompt(state, action)
 
-        raw_data = self.vllm_client.generate(prompt_str)
+        full_raw_data = ""
+        for chunk in self.vllm_client.generate_stream(prompt_str):
+            text = ""
+            if isinstance(chunk, dict):
+                if "choices" in chunk and len(chunk["choices"]) > 0:
+                    choice = chunk["choices"][0]
+                    text = choice.get("text", "") or choice.get("message", {}).get("content", "")
+                elif "text" in chunk:
+                    text = chunk["text"]
+            elif isinstance(chunk, str):
+                text = chunk
+                
+            if text:
+                full_raw_data += text
+                yield text
 
-        narration, state_updates, events = parse_vllm_response(raw_data)
+        narration, state_updates, events = parse_vllm_response(full_raw_data)
 
         if repository and state_updates:
             loc_id = state_updates.get("location_id") or getattr(state, "current_location_id", "1")
@@ -133,12 +147,12 @@ class NarrativeEngine:
         active_npcs = getattr(state, "active_npcs", []) or []
         npc_names = [getattr(npc, "name", str(npc)) for npc in active_npcs]
 
-        return NarrativeResult(
-            narration=narration,
-            state_updates=state_updates,
-            npcs=npc_names,
-            events=events or []
-        )
+        yield {
+            "narration": narration,
+            "state_updates": state_updates,
+            "npcs": npc_names,
+            "events": events or []
+        }
 
 async def trigger_npc_interaction(location_id: int, npc_ids: List[int]):
     """

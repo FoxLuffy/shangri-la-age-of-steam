@@ -65,9 +65,64 @@ export const fetchWorldState = async (): Promise<GetStateResponse> => {
   return data;
 };
 
-export const sendAction = async (payload: PlayerActionPayload) => {
-  const { data } = await api.post('/chat', payload);
-  return data;
+export const sendAction = async (
+  payload: PlayerActionPayload,
+  onChunk?: (chunk: string) => void
+) => {
+  const response = await fetch(`${BACKEND_URL}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error('ReadableStream not supported.');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let finalResult = null;
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6).trim();
+          if (dataStr) {
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.chunk && onChunk) {
+                onChunk(parsed.chunk);
+              } else if (parsed.result) {
+                finalResult = parsed.result;
+              }
+            } catch (e) {
+              console.error('Error parsing chunk:', e);
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return finalResult;
 };
 
 export const resetWorldState = async () => {

@@ -121,3 +121,23 @@ class QuestState(SQLModel, table=True):
     character_id: int = Field(foreign_key="character.id")
     quest_id: int = Field(foreign_key="quest.id")
     state: QuestStateEnum = Field(default=QuestStateEnum.available)
+
+class WorldEvent(SQLModel, table=True):
+    __tablename__ = "world_events"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    location_id: str = Field(index=True)
+    event_type: str
+    event_text: str
+    severity: int = Field(default=1)
+    affected_locations: List[str] = Field(default=[], sa_column=Column(JSON))
+    faction_impacts: Dict[str, float] = Field(default={}, sa_column=Column(JSON))
+    timestamp: str = Field(default="")
+    is_active: int = Field(default=1)
+
+class ResourceMarket(SQLModel, table=True):
+    __tablename__ = "resource_market"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    resource_name: str = Field(index=True, unique=True)
+    base_price: float = Field(default=10.0)
+    current_price: float = Field(default=10.0)
+    volatility: float = Field(default=0.1)

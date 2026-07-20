@@ -31,16 +31,23 @@
 
 ## Phase 5: Content Depth & Systems (Next)
 - [x] **Complex Relationship & Faction System**: Faction standing (Iron Syndicate vs. Alchemists Guild).
-|- [x] **Dynamic World Events**: Procedural world events (steam leaks, riots, industrial accidents).
+- [x] **Dynamic World Events**: Procedural world events (steam leaks, riots, industrial accidents).
 - [ ] **Procedural NPC Generation**: Randomized unique NPCs based on local regional "flavors."
 - [ ] **Faction-based Crafting**: Certain items only craftable in specific faction zones.
 
-## Phase 6: Multimedia & Atmosphere (Future)
+## Phase 6: Deep Gameplay Mechanics (New)
+- [ ] **Automata Companions**: Build, upgrade, and customize robotic steam-driven companions (clockwork owls, brass hounds) to assist in quests.
+- [x] **Dynamic Economy Engine**: Simulated trade economy where coal, brass, and aether prices fluctuate dynamically based on world events and player actions.
+- [ ] **Steam-Tech Augmentations**: Player character cybernetics (steampunk style). Replace limbs with pneumatic prosthetics for unique abilities.
+- [ ] **Sabotage & Espionage Mini-games**: Text-based puzzle interfaces for hacking pneumatic tube networks, picking gear-locks, and deciphering alchemical recipes.
+- [ ] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
+
+## Phase 7: Multimedia & Atmosphere (Future)
 - [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
 - [ ] **Dynamic Music**: Procedural music that reacts to player mood and location danger.
 - [ ] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
 
-## Phase 7: Social & Persistence (Future)
+## Phase 8: Social & Persistence (Future)
 - [ ] **Persistent World History**: A searchable "ledger" of all major narrative decisions.
 - [ ] **Multiplayer Sync (Experimental)**: Shared world state for group exploration.
 - [ ] **Save State Serialization**: Full state exports/imports for cross-device play.

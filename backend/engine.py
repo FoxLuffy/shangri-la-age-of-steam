@@ -181,10 +181,55 @@ async def scan_locations_and_trigger_interactions():
             # and call the LLM, then save a WorldEvent to the database.
             await trigger_npc_interaction(loc["location_id"], loc["npcs"])
 
+from sqlmodel import select
+from backend.database import ResourceMarket, WorldEvent
+
+def simulate_economy_tick(session: Session):
+    """
+    Simulate the economy tick by fluctuating prices based on base price, volatility, and active world events.
+    """
+    import random
+    
+    # Get active events
+    active_events = session.exec(select(WorldEvent).where(WorldEvent.is_active == 1)).all()
+    
+    # Aggregate modifiers from events
+    modifiers = {}
+    for event in active_events:
+        for resource, impact in event.faction_impacts.items():
+            if resource not in modifiers:
+                modifiers[resource] = 1.0
+            # Severity scales the impact
+            modifiers[resource] += (impact * event.severity)
+            
+    markets = session.exec(select(ResourceMarket)).all()
+    
+    for market in markets:
+        # Base random fluctuation based on volatility
+        fluctuation = 1.0 + random.uniform(-market.volatility, market.volatility)
+        
+        # Apply event modifiers if any
+        modifier = modifiers.get(market.resource_name, 1.0)
+        
+        # Calculate new price
+        market.current_price = max(1.0, market.current_price * fluctuation * modifier)
+        
+        # Trend back towards base price slightly if no extreme events
+        if modifier == 1.0:
+            market.current_price += (market.base_price - market.current_price) * 0.05
+            
+        session.add(market)
+    session.commit()
+
 async def world_tick():
     """
     Runs the world simulation tick.
     """
     logger.info("World tick started.")
     await scan_locations_and_trigger_interactions()
+    
+    from backend.database import get_session
+    with get_session() as session:
+        simulate_economy_tick(session)
+        
     logger.info("World tick completed.")

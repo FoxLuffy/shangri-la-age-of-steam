@@ -79,14 +79,4 @@ class DBWorldState(SQLModel, base=Base):
     global_event: Optional[str] = None
     world_memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
 
-class DBWorldEvent(SQLModel, base=Base):
-    __tablename__ = "world_events"
-    id: Optional[int] = SQLModelField(default=None, primary_key=True)
-    location_id: str = SQLModelField(index=True)
-    event_type: str
-    event_text: str
-    severity: int = SQLModelField(default=1)
-    affected_locations: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
-    faction_impacts: Dict[str, float] = SQLModelField(default={}, sa_column=Column(JSON))
-    timestamp: datetime = SQLModelField(default=datetime.utcnow)
-    is_active: int = SQLModelField(default=1)
+

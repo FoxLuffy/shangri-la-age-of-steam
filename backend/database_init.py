@@ -58,8 +58,16 @@ def seed_data():
                 world_memories=[{"key": "City News", "value": "The Iron Syndicate has increased tariffs on coal."}]
             )
             session.add(world_state)
+            
+            # Seed ResourceMarket
+            from backend.database import ResourceMarket
+            res1 = ResourceMarket(resource_name="Coal", base_price=12.0, current_price=12.0, volatility=0.05)
+            res2 = ResourceMarket(resource_name="Brass", base_price=45.0, current_price=45.0, volatility=0.1)
+            res3 = ResourceMarket(resource_name="Aether", base_price=150.0, current_price=150.0, volatility=0.25)
+            session.add_all([res1, res2, res3])
+            
             session.commit()
-            print("Database seeded with initial locations, NPCs, and WorldState.")
+            print("Database seeded with initial locations, NPCs, WorldState, and ResourceMarket.")
         else:
             print("Database already contains data.")
 

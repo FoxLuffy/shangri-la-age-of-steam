@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Optional, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlmodel import select
 from backend.database import DBWorldState, DBWorldEvent
 from backend.models import WorldState, WorldEvent
 

@@ -3,6 +3,8 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy import Column, String, Integer, Text, JSON
 from contextlib import contextmanager
 import os
+from enum import Enum
+
 
 
 sqlite_file_name = os.getenv("DATABASE_PATH", "saos.db")
@@ -65,3 +67,57 @@ class NarrativeResult(SQLModel, table=True):
     state_updates: Optional[str] = Field(default=None, sa_column=Column(JSON))
     npcs: List[str] = Field(default=[], sa_column=Column(JSON))
     events: Optional[str] = Field(default=None, sa_column=Column(JSON))
+
+class ItemCategory(str, Enum):
+    consumables = "Consumables"
+    equipment = "Equipment"
+    crafting_materials = "Crafting_Materials"
+    steam_tech_components = "Steam_Tech_Components"
+
+class QuestStateEnum(str, Enum):
+    available = "Available"
+    active = "Active"
+    completed = "Completed"
+    failed = "Failed"
+
+class Character(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+
+class Item(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: Optional[str] = None
+    category: ItemCategory
+
+class RecipeRequirement(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    recipe_id: int = Field(foreign_key="recipe.id")
+    item_id: int = Field(foreign_key="item.id")
+    quantity: int = Field(default=1)
+
+class Recipe(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: Optional[str] = None
+    result_item_id: int = Field(foreign_key="item.id")
+    result_quantity: int = Field(default=1)
+
+class Inventory(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id")
+    item_id: int = Field(foreign_key="item.id")
+    quantity: int = Field(default=0)
+
+class Quest(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: Optional[str] = None
+    reward_item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    reward_quantity: int = Field(default=0)
+
+class QuestState(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id")
+    quest_id: int = Field(foreign_key="quest.id")
+    state: QuestStateEnum = Field(default=QuestStateEnum.available)

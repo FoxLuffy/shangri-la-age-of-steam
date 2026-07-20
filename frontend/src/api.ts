@@ -1,6 +1,13 @@
 import axios from 'axios';
+let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8003';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' ? `http://${window.location.hostname}:8003` : 'http://localhost:8003');
+if (typeof window !== 'undefined' && !import.meta.env.VITE_BACKEND_URL) {
+  if (window.location.hostname.match(/^\d+-/)) {
+    BACKEND_URL = `${window.location.protocol}//${window.location.hostname.replace(/^\d+-/, '8003-')}`;
+  } else {
+    BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:8003`;
+  }
+}
 
 const api = axios.create({
   baseURL: BACKEND_URL,

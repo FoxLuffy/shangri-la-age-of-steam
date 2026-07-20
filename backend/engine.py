@@ -1,64 +1,90 @@
 import json
 import re
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Tuple
 from sqlalchemy.orm import Session
-from backend.models import WorldState, PlayerAction, NarrativeResult, RawResponse, Location, NPC
+from backend.models import WorldState, PlayerAction, NarrativeResult, Location, NPC
 from backend.client import VLLMClient
 from backend.prompt_utils import build_narrative_prompt
 from backend.repository import StateRepository
 
-def parse_llm_output(raw_text: str) -> Dict[str, Any]:
-    narration = raw_text
-    state_updates = None
-    events = None
+def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
+    """
+    Parses response from VLLM client into narration text, state_updates dict, and events list.
+    """
+    narration = ""
+    state_updates: Dict[str, Any] = {}
+    events: List[Dict[str, Any]] = []
 
-    if "[Narration]" in raw_text:
-        parts = raw_text.split("[Narration]")
-        after_narr = parts[-1]
-        if "[StateUpdates]" in after_narr:
-            narr_part, rest = after_narr.split("[StateUpdates]", 1)
-            narration = narr_part.strip()
-            
-            if "[Events]" in rest:
-                su_part, ev_part = rest.split("[Events]", 1)
+    if isinstance(raw_data, dict):
+        if "text" in raw_data and isinstance(raw_data["text"], str):
+            narration = raw_data["text"]
+        elif "choices" in raw_data and isinstance(raw_data["choices"], list) and len(raw_data["choices"]) > 0:
+            choice = raw_data["choices"][0]
+            if isinstance(choice, dict):
+                narration = choice.get("text", "") or choice.get("message", {}).get("content", "")
+        elif "narration" in raw_data:
+            narration = str(raw_data["narration"])
+    elif isinstance(raw_data, str):
+        narration = raw_data
+
+    # Parse [Narration] and [StateUpdates] section tags if embedded in narrative response
+    if "[Narration]" in narration or "[StateUpdates]" in narration:
+        parts = narration.split("[StateUpdates]")
+        narration_clean = parts[0].replace("[Narration]", "").strip()
+
+        if len(parts) > 1:
+            updates_str = parts[1].strip()
+            if "```" in updates_str:
+                updates_str = updates_str.split("```")[1]
+                if updates_str.startswith("json"):
+                    updates_str = updates_str[4:]
+                updates_str = updates_str.strip()
+            if "[Events]" in updates_str:
+                su_part, ev_part = updates_str.split("[Events]", 1)
                 try:
                     state_updates = json.loads(su_part.strip())
                 except Exception:
-                    pass
+                    state_updates = {}
                 try:
                     events = json.loads(ev_part.strip())
                 except Exception:
-                    pass
+                    events = []
             else:
                 try:
-                    state_updates = json.loads(rest.strip())
+                    state_updates = json.loads(updates_str)
                 except Exception:
-                    pass
-        else:
-            narration = after_narr.strip()
+                    state_updates = {}
+        narration = narration_clean
     else:
         # Strip out any JSON block at the end if present
-        json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+        json_match = re.search(r'\{.*\}', narration, re.DOTALL)
         if json_match:
-            narration = raw_text[:json_match.start()].strip()
             try:
                 state_updates = json.loads(json_match.group(0))
+                narration = narration[:json_match.start()].strip()
             except Exception:
                 pass
 
-    return {
-        "narration": narration if narration else raw_text,
-        "state_updates": state_updates,
-        "events": events
-    }
+    # Override or supplement with direct dictionary keys if present (e.g. from mock return values)
+    if isinstance(raw_data, dict):
+        if raw_data.get("state_updates") is not None:
+            state_updates = raw_data["state_updates"]
+        if raw_data.get("events") is not None:
+            events = raw_data["events"]
+
+    return narration, state_updates, events
+
 
 class NarrativeEngine:
     def __init__(self, state_or_client: Any = None, vllm_client: Optional[VLLMClient] = None):
         if isinstance(state_or_client, VLLMClient):
             self.vllm_client = state_or_client
             self.initial_state = None
-        else:
+        elif state_or_client is not None and not isinstance(state_or_client, VLLMClient):
             self.initial_state = state_or_client
+            self.vllm_client = vllm_client or VLLMClient()
+        else:
+            self.initial_state = None
             self.vllm_client = vllm_client or VLLMClient()
 
     def process_action(self, action: PlayerAction, session: Optional[Session] = None) -> NarrativeResult:
@@ -77,55 +103,36 @@ class NarrativeEngine:
             )
 
         prompt_str = build_narrative_prompt(state, action)
-        
-        if hasattr(action, 'mood') and action.mood:
-            prompt_str += f"\n\n[Mood: {action.mood}]"
-            
-        if hasattr(action, 'is_exploration') and action.is_exploration:
-            prompt_str += "\n\nProvide a detailed description of the surroundings."
-        
+
         raw_data = self.vllm_client.generate(prompt_str)
 
-        if isinstance(raw_data, dict):
-            if "text" in raw_data and not any(k in raw_data for k in ["narration", "choices"]):
-                parsed = parse_llm_output(raw_data["text"])
-                narration = parsed["narration"]
-                state_updates = raw_data.get("state_updates") or parsed["state_updates"]
-                events = raw_data.get("events") or parsed["events"]
-            elif "choices" in raw_data and len(raw_data["choices"]) > 0:
-                raw_text = raw_data["choices"][0].get("text", "")
-                parsed = parse_llm_output(raw_text)
-                narration = parsed["narration"]
-                state_updates = parsed["state_updates"]
-                events = parsed["events"]
-            elif "narration" in raw_data:
-                narration = raw_data["narration"]
-                state_updates = raw_data.get("state_updates")
-                events = raw_data.get("events")
-            else:
-                raw_text = str(raw_data.get("text", raw_data))
-                parsed = parse_llm_output(raw_text)
-                narration = parsed["narration"]
-                state_updates = parsed["state_updates"]
-                events = parsed["events"]
-        else:
-            narration = str(raw_data)
-            state_updates = None
-            events = None
+        narration, state_updates, events = parse_vllm_response(raw_data)
 
         if repository and state_updates:
-            if "location_id" in state_updates:
-                repository.update_location(state_updates["location_id"], state_updates)
-                state.current_location_id = state_updates["location_id"]
-            repository.save_state(state)
+            loc_id = state_updates.get("location_id") or getattr(state, "current_location_id", "1")
+            if "location_name" in state_updates or "location_description" in state_updates:
+                loc_data = {}
+                if "location_name" in state_updates:
+                    loc_data["name"] = state_updates["location_name"]
+                if "location_description" in state_updates:
+                    loc_data["description"] = state_updates["location_description"]
+                repository.update_location(loc_id, loc_data)
+            
+            if "active_npcs" in state_updates and isinstance(state_updates["active_npcs"], list):
+                for npc_info in state_updates["active_npcs"]:
+                    if isinstance(npc_info, dict):
+                        repository.create_or_update_npc(npc_info, loc_id)
 
-        active_npc_names = []
-        if hasattr(state, 'active_npcs') and state.active_npcs:
-            active_npc_names = [npc.name for npc in state.active_npcs if hasattr(npc, 'name')]
+            if state_updates.get("location_id"):
+                state.current_location_id = state_updates["location_id"]
+                repository.save_state(state)
+
+        active_npcs = getattr(state, "active_npcs", []) or []
+        npc_names = [getattr(npc, "name", str(npc)) for npc in active_npcs]
 
         return NarrativeResult(
             narration=narration,
             state_updates=state_updates,
-            npcs=active_npc_names,
+            npcs=npc_names,
             events=events or []
         )

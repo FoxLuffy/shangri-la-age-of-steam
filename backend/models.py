@@ -16,7 +16,7 @@ class NPC(BaseModel):
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
 
 class WorldState(BaseModel):
-    current_location_id: str = "1"
+    current_location_id: Optional[str] = "1"
     active_npcs_ids: Union[List[str], str] = []
     global_event: Optional[str] = None
     world_memories: Union[List[Dict[str, str]], str] = []

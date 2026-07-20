@@ -15,13 +15,32 @@ This project uses a modern, production-ready architecture designed for low-laten
 - **Frontend:** React, Vite, Tailwind CSS
 - **Data:** JSON/SQLite for world state
 
+## Building and Running locally
+
+### Building Docker Images
+Build commands must be executed from the root repository directory (`.`):
+
+- **Frontend Image:**
+  ```bash
+  docker build -t shangri-la-frontend:latest -f Dockerfile.frontend .
+  ```
+- **Backend Image:**
+  ```bash
+  docker build -t shangri-la-backend:latest -f Dockerfile.backend .
+  ```
+
+### Running with Docker Compose
+```bash
+docker-compose up --build
+```
+
 ## Deployment (TrueNAS SCALE)
 
 To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for your config and use the following structure in the "Deployment Configuration":
 
 ### Environment Variables
 | Name | Value |
-| :---32|---|
+| :---|---|
 | `BACKEND_PORT` | `8000` |
 | `FRONTEND_PORT` | `5173` |
 
@@ -54,7 +73,7 @@ services:
     container_name: shangri-la-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       - FRONTEND_PORT=5173
       - VLLM_SERVER_URL=http://<YOUR_TRUENAS_HOST_IP>:<VLLM_PORT>
@@ -67,7 +86,7 @@ services:
 ## CI/CD (GitHub Actions)
 The following workflow provides a manual trigger to build and publish the artifacts.
 
-.github/workflows/publish.yml
+`.github/workflows/publish.yml`
 ```yaml
 name: Publish Artifacts
 
@@ -107,7 +126,45 @@ jobs:
           docker push shangri-la-backend:latest
           docker push shangri-la-frontend:latest
 ```
---- Project Structure Complete ---
+
+## Project Structure
+
+```
+├── Dockerfile.backend
+├── Dockerfile.frontend
+├── README.md
+├── backend/
+│   ├── client.py
+│   ├── database.py
+│   ├── database_init.py
+│   ├── engine.py
+│   ├── entrypoint.sh
+│   ├── main.py
+│   ├── models.py
+│   ├── prompt_utils.py
+│   ├── repository.py
+│   ├── requirements.txt
+│   └── tests/
+├── docker-compose.yml
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── public/
+│   ├── src/
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── api.ts
+│   │   ├── components/
+│   │   │   └── ChatInterface.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   └── vite.config.ts
+└── saos.db
+```
 
 ## Project Status
 - [x] Phase 1: Foundation & Core API

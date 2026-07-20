@@ -28,3 +28,4 @@
 - [ ] **VLLM Streaming Output (Server-Sent Events / WebSockets):** Token-by-token narrative streaming for ultra-low latency presentation.
 - [ ] **Complex Relationship & Faction System:** Deepen NPC disposition formulas with faction standing (e.g., Iron Syndicate vs Alchemists Guild).
 - [ ] **Audio Ambience & Sound Effects:** Add atmospheric steam/machinery audio clips and background music.
+

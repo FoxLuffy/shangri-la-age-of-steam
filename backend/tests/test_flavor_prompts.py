@@ -39,6 +39,12 @@ def test_flavor_prompt_complex_inputs():
         assert npc.name in prompt
             
     assert "reflection in the polished wood" in prompt
+        
+    # Check for mood and exploration instructions
+    assert "[Mood: tense]" in prompt
+    assert "Provide a detailed description of the surroundings" in prompt
+        
+    # Check for system instructions
     assert "You are the Narrator" in prompt
 
 if __name__ == "__main__":

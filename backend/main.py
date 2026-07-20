@@ -22,7 +22,14 @@ app.add_middleware(
 
 VLLM_API_BASE = os.getenv("VLLM_SERVER_URL") or os.getenv("VLLM_API_BASE", "http://localhost:8000/v1")
 client = VLLMClient(api_base=VLLM_API_BASE)
+mock_client = client
 engine = NarrativeEngine(client)
+
+dummy_state = WorldState(
+    current_location_id="1",
+    active_npcs_ids=[],
+    world_memories=[]
+)
 
 @app.get("/health")
 async def health_check():

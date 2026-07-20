@@ -4,6 +4,7 @@ from sqlalchemy import Column, String, Integer, Text, JSON
 from contextlib import contextmanager
 import os
 
+
 sqlite_file_name = os.getenv("DATABASE_PATH", "saos.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, echo=False)
@@ -21,7 +22,7 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
-    npcs: List[str] = Field(default=[], sa_column=Column(JSON))
+    npcs: List["NPC"] = Relationship(back_populates="location")
 
 class NPC(SQLModel, table=True):
     id: str = Field(primary_key=True)

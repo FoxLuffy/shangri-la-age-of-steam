@@ -6,20 +6,48 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 class VLLMClient:
-    def __init__(self, api_base: Optional[str] = None):
+    """
+    Client for communicating with the vLLM inference server.
+    """
+    def __init__(
+        self,
+        api_base: Optional[str] = None,
+        model: Optional[str] = None,
+        timeout: float = 30.0
+    ):
         if not api_base:
             api_base = os.environ.get("VLLM_SERVER_URL") or os.environ.get("VLLM_API_BASE", "http://localhost:8000/v1")
         self.api_base = api_base.rstrip('/')
+        self.model = model or os.getenv("VLLM_MODEL", "default")
+        self.timeout = timeout
         api_key = os.environ.get("VLLM_API_KEY", "NONE")
         self.headers = {"Authorization": f"Bearer {api_key}"}
 
-    def generate(self, prompt: str) -> Dict[str, Any]:
+    def generate(
+        self,
+        prompt: str,
+        max_tokens: int = 512,
+        temperature: float = 0.7,
+        top_p: float = 0.9,
+        **kwargs: Any
+    ) -> Dict[str, Any]:
+        """
+        Generates text completion using the vLLM endpoint.
+        """
         endpoint = f"{self.api_base}/completions" if not self.api_base.endswith("/completions") else self.api_base
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "top_p": top_p,
+            **kwargs
+        }
         try:
-            with httpx.Client(timeout=5.0) as client:
+            with httpx.Client(timeout=self.timeout) as client:
                 response = client.post(
                     endpoint,
-                    json={"model": "default", "prompt": prompt},
+                    json=payload,
                     headers=self.headers
                 )
                 if response.status_code == 200:

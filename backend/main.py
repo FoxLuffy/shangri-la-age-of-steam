@@ -1,8 +1,10 @@
 import os
+import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
@@ -89,11 +91,16 @@ async def get_world_state():
             "all_npcs": all_npcs
         }
 
-@app.post("/chat", response_model=NarrativeResult)
+@app.post("/chat")
 async def chat(action: PlayerAction):
-    with get_session() as session:
-        result = engine.process_action(action, session)
-        return result
+    def event_stream():
+        with get_session() as session:
+            for item in engine.process_action(action, session):
+                if isinstance(item, str):
+                    yield f"data: {json.dumps({'chunk': item})}\n\n"
+                elif isinstance(item, dict):
+                    yield f"data: {json.dumps({'result': item})}\n\n"
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @app.post("/reset")
 async def reset_database():

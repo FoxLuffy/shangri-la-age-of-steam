@@ -132,7 +132,7 @@ export default function ChatInterface() {
       const errorMsg: Message = {
         id: `err-${Date.now()}`,
         sender: 'system',
-        content: `Error: Failed to process action (${error.message || 'Network error'}). Ensure backend server is running on port 8000.`,
+        content: `Error: Failed to process action (${error.message || 'Network error'}). Ensure backend server is running on port 8003.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errorMsg]);

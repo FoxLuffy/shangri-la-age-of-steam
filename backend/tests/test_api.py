@@ -9,10 +9,14 @@ def test_chat_endpoint():
     # Move imports inside the test function to ensure patching works correctly
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     
-    # We patch backend.client.VLLMClient so that any instantiation within main/engine uses the mock.
-    with patch("backend.client.VLLMClient") as MockClient:
-        import main
-        from main import app
+    import main
+    from main import app
+
+    # Reset LazyEngine instance in case it was initialized by another test
+    main.engine._instance = None
+
+    # We patch main.VLLMClient so that any instantiation within main/engine uses the mock.
+    with patch("main.VLLMClient") as MockClient:
         
         mock_instance = MockClient.return_value
         mock_instance.generate_stream.return_value = [

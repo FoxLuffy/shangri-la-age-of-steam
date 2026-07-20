@@ -60,7 +60,7 @@ def seed_data():
             session.add(world_state)
             
             # Seed ResourceMarket
-            from backend.models import ResourceMarket
+            from backend.database import ResourceMarket
             res1 = ResourceMarket(resource_name="Coal", base_price=12.0, current_price=12.0, volatility=0.05)
             res2 = ResourceMarket(resource_name="Brass", base_price=45.0, current_price=45.0, volatility=0.1)
             res3 = ResourceMarket(resource_name="Aether", base_price=150.0, current_price=150.0, volatility=0.25)

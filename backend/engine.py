@@ -182,7 +182,7 @@ async def scan_locations_and_trigger_interactions():
             await trigger_npc_interaction(loc["location_id"], loc["npcs"])
 
 from sqlalchemy import select
-from backend.models import ResourceMarket, DBWorldEvent
+from backend.database import ResourceMarket, WorldEvent
 
 def simulate_economy_tick(session: Session):
     """
@@ -191,7 +191,7 @@ def simulate_economy_tick(session: Session):
     import random
     
     # Get active events
-    active_events = session.exec(select(DBWorldEvent).where(DBWorldEvent.is_active == 1)).all()
+    active_events = session.exec(select(WorldEvent).where(WorldEvent.is_active == 1)).all()
     
     # Aggregate modifiers from events
     modifiers = {}

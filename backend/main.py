@@ -222,7 +222,7 @@ async def get_quests(character_id: int):
 @app.get("/market")
 async def get_market_prices():
     """Retrieve current market prices for all resources."""
-    from backend.models import ResourceMarket
+    from backend.database import ResourceMarket
     with get_session() as session:
         markets = session.exec(select(ResourceMarket)).all()
         return markets

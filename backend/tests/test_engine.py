@@ -8,11 +8,13 @@ def test_narrative_engine_processing():
     state = WorldState(current_location_id="1", current_location=loc, active_npcs=npcs)
     
     mock_vllm_client = MagicMock()
-    mock_vllm_client.generate.return_value = {
-        "text": "You walk into the forest as steam rises.",
-        "state_updates": {"location_id": "1"},
-        "events": []
-    }
+    mock_vllm_client.generate_stream.return_value = [
+        {
+            "text": "You walk into the forest as steam rises.",
+            "state_updates": {"location_id": "1"},
+            "events": []
+        }
+    ]
     
     engine = NarrativeEngine(state, mock_vllm_client)
     action = PlayerAction(action_text="I walk into the forest", current_location_id="1")
@@ -22,6 +24,10 @@ def test_narrative_engine_processing():
         mock_repo = MockRepoClass.return_value
         mock_repo.get_latest_state.return_value = state
         
-        result = engine.process_action(action, mock_session)
+        result = None
+        for chunk in engine.process_action(action, mock_session):
+            if isinstance(chunk, dict) and "narration" in chunk:
+                result = chunk
         
-    assert "forest" in result.narration.lower()
+    assert result is not None
+    assert "forest" in result["narration"].lower()

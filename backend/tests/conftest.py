@@ -8,9 +8,13 @@ os.environ["DATABASE_PATH"] = db_path
 
 @pytest.fixture(autouse=True, scope="session")
 def setup_global_db():
-    from backend.database import create_db_and_tables
+    from backend.database import create_db_and_tables, engine
     create_db_and_tables()
     yield
+    engine.dispose()
     os.close(db_fd)
-    os.unlink(db_path)
+    try:
+        os.unlink(db_path)
+    except PermissionError:
+        pass
 

@@ -227,3 +227,11 @@ async def get_market_prices():
         markets = session.exec(select(ResourceMarket)).all()
         return markets
 
+@app.get("/automata")
+async def get_automata():
+    """Retrieve all automata companions."""
+    from backend.database import AutomataCompanion
+    with get_session() as session:
+        automata = session.exec(select(AutomataCompanion)).all()
+        return automata
+

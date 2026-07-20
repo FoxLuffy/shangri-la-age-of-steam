@@ -1,15 +1,35 @@
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from jinja2 import Template
-from backend.models import WorldState, PlayerAction
+from backend.models import WorldState, PlayerAction, Location
+
+def get_dynamic_narration(action: Optional[PlayerAction] = None,
+                           location: Optional[Location] = None,
+                           world_state: Optional[WorldState] = None) -> str:
+    """
+    Provides a context-aware description based on user actions and location.
+    """
+    if action is None and location is None and world_state is None:
+        return "[Narration]The environment remains still, but the air is heavy with the weight of history."
+
+    if action:
+        return f"[Narration]As you {action.action_text.lower()}, the surrounding details shift."
+
+    if location:
+        return f"[Narration]You are in {location.name}. {location.description}"
+
+    if world_state and world_state.current_location:
+        return f"[Narration]The current setting is {world_state.current_location.name}."
+
+    return "[Narration]The atmosphere is thick with mystery."
 
 def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
     template_path = os.path.join(os.path.dirname(__file__), "templates", "narrative_prompt.j2")
     with open(template_path, "r") as f:
         template_str = f.read()
-    
+
     template = Template(template_str)
-    
+
     npc_contexts = []
     active_npcs = getattr(state, "active_npcs", None) or []
     for npc in active_npcs:
@@ -50,7 +70,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
 
     if hasattr(action, 'mood') and action.mood:
         prompt_str += f"\n\n[Mood: {action.mood}]"
-        
+
     if hasattr(action, 'is_exploration') and action.is_exploration:
         prompt_str += "\n\nProvide a detailed description of the surroundings."
 
@@ -63,12 +83,12 @@ def build_npc_interaction_prompt(
     recent_events: list[str],
     npc1_context: str,
     npc2_context: str,
-    active_event_descriptions: list[str] = None
+    active_event_descriptions: Optional[list[str]] = None
 ) -> str:
     template_path = os.path.join(os.path.dirname(__file__), "templates", "npc_interaction_prompt.j2")
     with open(template_path, "r") as f:
         template_str = f.read()
-    
+
     template = Template(template_str)
     return template.render(
         npc1_name=npc1_name,

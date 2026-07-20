@@ -5,35 +5,24 @@ from unittest.mock import MagicMock, patch
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-import main
-from main import app
-from backend.models import NarrativeResult
-
-def test_health_check():
-    client = TestClient(app)
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-
-def parse_sse_data(line: str) -> dict:
-    if line and line.startswith("data: "):
-        return json.loads(line.replace("data: ", "", 1))
-    return {}
-
 def test_chat_endpoint():
-    client = TestClient(app)
-    payload = {"action_text": "Hello", "current_location_id": "1"}
+    # Move imports inside the test function to ensure patching works correctly
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     
-    # Mock the VLLMClient to avoid real network calls in CI
+    # We patch backend.client.VLLMClient so that any instantiation within main/engine uses the mock.
     with patch("backend.client.VLLMClient") as MockClient:
+        import main
+        from main import app
+        
         mock_instance = MockClient.return_value
         mock_instance.generate_stream.return_value = [
             {"choices": [{"text": "Hello! How can I help you today?"}]},
             {"choices": [{"text": "The atmosphere is heavy with steam."}]},
             {"choices": [{"text": "The Narration says: The copper pipes hiss."}], "result": "The copper pipes hiss."}
         ]
+        
+        client = TestClient(app)
+        payload = {"action_text": "Hello", "current_location_id": "1"}
         
         with client.stream("POST", "/chat", json=payload) as response:
             assert response.status_code == 200
@@ -44,3 +33,17 @@ def test_chat_endpoint():
                     final_result = data["result"]
             assert final_result is not None
             assert "narration" in final_result
+
+def parse_sse_data(line: str) -> dict:
+    if line and line.startswith("data: "):
+        return json.loads(line.replace("data: ", "", 1))
+    return {}
+
+def test_health_check():
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    import main
+    from main import app
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"

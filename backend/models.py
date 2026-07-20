@@ -1,5 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Union
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, JSON
+from sqlmodel import SQLModel, Field as SQLModelField
+from sqlalchemy.orm import declarative_base
+
+# Use SQLAlchemy's declarative_base for the base model
+Base = declarative_base()
 
 class Location(BaseModel):
     id: str
@@ -37,25 +44,49 @@ class RawResponse(BaseModel):
     text: str
     tool_calls: Optional[List[Dict[str, Any]]] = None
     state_updates: Optional[Dict[str, Any]] = None
-    events: Optional[List[Dict[str, Any]]] = None  # List of events triggered by AI
+    events: Optional[List[Dict[str, Any]]] = None
 
 class NarrativeResult(BaseModel):
     narration: str
     state_updates: Optional[Dict[str, Any]] = None
     npcs: Union[List[str], str] = []
-    events: Optional[List[Dict[str, Any]]] = None  # Events triggered
+    events: Optional[List[Dict[str, Any]]] = None
 
-from sqlalchemy import Column, Integer, String, DateTime, JSON
-from sqlalchemy.orm import declarative_base
-from datetime import datetime
+# Database Models (SQLModel)
 
-Base = declarative_base()
+class DBLocation(SQLModel, base=Base):
+    __tablename__ = "location"
+    id: str = SQLModelField(primary_key=True)
+    name: str
+    description: str
+    npcs: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
 
-class WorldEvent(Base):
+class DBNPC(SQLModel, base=Base):
+    __tablename__ = "npc"
+    id: str = SQLModelField(primary_key=True)
+    name: str
+    traits: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
+    current_dialogue: Optional[str] = None
+    disposition: float = SQLModelField(default=0.0)
+    memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
+    location_id: str = SQLModelField(default="1", index=True, foreign_key="location.id")
+
+class DBWorldState(SQLModel, base=Base):
+    __tablename__ = "world_state"
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    current_location_id: str = SQLModelField(default="1")
+    active_npcs_ids: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
+    global_event: Optional[str] = None
+    world_memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
+
+class DBWorldEvent(SQLModel, base=Base):
     __tablename__ = "world_events"
-
-    id = Column(Integer, primary_key=True, index=True)
-    location_id = Column(Integer, index=True)
-    event_text = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    involved_npc_ids = Column(JSON)
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    location_id: str = SQLModelField(index=True)
+    event_type: str
+    event_text: str
+    severity: int = SQLModelField(default=1)
+    affected_locations: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
+    faction_impacts: Dict[str, float] = SQLModelField(default={}, sa_column=Column(JSON))
+    timestamp: datetime = SQLModelField(default=datetime.utcnow)
+    is_active: int = SQLModelField(default=1)

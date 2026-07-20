@@ -2,6 +2,9 @@ version: "3.8"
 
 services:
   backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     image: ${PROJECT_NAME:-shangri-la}/shangri-la-backend:latest
     container_name: shangri-la-backend
     restart: unless-stopped
@@ -14,11 +17,14 @@ services:
       - /mnt/tank/saos_data:/data
 
   frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     image: ${PROJECT_NAME:-shangri-la}/shangri-la-frontend:latest
     container_name: shangri-la-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       - FRONTEND_PORT=5173
       - VLLM_SERVER_URL=http://${TRUENAS_HOST_IP}:${VLLM_PORT}

@@ -17,8 +17,8 @@ engine = NarrativeEngine(client)
 # Initial dummy state
 dummy_state = WorldState(
     current_location_id="1",
-    active_npcs_ids="",
-    world_memories=""
+    active_npcs_ids=[],
+    world_memories=[]
 )
 
 @app.get("/health")

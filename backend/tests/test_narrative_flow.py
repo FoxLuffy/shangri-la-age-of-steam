@@ -10,10 +10,22 @@ def test_narrative_engine_vllm_call():
     
     # Mock the client
     mock_client = MagicMock(spec=VLLMClient)
-    mock_client.generate.return_value = {"text": "The trees rustle."}
+    mock_client.generate.return_value = {
+        "text": "The trees rustle.",
+        "state_updates": {"location_id": "1"},
+        "events": []
+    }
     
-    engine = NarrativeEngine(state, vllm_client=mock_client)
+    engine = NarrativeEngine(vllm_client=mock_client)
     action = PlayerAction(action_text="Look around", current_location_id="1")
     
-    result = engine.process_action(action)
+    mock_session = MagicMock()
+    with MagicMock(), pytest.MonkeyPatch.context() as mp:
+        from unittest.mock import patch
+        with patch("backend.engine.StateRepository") as MockRepoClass:
+            mock_repo = MockRepoClass.return_value
+            mock_repo.get_latest_state.return_value = state
+            
+            result = engine.process_action(action, mock_session)
+            
     assert "trees rustle" in result.narration.lower()

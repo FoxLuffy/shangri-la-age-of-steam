@@ -1,5 +1,4 @@
-import pytest
-from httpx import AsyncClient
+from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 import sys
 import os
@@ -8,24 +7,29 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import app
+from backend.models import NarrativeResult
 
 # Mocking the engine and clients
-# In a real test, we'd use more sophisticated mocking, but this is for a basic connectivity check
 import main
 main.engine = MagicMock()
 main.dummy_state = MagicMock()
 main.mock_client = MagicMock()
 
-@pytest.mark.asyncio
-async def test_health_check():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get("/health")
-        assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+# Set a valid return value for process_action to satisfy FastAPI's response_model validation
+main.engine.process_action.return_value = NarrativeResult(
+    narration="Mocked narration",
+    npcs=["Arthur"]
+)
 
-@pytest.mark.asyncio
-async def test_chat_endpoint():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        payload = {"action_text": "Hello", "current_location_id": "1"}
-        response = await ac.post("/chat", json=payload)
-        assert response.status_code == 200
+def test_health_check():
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+def test_chat_endpoint():
+    client = TestClient(app)
+    payload = {"action_text": "Hello", "current_location_id": "1"}
+    response = client.post("/chat", json=payload)
+    assert response.status_code == 200
+    assert response.json()["narration"] == "Mocked narration"

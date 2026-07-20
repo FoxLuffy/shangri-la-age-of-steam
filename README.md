@@ -63,7 +63,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - BACKEND_PORT=8000
+      - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
     volumes:
       - /mnt/tank/saos_data:/data

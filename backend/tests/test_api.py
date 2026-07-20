@@ -11,32 +11,30 @@ def test_chat_endpoint():
     
     import main
     from main import app
+    from backend.engine import NarrativeEngine
+    from backend.client import VLLMClient
+    from unittest.mock import MagicMock
 
-    # Reset LazyEngine instance in case it was initialized by another test
-    main.engine._instance = None
-
-    # We patch main.VLLMClient so that any instantiation within main/engine uses the mock.
-    with patch("main.VLLMClient") as MockClient:
-        
-        mock_instance = MockClient.return_value
-        mock_instance.generate_stream.return_value = [
-            {"choices": [{"text": "Hello! How can I help you today?"}]},
-            {"choices": [{"text": "The atmosphere is heavy with steam."}]},
-            {"choices": [{"text": "The Narration says: The copper pipes hiss."}], "result": "The copper pipes hiss."}
-        ]
-        
-        client = TestClient(app)
-        payload = {"action_text": "Hello", "current_location_id": "1"}
-        
-        with client.stream("POST", "/chat", json=payload) as response:
-            assert response.status_code == 200
-            final_result = None
-            for line in response.iter_lines():
-                data = parse_sse_data(line)
-                if "result" in data:
-                    final_result = data["result"]
-            assert final_result is not None
-            assert "narration" in final_result
+    mock_vllm = MagicMock(spec=VLLMClient)
+    mock_vllm.generate_stream.return_value = [
+        {"choices": [{"text": "Hello! How can I help you today?"}]},
+        {"choices": [{"text": "The atmosphere is heavy with steam."}]},
+        {"choices": [{"text": "The Narration says: The copper pipes hiss."}], "result": "The copper pipes hiss."}
+    ]
+    main.engine._instance = NarrativeEngine(mock_vllm)
+    
+    client = TestClient(app)
+    payload = {"action_text": "Hello", "current_location_id": "1"}
+    
+    with client.stream("POST", "/chat", json=payload) as response:
+        assert response.status_code == 200
+        final_result = None
+        for line in response.iter_lines():
+            data = parse_sse_data(line)
+            if "result" in data:
+                final_result = data["result"]
+        assert final_result is not None
+        assert "narration" in final_result
 
 def parse_sse_data(line: str) -> dict:
     if line and line.startswith("data: "):

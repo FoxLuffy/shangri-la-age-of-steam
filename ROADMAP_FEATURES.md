@@ -1,0 +1,46 @@
+# Feature Roadmap: Shangri-la: Age of Steam
+
+## Phase 1: Foundation (Completed)
+- [x] Project Repository & Workspace Setup
+- [x] Environment Configuration (Python 3.13, FastAPI, SQLModel, Vite, React 19)
+- [x] Database Schema Implementation (Location, NPC, WorldState, PlayerAction)
+- [x] Database Seeding & Initialization System
+- [x] CORS Middleware & FastAPI API endpoints
+- [x] vLLM Client Integration
+- [x] Prompt Engineering & Templates
+- [x] State Management & Persistence
+- [x] React Frontend UI
+
+## Phase 2: Narrative & Interaction (Completed)
+- [x] Prompt Engineering & Templates
+- [x] vLLM Inference Integration
+- [x] State Management & Persistence
+- [x] Player Mood & Exploration Mode integration
+- [x] Output Parsing
+
+## Phase 3: User Experience (Completed)
+- [x] React 19 / Vite / Tailwind CSS Steampunk UI
+- [x] Interactive Terminal Narrative Feed
+- [x] Active NPCs Panel with Disposition Meters
+- [x] Environment Overview & Fast Travel
+
+## Phase 4: Advanced Mechanics (Completed)
+- [x] **Multi-Agent NPC Orchestration**: Autonomous NPC interactions.
+- [x] **Dynamic Inventory & Quest Tracking**: Persistent items, crafting, and quest states.
+- [x] **Real-Time Streaming**: SSE-based chunk-by-chunk narrative.
+
+## Phase 5: Content Depth & Systems (Next)
+- [x] **Complex Relationship & Faction System**: Faction standing (Iron Syndicate vs. Alchemists Guild).
+- [ ] **Dynamic World Events**: Procedural world events (steam leaks, riots, industrial accidents).
+- [ ] **Procedural NPC Generation**: Randomized unique NPCs based on local regional "flavors."
+- [ ] **Faction-based Crafting**: Certain items only craftable in specific faction zones.
+
+## Phase 6: Multimedia & Atmosphere (Future)
+- [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
+- [ ] **Dynamic Music**: Procedural music that reacts to player mood and location danger.
+- [ ] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
+
+## Phase 7: Social & Persistence (Future)
+- [ ] **Persistent World History**: A searchable "ledger" of all major narrative decisions.
+- [ ] **Multiplayer Sync (Experimental)**: Shared world state for group exploration.
+- [ ] **Save State Serialization**: Full state exports/imports for cross-device play.

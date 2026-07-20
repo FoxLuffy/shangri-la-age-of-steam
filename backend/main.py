@@ -66,17 +66,20 @@ app.add_middleware(
 
 VLLM_API_BASE = os.getenv("VLLM_SERVER_URL") or os.getenv("VLLM_API_BASE", "http://localhost:8000/v1")
 
-# Dependency injection for the engine
-engine = None
+class LazyEngine:
+    def __init__(self, api_base: str):
+        self.api_base = api_base
+        self._instance = None
 
-def init_engine(client: Optional[VLLMClient] = None):
-    global engine
-    if client:
-        engine = NarrativeEngine(client)
-    else:
-        engine = NarrativeEngine(VLLMClient(api_base=VLLM_API_BASE))
+    def process_action(self, action, session):
+        if self._instance is None:
+            logger.info(f"Lazy-loading VLLMClient from {self.api_base}")
+            client = VLLMClient(api_base=self.api_base)
+            self._instance = NarrativeEngine(client)
+        return self._instance.process_action(action, session)
 
-init_engine()
+# This creates a proxy, not the real engine, so no connection happens on import.
+engine = LazyEngine(VLLM_API_BASE)
 
 dummy_state = WorldState(
     current_location_id="1",
@@ -107,9 +110,9 @@ async def chat(action: PlayerAction):
         with get_session() as session:
             for item in engine.process_action(action, session):
                 if isinstance(item, str):
-                    yield f"data: {json.dumps({'chunk': item})}\\n\\n"
+                    yield f"data: {json.dumps({'chunk': item})}\n\n"
                 elif isinstance(item, dict):
-                    yield f"data: {json.dumps({'result': item})}\\n\\n"
+                    yield f"data: {json.dumps({'result': item})}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @app.post("/reset")

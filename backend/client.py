@@ -86,6 +86,7 @@ class VLLMClient:
                 with client.stream("POST", endpoint, json=payload, headers=self.headers) as response:
                     if response.status_code == 200:
                         for line in response.iter_lines():
+                            line = line.decode('utf-8') if isinstance(line, bytes) else line
                             if line.startswith("data: "):
                                 data_str = line[6:].strip()
                                 if data_str == "[DONE]":

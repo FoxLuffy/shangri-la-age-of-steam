@@ -1,0 +1,15 @@
+Analyze the database error in 'backend/database_init.py' at line 70.
+The error is a SQLAlchemy ORM state initialization error during seed_data().
+The error occurs when instantiating Location, NPC, or WorldState models.
+This typically happens when the __init__ method is overridden without calling super().__init__ in a SQLAlchemy/SQLModel model.
+
+CONTEXT:
+- Files: backend/database.py, backend/database_init.py, backend/models.py
+- Environment: Docker compose with shared volume /mnt/ottertje/saos_data:/data
+
+TASK:
+1. Inspect models.py and database.py to see how models are defined.
+2. Inspect database_init.py to see how they are being used.
+3. Fix the initialization issue. If models are using SQLModel or SQLAlchemy Declarative, ensure constructors are handled correctly.
+4. Ensure the backend can connect to the database using the settings in docker-compose.yml.
+5. Provide a summary of changes.

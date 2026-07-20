@@ -243,3 +243,11 @@ async def get_augmentations(character_id: int = 1):
         augs = session.exec(select(Augmentation).where(Augmentation.character_id == character_id)).all()
         return augs
 
+@app.post("/generate_npc")
+async def generate_npc_endpoint(flavor: str = "industrial"):
+    """Generate a random procedural NPC for a specific flavor."""
+    from backend.npc_generator import generate_procedural_npc
+    with get_session() as session:
+        npc = generate_procedural_npc(session, location_flavor=flavor)
+        return npc
+

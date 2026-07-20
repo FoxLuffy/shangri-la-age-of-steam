@@ -11,20 +11,17 @@ def seed_data():
             loc1 = Location(
                 id="1",
                 name="The Rusty Anchor Tavern",
-                description="A dim, steam-filled tavern in the low docks district. Thick smog drifts through copper pipes overhead, and sailors speak in hushed tones.",
-                npcs=["npc_1", "npc_2"]
+                description="A dim, steam-filled tavern in the low docks district. Thick smog drifts through copper pipes overhead, and sailors speak in hushed tones."
             )
             loc2 = Location(
                 id="2",
                 name="Clockwork Plaza",
-                description="A sprawling plaza centered around a massive brass clock tower. Cogwheels turn rhythmically as steam vents discharge with loud huffs.",
-                npcs=["npc_3"]
+                description="A sprawling plaza centered around a massive brass clock tower. Cogwheels turn rhythmically as steam vents discharge with loud huffs."
             )
             loc3 = Location(
                 id="3",
                 name="The Grand Foundry",
-                description="A cavernous industrial warehouse where giant pistons crush glowing iron ore, emitting intense heat and blinding sparks.",
-                npcs=[]
+                description="A cavernous industrial warehouse where giant pistons crush glowing iron ore, emitting intense heat and blinding sparks."
             )
             session.add_all([loc1, loc2, loc3])
 

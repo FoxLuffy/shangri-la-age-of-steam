@@ -2,6 +2,7 @@ import httpx
 import os
 import logging
 from typing import Dict, Any, Optional
+from backend.prompt_utils import get_dynamic_narration
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class VLLMClient:
         if not api_base:
             api_base = os.environ.get("VLLM_SERVER_URL") or os.environ.get("VLLM_API_BASE", "http://localhost:8000/v1")
         self.api_base = api_base.rstrip('/')
-        self.model = model or os.getenv("VLLM_MODEL", "default")
+        self.model = model or os.environ.get("VLLM_MODEL", "default")
         self.timeout = timeout
         api_key = os.environ.get("VLLM_API_KEY", "NONE")
         self.headers = {"Authorization": f"Bearer {api_key}"}
@@ -53,27 +54,11 @@ class VLLMClient:
                 if response.status_code == 200:
                     return response.json()
                 else:
-                    logger.warning(f"VLLM returned status code {response.status_code}")
+                    logger.error(f"VLLM returned status code {response.status_code}")
+                    raise RuntimeError(f"VLLM server returned non-200 status code: {response.status_code}")
         except Exception as e:
-            logger.info(f"VLLM endpoint unavailable ({e}). Using mock narrative engine response.")
-
-        # Fallback response for offline / dev mode
-        return {
-            "choices": [{
-                "text": (
-                    f"[Narration]\nThe hissed discharge of copper steam pipes echoes as your action unfolds. "
-                    f"The ambient atmosphere thickens with the scent of coal smoke and oil.\n\n"
-                    f"[StateUpdates]\n{{\"location_id\": \"1\"}}"
-                )
-            }],
-            "text": (
-                f"[Narration]\nThe hissed discharge of copper steam pipes echoes as your action unfolds. "
-                f"The ambient atmosphere thickens with the scent of coal smoke and oil.\n\n"
-                f"[StateUpdates]\n{{\"location_id\": \"1\"}}"
-            ),
-            "state_updates": {"location_id": "1"},
-            "events": []
-        }
+            logger.error(f"VLLM endpoint unavailable ({e})")
+            raise RuntimeError(f"VLLM endpoint unavailable: {e}")
 
     def generate_stream(
         self,
@@ -99,34 +84,22 @@ class VLLMClient:
         try:
             with httpx.Client(timeout=self.timeout) as client:
                 with client.stream("POST", endpoint, json=payload, headers=self.headers) as response:
-                    if response.status_code == 200:
-                        for line in response.iter_lines():
-                            if line.startswith("data: "):
-                                data_str = line[6:].strip()
-                                if data_str == "[DONE]":
-                                    break
-                                if data_str:
-                                    import json
-                                    try:
-                                        yield json.loads(data_str)
-                                    except Exception:
-                                        pass
-                    else:
-                        logger.warning(f"VLLM returned status code {response.status_code}")
-                        return
-        except Exception as e:
-            logger.info(f"VLLM endpoint unavailable ({e}). Using mock narrative engine response stream.")
+                    if response.status_code != 200:
+                        logger.error(f"VLLM returned status code {response.status_code}")
+                        raise RuntimeError(f"VLLM server returned non-200 status code: {response.status_code}")
 
-        # Fallback response stream
-        fallback_text = (
-            f"[Narration]\nThe hissed discharge of copper steam pipes echoes as your action unfolds. "
-            f"The ambient atmosphere thickens with the scent of coal smoke and oil.\n\n"
-            f"[StateUpdates]\n{{\"location_id\": \"1\"}}"
-        )
-        import time
-        # Yield words to simulate streaming
-        words = fallback_text.split(" ")
-        for i, word in enumerate(words):
-            space = " " if i > 0 else ""
-            yield {"choices": [{"text": space + word}]}
-            time.sleep(0.05)
+                    for line in response.iter_lines():
+                        line = line.decode('utf-8') if isinstance(line, bytes) else line
+                        if line.startswith("data: "):
+                            data_str = line[6:].strip()
+                            if data_str == "[DONE]":
+                                break
+                            if data_str:
+                                import json
+                                try:
+                                    yield json.loads(data_str)
+                                except Exception:
+                                    pass
+        except Exception as e:
+            logger.error(f"VLLM endpoint unavailable ({e})")
+            raise RuntimeError(f"VLLM endpoint unavailable: {e}")

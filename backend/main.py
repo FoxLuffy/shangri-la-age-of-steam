@@ -3,6 +3,7 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,7 @@ from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
 from backend.client import VLLMClient
-from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, QuestState, create_db_and_tables
+from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, create_db_and_tables
 from backend.repository import StateRepository
 from backend.database_init import seed_data
 
@@ -64,9 +65,21 @@ app.add_middleware(
 )
 
 VLLM_API_BASE = os.getenv("VLLM_SERVER_URL") or os.getenv("VLLM_API_BASE", "http://localhost:8000/v1")
-client = VLLMClient(api_base=VLLM_API_BASE)
-mock_client = client
-engine = NarrativeEngine(client)
+
+class LazyEngine:
+    def __init__(self, api_base: str):
+        self.api_base = api_base
+        self._instance = None
+
+    def process_action(self, action, session):
+        if self._instance is None:
+            logger.info(f"Lazy-loading VLLMClient from {self.api_base}")
+            client = VLLMClient(api_base=self.api_base)
+            self._instance = NarrativeEngine(client)
+        return self._instance.process_action(action, session)
+
+# This creates a proxy, not the real engine, so no connection happens on import.
+engine = LazyEngine(VLLM_API_BASE)
 
 dummy_state = WorldState(
     current_location_id="1",
@@ -164,7 +177,7 @@ async def craft_item(character_id: int, recipe_id: int):
                     session.delete(inv_item)
                 else:
                     session.add(inv_item)
-                    
+                
             # Add resulting item to inventory
             result_inv_item = session.exec(
                 select(Inventory)
@@ -205,4 +218,3 @@ async def get_quests(character_id: int):
             select(QuestState).where(QuestState.character_id == character_id)
         ).all()
         return quests
-

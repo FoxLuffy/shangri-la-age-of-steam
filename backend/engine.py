@@ -85,10 +85,12 @@ class NarrativeEngine:
             self.initial_state = None
         elif state_or_client is not None and not isinstance(state_or_client, VLLMClient):
             self.initial_state = state_or_client
-            self.vllm_client = vllm_client or VLLMClient()
+            self.vllm_client = vllm_client if vllm_client is not None else VLLMClient()
         else:
             self.initial_state = None
-            self.vllm_client = vllm_client or VLLMClient()
+            if vllm_client is None:
+                raise ValueError("VLLMClient must be provided explicitly if no initial state is given.")
+            self.vllm_client = vllm_client
 
     def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:

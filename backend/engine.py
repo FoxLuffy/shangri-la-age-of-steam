@@ -110,6 +110,8 @@ class NarrativeEngine:
         prompt_str = build_narrative_prompt(state, action)
 
         full_raw_data = ""
+        is_narrating = True
+        buffer = ""
         for chunk in self.vllm_client.generate_stream(prompt_str):
             text = ""
             if isinstance(chunk, dict):
@@ -123,7 +125,34 @@ class NarrativeEngine:
                 
             if text:
                 full_raw_data += text
-                yield text
+                if is_narrating:
+                    if "[StateUpdates]" in full_raw_data:
+                        is_narrating = False
+                        continue
+                    
+                    buffer += text.replace("[Narration]", "")
+                    # If buffer has a '[' but doesn't have the full '[StateUpdates]', we hold it.
+                    if "[" in buffer:
+                        # Find the first '['
+                        idx = buffer.find("[")
+                        # We can yield everything before '['
+                        if idx > 0:
+                            yield buffer[:idx]
+                            buffer = buffer[idx:]
+                        
+                        # If buffer is a prefix of "[StateUpdates]", we must wait to see more
+                        if "[StateUpdates]".startswith(buffer):
+                            pass
+                        else:
+                            # It's not the start of [StateUpdates], safe to yield
+                            yield buffer
+                            buffer = ""
+                    else:
+                        yield buffer
+                        buffer = ""
+                        
+        if is_narrating and buffer:
+            yield buffer
 
         narration, state_updates, events = parse_vllm_response(full_raw_data)
 

@@ -48,26 +48,36 @@ def seed_data():
             loc1 = Location(
                 id="1",
                 name="The Rusty Anchor Tavern",
-                description="A dim, steam-filled tavern in the low docks district. Thick smog drifts through copper pipes overhead, and sailors speak in hushed tones."
+                description="A dim, steam-filled tavern in the low docks district. Thick smog drifts through copper pipes overhead, and sailors speak in hushed tones about the iron syndicate."
             )
             loc2 = Location(
                 id="2",
                 name="Clockwork Plaza",
-                description="A sprawling plaza centered around a massive brass clock tower. Cogwheels turn rhythmically as steam vents discharge with loud huffs."
+                description="A sprawling plaza centered around a massive brass clock tower. Cogwheels turn rhythmically as steam vents discharge with loud huffs. Vendors sell mechanical trinkets."
             )
             loc3 = Location(
                 id="3",
                 name="The Grand Foundry",
-                description="A cavernous industrial warehouse where giant pistons crush glowing iron ore, emitting intense heat and blinding sparks."
+                description="A cavernous industrial warehouse where giant pistons crush glowing iron ore, emitting intense heat and blinding sparks. Automata patrol the walkways."
             )
-            session.add_all([loc1, loc2, loc3])
+            loc4 = Location(
+                id="4",
+                name="The Aetherium Observatory",
+                description="High above the smog, this glass-domed structure houses massive brass telescopes aimed at the glowing aether rifts in the sky."
+            )
+            loc5 = Location(
+                id="5",
+                name="Undercity Slums",
+                description="A labyrinth of cramped, rusted metal shanties beneath the main city grid. It reeks of sulfur and desperation, a haven for smugglers and rogue alchemists."
+            )
+            session.add_all([loc1, loc2, loc3, loc4, loc5])
 
             npc1 = NPC(
                 id="npc_1",
                 name="Barnaby the Chief Engineer",
                 traits=["knowledgeable", "cautious", "grumpy"],
                 disposition=0.2,
-                location_id="1",
+                location_id="3",
                 memories=[{"key": "Steam Leaks", "value": "Worried about pressure drops in Sector 4"}]
             )
             npc2 = NPC(
@@ -75,7 +85,7 @@ def seed_data():
                 name="Lady Eleanor Vane",
                 traits=["astute", "secretive", "wealthy"],
                 disposition=0.0,
-                location_id="1",
+                location_id="4",
                 memories=[{"key": "Alchemy Experiment", "value": "Seeking refined brass components for her automaton"}]
             )
             npc3 = NPC(
@@ -83,16 +93,32 @@ def seed_data():
                 name="Silas the Smuggler",
                 traits=["shrewd", "observant", "cynical"],
                 disposition=-0.1,
-                location_id="2",
+                location_id="5",
                 memories=[{"key": "Dock Patrols", "value": "Keeps a watchful eye out for city enforcers"}]
             )
-            session.add_all([npc1, npc2, npc3])
+            npc4 = NPC(
+                id="npc_4",
+                name="Kaelen Ironhand",
+                traits=["brutal", "loyal", "scarred"],
+                disposition=-0.5,
+                location_id="1",
+                memories=[{"key": "Tavern Brawl", "value": "Broke a man's arm over a game of gears last night"}]
+            )
+            npc5 = NPC(
+                id="npc_5",
+                name="Madame Vivienne",
+                traits=["charming", "manipulative", "elegant"],
+                disposition=0.4,
+                location_id="2",
+                memories=[{"key": "Syndicate Secrets", "value": "Knows which council members take bribes from the undercity"}]
+            )
+            session.add_all([npc1, npc2, npc3, npc4, npc5])
 
             world_state = WorldState(
                 current_location_id="1",
-                active_npcs_ids=["npc_1", "npc_2"],
+                active_npcs_ids=["npc_4"],
                 global_event="The Great Steam Festival is approaching, filling the city with excitement and restless automatons.",
-                world_memories=[{"key": "City News", "value": "The Iron Syndicate has increased tariffs on coal."}]
+                world_memories=[{"key": "City News", "value": "The Iron Syndicate has increased tariffs on coal, causing unrest in the undercity."}]
             )
             session.add(world_state)
             

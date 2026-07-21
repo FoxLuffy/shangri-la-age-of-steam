@@ -158,6 +158,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.post("/reset")
 async def reset_database():
+    from backend.database import SQLModel, engine
+    # Drop all tables to fully reset
+    SQLModel.metadata.drop_all(engine)
+    # create_db_and_tables is called inside seed_data, which will recreate them
     seed_data()
     with get_session() as session:
         repo = StateRepository(session)

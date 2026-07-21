@@ -16,8 +16,13 @@ def test_faction_crafting():
         session.add(loc_alchemist)
         session.add(loc_other)
         
-        ws = WorldState(current_location_id="loc_alc")
-        session.add(ws)
+        ws = session.exec(select(WorldState)).first()
+        if not ws:
+            ws = WorldState(current_location_id="loc_alc")
+            session.add(ws)
+        else:
+            ws.current_location_id = "loc_alc"
+            session.add(ws)
         
         item_in = Item(name="Base Potion", category=ItemCategory.consumables)
         item_out = Item(name="Advanced Potion", category=ItemCategory.consumables)

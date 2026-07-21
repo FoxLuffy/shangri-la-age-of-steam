@@ -50,17 +50,27 @@ function App() {
     }
   };
 
+  const [showCombat, setShowCombat] = useState(false);
+  const [showMinigame, setShowMinigame] = useState(false);
+
   const activeMinigame = worldState?.active_minigame;
 
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
-        <CombatUI worldState={worldState} />
-        <ChatInterface onStateUpdate={setWorldState} />
-        {activeMinigame && (
+        {showCombat && <CombatUI worldState={worldState} />}
+        <ChatInterface 
+          onStateUpdate={setWorldState} 
+          onOpenCombat={() => setShowCombat(true)}
+          onOpenMinigame={() => setShowMinigame(true)}
+        />
+        {showMinigame && activeMinigame && (
           <MinigamePanel 
             minigame={activeMinigame} 
-            onComplete={() => setWorldState({ ...worldState, active_minigame: null })} 
+            onComplete={() => {
+              setShowMinigame(false);
+              setWorldState({ ...worldState, active_minigame: null });
+            }} 
           />
         )}
       </div>

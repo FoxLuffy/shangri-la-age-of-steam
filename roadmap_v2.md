@@ -2,10 +2,16 @@
 
 ## Phase 1: Narrative-Driven Tactical Combat ⚔️
 *Move beyond simple dice rolls by blending descriptive prose with hard tactical mechanics.*
-- [ ] **Dynamic Entity Stats:** Introduce HP, Armor, and Steam/Energy (mana) to the player and NPCs.
-- [ ] **Narrative Attack Parsing:** The LLM interprets freeform combat inputs (e.g., *"I sharpened my mind and aimed for his wings"*) and translates them into hard mechanics (e.g., calculates Critical Hit against 'Wings', reduces Enemy HP, expends 10 Steam).
-- [ ] **Status Effects & Overheating:** Introduce elemental and mechanical status effects (e.g., *Bleeding, Stunned, Overheated, Rusted*). If the player spams steam-abilities, they overheat and take damage.
-- [ ] **Combat UI State:** A distinct UI mode during combat that displays enemy health bars, targeted limbs, and the player's current Steam/Heat gauges.
+- [x] **Dynamic Entity Stats:** Introduce HP, Armor, and Steam/Energy (mana) to the player and NPCs.
+- [x] **Narrative Attack Parsing:** The LLM interprets freeform combat inputs (e.g., *"I sharpened my mind and aimed for his wings"*) and translates them into hard mechanics (e.g., calculates Critical Hit against 'Wings', reduces Enemy HP, expends 10 Steam).
+- [x] **Status Effects & Overheating:** Introduce elemental and mechanical status effects (e.g., *Bleeding, Stunned, Overheated, Rusted*). If the player spams steam-abilities, they overheat and take damage.
+- [x] **Combat UI State:** A distinct UI mode during combat that displays enemy health bars, targeted limbs, and the player's current Steam/Heat gauges.
+
+## Phase 1.5: UX & Immersion Overhaul 🎨
+*Smooth out interactions and add quality of life improvements.*
+- [ ] **Interactive Event Triggers:** Minigames (like lockpicking) and Combat UI should not auto-trigger and block the screen. Instead, a button should appear in the narrator's dialogue bubble allowing the player to initiate the screen when ready, or approach the event differently.
+- [ ] **Tutorial Settings & Overlays:** Add a settings menu where tutorials for new screens can be toggled. Enabled by default (can be toggled during Character Creation). Every new screen or major change must include a tutorial overlay.
+- [ ] **Dynamic Gear Generation:** Expand Character Creation to allow the player to write a prompt describing their starting gear/equipment. The LLM evaluates the prompt against their chosen class, granting reasonable starting items. Items must be explicitly acquired in-game and do not magically appear out of thin air.
 
 ## Phase 2: Industrialist Empire & City Management 🏭
 *Transition from a wandering adventurer to a baron of industry.*

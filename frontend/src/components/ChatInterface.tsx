@@ -27,9 +27,11 @@ interface Message {
 
 interface ChatInterfaceProps {
   onStateUpdate?: (state: any) => void;
+  onOpenCombat?: () => void;
+  onOpenMinigame?: () => void;
 }
 
-export default function ChatInterface({ onStateUpdate }: ChatInterfaceProps) {
+export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinigame }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedMood, setSelectedMood] = useState<string>('');
@@ -476,6 +478,28 @@ export default function ChatInterface({ onStateUpdate }: ChatInterfaceProps) {
                           {typeof ev === 'string' ? ev : JSON.stringify(ev)}
                         </span>
                       ))}
+                    </div>
+                  )}
+
+                  {msg.sender === 'narrator' && msg.stateUpdates?.combat_updates?.is_combat_active && onOpenCombat && (
+                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex justify-end">
+                      <button 
+                        onClick={onOpenCombat}
+                        className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-200 text-xs font-mono uppercase tracking-widest border border-red-700/50 rounded flex items-center gap-2 transition-colors"
+                      >
+                        ⚔️ Enter Combat
+                      </button>
+                    </div>
+                  )}
+
+                  {msg.sender === 'narrator' && msg.stateUpdates?.minigame_trigger && onOpenMinigame && (
+                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex justify-end">
+                      <button 
+                        onClick={onOpenMinigame}
+                        className="px-3 py-1.5 bg-cyan-900/50 hover:bg-cyan-800 text-cyan-200 text-xs font-mono uppercase tracking-widest border border-cyan-700/50 rounded flex items-center gap-2 transition-colors"
+                      >
+                        ⚙️ Start Minigame
+                      </button>
                     </div>
                   )}
                 </div>

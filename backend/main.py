@@ -140,7 +140,8 @@ async def play_minigame(payload: MinigamePlayPayload):
         if not mg or mg.solved:
             raise HTTPException(status_code=400, detail="Minigame not found or already solved.")
             
-        state = mg.state.copy()
+        import copy
+        state = copy.deepcopy(mg.state)
         
         if mg.type == "hack":
             # Simple mastermind/hacking game logic
@@ -179,7 +180,9 @@ async def play_minigame(payload: MinigamePlayPayload):
             mg.solved = True
             state["message"] = "Minigame abandoned."
 
+        from sqlalchemy.orm.attributes import flag_modified
         mg.state = state
+        flag_modified(mg, "state")
         session.add(mg)
         session.commit()
         session.refresh(mg)
@@ -400,6 +403,7 @@ async def generate_npc_endpoint(flavor: str = "industrial"):
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
+    gear_prompt: str = ""
 
 PRESETS = {
     "Aristocrat": {
@@ -445,6 +449,40 @@ async def create_character(req: CharacterCreateRequest):
         session.add(char)
         session.commit()
         session.refresh(char)
+        
+        if req.gear_prompt:
+            from backend.client import VLLMClient
+            from backend.database import Inventory, Item
+            import json
+            client = VLLMClient()
+            prompt = (
+                f"You are the game master. The player chose class '{req.preset}' and requested starting gear: '{req.gear_prompt}'. "
+                "Grant them 1-3 reasonable starting items. Do not give them overpowered items; powerful items must be acquired in-game. "
+                "Return ONLY a JSON array of items: [{\"name\": \"Rusty Wrench\", \"description\": \"A heavy wrench.\", \"quantity\": 1, \"type\": \"weapon\"}]"
+            )
+            try:
+                response = client.generate(prompt=prompt, max_tokens=200, temperature=0.7)
+                content = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                import re
+                json_match = re.search(r'\[.*\]', content, re.DOTALL)
+                if json_match:
+                    items = json.loads(json_match.group(0))
+                    for item_data in items:
+                        item = Item(
+                            name=item_data.get("name", "Unknown Item"),
+                            description=item_data.get("description", ""),
+                            type=item_data.get("type", "misc")
+                        )
+                        session.add(item)
+                        session.commit()
+                        session.refresh(item)
+                        
+                        inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
+                        session.add(inv)
+                    session.commit()
+            except Exception as e:
+                print("Failed to generate gear:", e)
+        
         return char
 
 class MinigameActionRequest(BaseModel):

@@ -60,8 +60,13 @@ export default function MinigamePanel({ minigame, onComplete }: { minigame: any,
   const renderLockpickGame = () => {
     return (
       <div className="flex flex-col gap-4 items-center">
-        <div className="text-sm font-mono text-amber-400 border border-amber-800 bg-amber-950/50 p-2 text-center w-full">
-          {state.message}
+        <div className="flex flex-col gap-2 w-full text-center">
+          <div className="text-sm font-mono text-amber-400 border border-amber-800 bg-amber-950/50 p-2">
+            {state.message}
+          </div>
+          <div className="text-xs text-amber-500/70 italic font-serif">
+            Click 'Pick' to align each pin tumbler. Align all pins to open the lock.
+          </div>
         </div>
         
         <div className="flex gap-4">

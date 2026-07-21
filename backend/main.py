@@ -524,6 +524,7 @@ async def create_character(req: CharacterCreateRequest):
                 inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
                 session.add(inv)
             session.commit()
+            session.refresh(char)
             
         return char
 

@@ -21,6 +21,12 @@ class NPC(BaseModel):
     current_dialogue: Optional[str] = None
     disposition: float = 0.0  # Range -1.0 (Hostile) to 1.0 (Friendly)
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
+    faction_id: Optional[str] = None
+
+class FactionStandingModel(BaseModel):
+    faction_id: str
+    faction_name: str
+    standing: float
 
 class WorldState(BaseModel):
     current_location_id: Optional[str] = "1"
@@ -32,6 +38,7 @@ class WorldState(BaseModel):
     active_npcs: List[NPC] = []
     inventory: List[Dict[str, Any]] = []
     quests: List[Dict[str, Any]] = []
+    factions: List[FactionStandingModel] = []
     active_minigame: Optional[Dict[str, Any]] = None
 
 class PlayerAction(BaseModel):

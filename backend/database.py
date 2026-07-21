@@ -35,6 +35,7 @@ class NPC(SQLModel, table=True):
     disposition: float = Field(default=0.0)
     memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
     location_id: str = Field(default="1", index=True, foreign_key="location.id")
+    faction_id: Optional[str] = Field(default=None, foreign_key="faction.id")
     location: Optional[Location] = Relationship()
 
 class WorldState(SQLModel, table=True):
@@ -82,6 +83,17 @@ class QuestStateEnum(str, Enum):
     active = "Active"
     completed = "Completed"
     failed = "Failed"
+
+class Faction(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    name: str
+    description: str
+
+class FactionStanding(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    faction_id: str = Field(foreign_key="faction.id", index=True)
+    standing: float = Field(default=0.0) # -1.0 (hated) to 1.0 (revered)
 
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

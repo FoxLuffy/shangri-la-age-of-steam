@@ -75,6 +75,42 @@ export default function StatsPanel({ character, worldState, onReset }: { charact
         </div>
       )}
 
+      {worldState && worldState.factions && worldState.factions.length > 0 && (
+        <div className="mb-6">
+          <div className="text-xs text-amber-600/70 uppercase mb-2">Factions</div>
+          <div className="space-y-3">
+            {worldState.factions.map((faction: any, i: number) => (
+              <div key={i} className="text-sm">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-serif text-amber-200">{faction.faction_name}</span>
+                  <span className={`text-[10px] uppercase tracking-wider ${
+                    faction.standing > 0.5 ? 'text-emerald-400' :
+                    faction.standing > 0 ? 'text-emerald-200/70' :
+                    faction.standing < -0.5 ? 'text-rose-500' :
+                    faction.standing < 0 ? 'text-rose-300' : 'text-slate-400'
+                  }`}>
+                    {faction.standing > 0.5 ? 'Revered' :
+                     faction.standing > 0 ? 'Friendly' :
+                     faction.standing < -0.5 ? 'Hated' :
+                     faction.standing < 0 ? 'Hostile' : 'Neutral'}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-800 h-1.5 rounded overflow-hidden relative">
+                  <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-slate-600 z-10"></div>
+                  <div 
+                    className={`h-full absolute top-0 bottom-0 ${faction.standing >= 0 ? 'bg-emerald-500/70' : 'bg-rose-500/70'}`}
+                    style={{ 
+                      width: `${Math.abs(faction.standing) * 50}%`, 
+                      left: faction.standing >= 0 ? '50%' : `${50 + (faction.standing * 50)}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-auto pt-4 border-t border-amber-900/30">
         <button
           onClick={onReset}

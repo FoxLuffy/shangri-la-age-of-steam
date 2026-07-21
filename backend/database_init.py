@@ -10,6 +10,10 @@ def migrate_db():
         except Exception:
             pass
         try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN faction_id VARCHAR;"))
+        except Exception:
+            pass
+        try:
             conn.execute(text("ALTER TABLE character ADD COLUMN character_class VARCHAR DEFAULT 'Wanderer';"))
         except Exception:
             pass
@@ -45,6 +49,16 @@ def seed_data():
         # Check if locations exist
         existing_loc = session.exec(select(Location)).first()
         if not existing_loc:
+            # Seed Factions
+            from backend.database import Faction
+            factions = [
+                Faction(id="iron_syndicate", name="Iron Syndicate", description="A powerful coalition of industrialists controlling the steamworks."),
+                Faction(id="alchemists_guild", name="Alchemists Guild", description="Scholars and chemists seeking forbidden knowledge."),
+                Faction(id="undercity_smugglers", name="Undercity Smugglers", description="Rogues and outcasts navigating the city's hidden tunnels.")
+            ]
+            for f in factions:
+                session.add(f)
+                
             loc1 = Location(
                 id="1",
                 name="The Rusty Anchor Tavern",
@@ -78,6 +92,7 @@ def seed_data():
                 traits=["knowledgeable", "cautious", "grumpy"],
                 disposition=0.2,
                 location_id="3",
+                faction_id="iron_syndicate",
                 memories=[{"key": "Steam Leaks", "value": "Worried about pressure drops in Sector 4"}]
             )
             npc2 = NPC(
@@ -86,6 +101,7 @@ def seed_data():
                 traits=["astute", "secretive", "wealthy"],
                 disposition=0.0,
                 location_id="4",
+                faction_id="alchemists_guild",
                 memories=[{"key": "Alchemy Experiment", "value": "Seeking refined brass components for her automaton"}]
             )
             npc3 = NPC(
@@ -94,6 +110,7 @@ def seed_data():
                 traits=["shrewd", "observant", "cynical"],
                 disposition=-0.1,
                 location_id="5",
+                faction_id="undercity_smugglers",
                 memories=[{"key": "Dock Patrols", "value": "Keeps a watchful eye out for city enforcers"}]
             )
             npc4 = NPC(
@@ -102,6 +119,7 @@ def seed_data():
                 traits=["brutal", "loyal", "scarred"],
                 disposition=-0.5,
                 location_id="1",
+                faction_id="iron_syndicate",
                 memories=[{"key": "Tavern Brawl", "value": "Broke a man's arm over a game of gears last night"}]
             )
             npc5 = NPC(
@@ -110,6 +128,7 @@ def seed_data():
                 traits=["charming", "manipulative", "elegant"],
                 disposition=0.4,
                 location_id="2",
+                faction_id=None,
                 memories=[{"key": "Syndicate Secrets", "value": "Knows which council members take bribes from the undercity"}]
             )
             session.add_all([npc1, npc2, npc3, npc4, npc5])

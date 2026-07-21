@@ -73,7 +73,19 @@ class StateRepository:
                         "state": qs.state
                     })
                     
-            from backend.database import Minigame
+            from backend.database import Minigame, Faction, FactionStanding
+            
+            factions_list = []
+            f_states = self.session.exec(select(FactionStanding).where(FactionStanding.character_id == char.id)).all()
+            for fs in f_states:
+                faction = self.session.get(Faction, fs.faction_id)
+                if faction:
+                    factions_list.append({
+                        "faction_id": faction.id,
+                        "faction_name": faction.name,
+                        "standing": fs.standing
+                    })
+                    
             mg = self.session.exec(select(Minigame).where(Minigame.character_id == char.id, Minigame.solved == False)).first()
             if mg:
                 active_minigame = {
@@ -95,6 +107,7 @@ class StateRepository:
             active_npcs=active_npcs,
             inventory=inventory_list,
             quests=quests_list,
+            factions=factions_list if 'factions_list' in locals() else [],
             active_minigame=active_minigame
         )
 
@@ -270,6 +283,27 @@ class StateRepository:
             
         minigame = Minigame(character_id=char_id, type=minigame_type, state=state, solved=False)
         self.session.add(minigame)
+        self.session.commit()
+
+    def apply_faction_update(self, update: Dict[str, Any]):
+        from backend.database import FactionStanding
+        char_id = 1
+        faction_id = update.get("faction_id")
+        change = update.get("change", 0.0)
+        
+        if not faction_id:
+            return
+            
+        fs = self.session.exec(select(FactionStanding).where(FactionStanding.character_id == char_id, FactionStanding.faction_id == faction_id)).first()
+        if not fs:
+            fs = FactionStanding(character_id=char_id, faction_id=faction_id, standing=0.0)
+            
+        fs.standing += float(change)
+        
+        # Clamp between -1.0 and 1.0
+        fs.standing = max(-1.0, min(1.0, fs.standing))
+        
+        self.session.add(fs)
         self.session.commit()
 
 if __name__ == "__main__":

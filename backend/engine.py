@@ -181,6 +181,11 @@ class NarrativeEngine:
                     if isinstance(quest_update, dict):
                         repository.apply_quest_update(quest_update)
 
+            if "faction_updates" in state_updates and isinstance(state_updates["faction_updates"], list):
+                for faction_update in state_updates["faction_updates"]:
+                    if isinstance(faction_update, dict):
+                        repository.apply_faction_update(faction_update)
+
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]
                 if minigame_type in ["hack", "lockpick"]:

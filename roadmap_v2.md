@@ -18,7 +18,14 @@
 - [x] **Collapsible Environment/NPCs Pane:** The active NPCs pane should be collapsible to save space. It should dynamically update on locale changes or when new NPCs enter the area. Active NPCs should only be shown if they are currently present.
 - [x] **Narrator-Driven NPC Instantiation:** If a new character gets named by the Narrator during a scene, they should be automatically instantiated as an NPC in the database and placed in the active area.
 - [ ] **Audio Settings:** Audio features (sound effects, ambient loops) should be toggleable within the Settings Menu.
+- [x] **Narrator Speed Settings:** Add a function to the Settings Menu to adjust (slow down) the narrator's text generation or display speed.
 - [ ] **Custom Backstories:** Allow players to input a custom handwritten backstory or generate one via prompt during Character Creation, replacing the default class background.
+
+## Phase 1.7: Minigame & Pacing Upgrades ⚙️
+*Deepen the technical interactivity of minigames and story pacing.*
+- [ ] **Cliffhanger Minigame Transitions:** Minigame triggers should suspend the narrative at a cliffhanger rather than resolving the outcome immediately. The narrative should only continue based on the actual outcome (success/failure) of the minigame.
+- [ ] **Openable Hint Gears:** Tie narrator hints into the mechanics by adding openable hint gears in minigames, which become available depending on the player's specific skill level.
+- [ ] **Minigame Variability & Skills:** Overhaul the current static minigame logic (e.g., standard ABC combinations) to introduce variability, multiple puzzle types, and direct integration with different character skills.
 
 ## Phase 2: Industrialist Empire & City Management 🏭
 *Transition from a wandering adventurer to a baron of industry.*

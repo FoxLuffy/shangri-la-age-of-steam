@@ -3,12 +3,12 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
@@ -405,6 +405,11 @@ class CharacterCreateRequest(BaseModel):
     preset: str = "Wanderer"
     gear_prompt: str = ""
     show_tutorials: bool = True
+    gear: List[Dict[str, Any]] = Field(default_factory=list)
+
+class GenerateGearRequest(BaseModel):
+    preset: str
+    gear_prompt: str
 
 PRESETS = {
     "Aristocrat": {
@@ -424,6 +429,35 @@ PRESETS = {
         "stats": {"strength": 5, "intellect": 5, "charm": 5}
     }
 }
+
+@app.post("/characters/generate-gear")
+async def generate_gear(req: GenerateGearRequest):
+    """Generate starting gear based on player prompt and class."""
+    if not req.gear_prompt:
+        return {"items": []}
+        
+    from backend.client import VLLMClient
+    import json
+    import re
+    
+    client = VLLMClient()
+    prompt = (
+        f"You are the game master. The player chose class '{req.preset}' and requested starting gear: '{req.gear_prompt}'. "
+        "Grant them 1-3 reasonable starting items. Do not give them overpowered items; powerful items must be acquired in-game. "
+        "The category must be one of: Consumables, Equipment, Crafting_Materials, Steam_Tech_Components. "
+        "Return ONLY a JSON array of items: [{\"name\": \"Rusty Wrench\", \"description\": \"A heavy wrench.\", \"quantity\": 1, \"category\": \"Equipment\"}]"
+    )
+    try:
+        response = client.generate(prompt=prompt, max_tokens=200, temperature=0.7)
+        content = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+        json_match = re.search(r'\[.*\]', content, re.DOTALL)
+        if json_match:
+            items = json.loads(json_match.group(0))
+            return {"items": items}
+        return {"items": []}
+    except Exception as e:
+        print(f"Failed to generate gear: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate gear")
 
 class ToggleTutorialsRequest(BaseModel):
     show_tutorials: bool
@@ -454,8 +488,8 @@ async def get_character(character_id: int):
 
 @app.post("/characters")
 async def create_character(req: CharacterCreateRequest):
-    """Create a new character from a preset."""
-    from backend.database import Character
+    """Create a new character from a preset and their finalized gear."""
+    from backend.database import Character, Inventory, Item, ItemCategory
     preset_data = PRESETS.get(req.preset, PRESETS["Wanderer"])
     with get_session() as session:
         char = Character(
@@ -469,39 +503,28 @@ async def create_character(req: CharacterCreateRequest):
         session.commit()
         session.refresh(char)
         
-        if req.gear_prompt:
-            from backend.client import VLLMClient
-            from backend.database import Inventory, Item
-            import json
-            client = VLLMClient()
-            prompt = (
-                f"You are the game master. The player chose class '{req.preset}' and requested starting gear: '{req.gear_prompt}'. "
-                "Grant them 1-3 reasonable starting items. Do not give them overpowered items; powerful items must be acquired in-game. "
-                "Return ONLY a JSON array of items: [{\"name\": \"Rusty Wrench\", \"description\": \"A heavy wrench.\", \"quantity\": 1, \"type\": \"weapon\"}]"
-            )
-            try:
-                response = client.generate(prompt=prompt, max_tokens=200, temperature=0.7)
-                content = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                import re
-                json_match = re.search(r'\[.*\]', content, re.DOTALL)
-                if json_match:
-                    items = json.loads(json_match.group(0))
-                    for item_data in items:
-                        item = Item(
-                            name=item_data.get("name", "Unknown Item"),
-                            description=item_data.get("description", ""),
-                            type=item_data.get("type", "misc")
-                        )
-                        session.add(item)
-                        session.commit()
-                        session.refresh(item)
-                        
-                        inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
-                        session.add(inv)
-                    session.commit()
-            except Exception as e:
-                print("Failed to generate gear:", e)
-        
+        if req.gear and len(req.gear) > 0:
+            for item_data in req.gear:
+                # Map string category back to Enum safely
+                cat_str = item_data.get("category", "Equipment")
+                try:
+                    category = ItemCategory(cat_str)
+                except ValueError:
+                    category = ItemCategory.equipment
+
+                item = Item(
+                    name=item_data.get("name", "Unknown Item"),
+                    description=item_data.get("description", ""),
+                    category=category
+                )
+                session.add(item)
+                session.commit()
+                session.refresh(item)
+                
+                inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
+                session.add(inv)
+            session.commit()
+            
         return char
 
 class MinigameActionRequest(BaseModel):

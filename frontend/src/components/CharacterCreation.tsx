@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createCharacter } from '../api';
+import { createCharacter, generateGear } from '../api';
 
 interface Preset {
   id: string;
@@ -20,12 +20,31 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
   const [gearPrompt, setGearPrompt] = useState('');
   const [showTutorials, setShowTutorials] = useState(true);
   const [loading, setLoading] = useState(false);
+  
+  const [gearList, setGearList] = useState<any[]>([]);
+  const [gearAttempts, setGearAttempts] = useState(0);
+  const [generatingGear, setGeneratingGear] = useState(false);
+
+  const handleGenerateGear = async () => {
+    if (!gearPrompt.trim() || gearAttempts >= 3) return;
+    setGeneratingGear(true);
+    try {
+      const items = await generateGear(preset, gearPrompt);
+      setGearList(items);
+      setGearAttempts(prev => prev + 1);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to generate gear');
+    } finally {
+      setGeneratingGear(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset, gearPrompt, showTutorials);
+      const char = await createCharacter(name, preset, gearPrompt, showTutorials, gearList);
       onComplete(char.id);
     } catch (e) {
       console.error(e);
@@ -71,13 +90,39 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
           </div>
 
           <div>
-            <label className="block text-sm text-amber-600/70 uppercase mb-2">Requested Gear (Optional)</label>
+            <div className="flex justify-between items-end mb-2">
+              <label className="block text-sm text-amber-600/70 uppercase">Request Gear</label>
+              <span className="text-xs text-amber-700">{3 - gearAttempts} attempts remaining</span>
+            </div>
             <textarea 
               value={gearPrompt}
               onChange={(e) => setGearPrompt(e.target.value)}
-              className="w-full bg-slate-900 border border-amber-900/50 p-2 text-amber-100 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 resize-none h-24"
-              placeholder="Describe what gear or equipment you're carrying. The engine will grant items reasonable for your class..."
+              className="w-full bg-slate-900 border border-amber-900/50 p-2 text-amber-100 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 resize-none h-20"
+              placeholder="Describe what gear or equipment you're carrying..."
+              disabled={gearAttempts >= 3}
             />
+            <button 
+              onClick={handleGenerateGear}
+              disabled={!gearPrompt.trim() || gearAttempts >= 3 || generatingGear}
+              className="w-full mt-2 bg-amber-900/30 border border-amber-700 text-amber-500 p-2 uppercase text-sm hover:bg-amber-800/40 disabled:opacity-50 transition-colors"
+            >
+              {generatingGear ? 'Fabricating...' : 'Generate Gear'}
+            </button>
+            
+            {gearList.length > 0 && (
+              <div className="mt-4 p-3 border border-amber-900/50 bg-slate-900">
+                <div className="text-xs text-amber-600 uppercase mb-2">Manifested Items:</div>
+                <ul className="space-y-2">
+                  {gearList.map((item, idx) => (
+                    <li key={idx} className="text-sm border-l-2 border-amber-700 pl-2">
+                      <div className="text-amber-400 font-bold">{item.name} <span className="text-amber-700 text-xs">x{item.quantity || 1}</span></div>
+                      <div className="text-amber-200/60 text-xs">{item.description}</div>
+                      <div className="text-amber-600/50 text-[10px] uppercase mt-1">{item.category}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3 mt-4 border border-amber-900/30 p-3 bg-slate-900/50">

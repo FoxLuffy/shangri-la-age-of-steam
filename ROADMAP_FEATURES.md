@@ -53,6 +53,6 @@
 - [x] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
 
 ## Phase 9: Social & Persistence (Future)
-- [ ] **Persistent World History**: A searchable "ledger" of all major narrative decisions.
+- [x] **Persistent World History**: A searchable "ledger" of all major narrative decisions.
 - [ ] **Multiplayer Sync (Experimental)**: Shared world state for group exploration.
 - [ ] **Save State Serialization**: Full state exports/imports for cross-device play.

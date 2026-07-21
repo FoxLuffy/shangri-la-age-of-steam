@@ -133,6 +133,16 @@ async def get_inventory(character_id: int):
         ).all()
         return inventory_items
 
+@app.get("/history")
+async def get_history(limit: int = 50):
+    """Retrieve the world history ledger entries."""
+    from backend.database import LedgerEntry
+    with get_session() as session:
+        entries = session.exec(
+            select(LedgerEntry).order_by(LedgerEntry.id.desc()).limit(limit)
+        ).all()
+        return entries
+
 @app.post("/craft")
 async def craft_item(character_id: int, recipe_id: int):
     """

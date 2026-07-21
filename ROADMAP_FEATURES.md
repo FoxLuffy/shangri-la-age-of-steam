@@ -44,8 +44,8 @@
 - [x] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
 
 ## Phase 7: Frontend Systems & UI (Next)
-- [ ] **Character Creation Flow**: An introductory UI wizard shown at the beginning of the game to select a preset or customize character class, backstory, and initial stats.
-- [ ] **Stats & Backstory Panel**: A dedicated UI panel on the frontend displaying the player's current class, background story, and dynamic stats (`strength`, `intellect`, `charm`).
+- [x] **Character Creation Flow**: An introductory UI wizard shown at the beginning of the game to select a preset or customize character class, backstory, and initial stats.
+- [x] **Stats & Backstory Panel**: A dedicated UI panel on the frontend displaying the player's current class, background story, and dynamic stats (`strength`, `intellect`, `charm`).
 
 ## Phase 8: Multimedia & Atmosphere (Future)
 - [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.

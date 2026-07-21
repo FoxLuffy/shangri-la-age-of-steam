@@ -55,6 +55,28 @@ export interface GetStateResponse {
   all_npcs: NPC[];
 }
 
+export interface Character {
+  id: number;
+  name: string;
+  character_class: string;
+  background: string;
+  stats: {
+    strength: number;
+    intellect: number;
+    charm: number;
+  };
+}
+
+export const fetchCharacter = async (characterId: number): Promise<Character> => {
+  const { data } = await api.get(`/characters/${characterId}`);
+  return data;
+};
+
+export const createCharacter = async (name: string, preset: string): Promise<Character> => {
+  const { data } = await api.post('/characters', { name, preset });
+  return data;
+};
+
 export const fetchHealth = async () => {
   const { data } = await api.get('/health');
   return data;

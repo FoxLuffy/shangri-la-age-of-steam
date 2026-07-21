@@ -26,8 +26,8 @@
 - [x] **Multi-Agent NPC Orchestration:** Enable real-time inter-NPC conversations in the same location.
 - [x] **Dynamic Inventory & Quest Tracking:** Add item schemas, equipment management, and steam-tech crafting.
 - [x] **Automata Companions System:** Create models and state logic for robotic pets that can act in combat and exploration.
-- [ ] **VLLM Streaming Output (Server-Sent Events / WebSockets):** Token-by-token narrative streaming for ultra-low latency presentation.
-- [ ] **Sabotage & Espionage Mini-games Engine:** Interactive CLI-like puzzles in the UI for hacking and deciphering.
+- [x] **VLLM Streaming Output (Server-Sent Events / WebSockets):** Token-by-token narrative streaming for ultra-low latency presentation.
+- [x] **Sabotage & Espionage Mini-games Engine:** Interactive CLI-like puzzles in the UI for hacking and deciphering.
 - [x] **Dynamic Economy Engine:** State-driven fluctuating prices for resources.
 - [ ] **Complex Relationship & Faction System:** Deepen NPC disposition formulas with faction standing (e.g., Iron Syndicate vs Alchemists Guild).
 - [x] **Audio Ambience & Sound Effects:** Add atmospheric steam/machinery audio clips and background music.

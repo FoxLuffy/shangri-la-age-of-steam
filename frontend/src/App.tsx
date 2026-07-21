@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
 import CharacterCreation from './components/CharacterCreation';
 import StatsPanel from './components/StatsPanel';
+import MinigamePanel from './components/MinigamePanel';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
 
@@ -48,10 +49,18 @@ function App() {
     }
   };
 
+  const activeMinigame = worldState?.active_minigame;
+
   return (
-    <div className="w-full h-screen bg-slate-950 flex overflow-hidden">
-      <div className="flex-1 flex flex-col p-2 sm:p-4 h-full">
+    <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
+      <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
         <ChatInterface onStateUpdate={setWorldState} />
+        {activeMinigame && (
+          <MinigamePanel 
+            minigame={activeMinigame} 
+            onComplete={() => setWorldState({ ...worldState, active_minigame: null })} 
+          />
+        )}
       </div>
       <StatsPanel character={character} worldState={worldState} onReset={handleRetireCharacter} />
     </div>

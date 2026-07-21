@@ -13,6 +13,13 @@
 - [x] **Tutorial Settings & Overlays:** Add a settings menu where tutorials for new screens can be toggled. Enabled by default (can be toggled during Character Creation). Every new screen or major change must include a tutorial overlay.
 - [x] **Dynamic Gear Generation:** At character creation, add a prompt field to describe gear. System generates balanced starting items based on the class. (NO MAGICAL ITEM SPAWNS)
 
+## Phase 1.6: Dynamic UI & World State Refinements 🔧
+*Improve the responsiveness of the environment and streamline character setup.*
+- [x] **Collapsible Environment/NPCs Pane:** The active NPCs pane should be collapsible to save space. It should dynamically update on locale changes or when new NPCs enter the area. Active NPCs should only be shown if they are currently present.
+- [x] **Narrator-Driven NPC Instantiation:** If a new character gets named by the Narrator during a scene, they should be automatically instantiated as an NPC in the database and placed in the active area.
+- [ ] **Audio Settings:** Audio features (sound effects, ambient loops) should be toggleable within the Settings Menu.
+- [ ] **Custom Backstories:** Allow players to input a custom handwritten backstory or generate one via prompt during Character Creation, replacing the default class background.
+
 ## Phase 2: Industrialist Empire & City Management 🏭
 *Transition from a wandering adventurer to a baron of industry.*
 - [x] **Real Estate Engine:** Properties (factories, shops) can be bought and managed.

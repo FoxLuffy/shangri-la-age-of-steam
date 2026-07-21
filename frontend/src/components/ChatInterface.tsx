@@ -45,6 +45,7 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
+  const [isEnvExpanded, setIsEnvExpanded] = useState(true);
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,9 +134,12 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
         if (data.state.current_location) {
           setCurrentLocation(data.state.current_location);
         }
-        if (data.state.active_npcs) {
-          setActiveNpcs(data.state.active_npcs);
-        }
+        setAllLocations(data.all_locations || []);
+        setActiveNpcs(data.state.active_npcs || []);
+        
+        // Auto-expand environment if there are NPCs or if we just loaded
+        setIsEnvExpanded(true);
+
         if (data.state.global_event) {
           setGlobalEvent(data.state.global_event);
         }
@@ -567,29 +571,33 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
         </div>
 
         {/* Right Side: Active NPCs */}
-        <aside className="w-full md:w-80 bg-slate-900/40 p-4 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col gap-4 overflow-y-auto">
-          <div className="bg-slate-900/80 border border-amber-900/40 p-4 rounded-xl shadow-md">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Environment Overview</span>
-              <span>🧭</span>
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {currentLocation ? currentLocation.description : 'Select a location to explore.'}
-            </p>
-          </div>
+        {isEnvExpanded ? (
+          <aside className="w-full md:w-80 bg-slate-900/40 p-4 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col gap-4 overflow-y-auto relative transition-all">
+            <button 
+              onClick={() => setIsEnvExpanded(false)} 
+              className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-slate-800 rounded transition-colors"
+              title="Collapse Environment Pane"
+            >
+              ✕
+            </button>
+            <div className="bg-slate-900/80 border border-amber-900/40 p-4 rounded-xl shadow-md pr-8">
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Environment Overview</span>
+                <span>🧭</span>
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {currentLocation ? currentLocation.description : 'Select a location to explore.'}
+              </p>
+            </div>
 
-          <div className="flex-1 flex flex-col gap-3">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-              <span>Active NPCs ({activeNpcs.length})</span>
-              <span>👥</span>
-            </h3>
+            {activeNpcs.length > 0 && (
+              <div className="flex-1 flex flex-col gap-3">
+                <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                  <span>Active NPCs ({activeNpcs.length})</span>
+                  <span>👥</span>
+                </h3>
 
-            {activeNpcs.length === 0 ? (
-              <div className="text-xs text-slate-500 italic p-3 bg-slate-900/50 rounded-lg border border-slate-800">
-                No active NPCs detected in this vicinity.
-              </div>
-            ) : (
-              activeNpcs.map((npc) => (
+                {activeNpcs.map((npc) => (
                 <div
                   key={npc.id}
                   className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 shadow-md flex flex-col gap-2"
@@ -641,10 +649,31 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
                     </div>
                   )}
                 </div>
-              ))
+              ))}
+              </div>
+            )}
+          </aside>
+        ) : (
+          <div className="w-12 bg-slate-900/60 border-l border-slate-800 flex flex-col items-center py-4 gap-4 transition-all">
+            <button 
+              onClick={() => setIsEnvExpanded(true)}
+              className="text-amber-500/70 hover:text-amber-400 p-2 hover:bg-slate-800 rounded transition-colors"
+              title="Expand Environment Pane"
+            >
+              🧭
+            </button>
+            {activeNpcs.length > 0 && (
+              <button 
+                onClick={() => setIsEnvExpanded(true)}
+                className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
+                title={`Active NPCs: ${activeNpcs.length}`}
+              >
+                👥
+                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] font-bold px-1 rounded-full">{activeNpcs.length}</span>
+              </button>
             )}
           </div>
-        </aside>
+        )}
       </div>
     </div>
   );

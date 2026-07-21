@@ -116,7 +116,8 @@ export default function ChatInterface() {
           id: narratorMsgId,
           sender: 'narrator',
           content: '',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          mood: selectedMood || undefined
         }
       ]);
 
@@ -201,7 +202,8 @@ export default function ChatInterface() {
           id: narratorMsgId,
           sender: 'narrator',
           content: '',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          mood: selectedMood || undefined
         }
       ]);
 
@@ -356,7 +358,7 @@ export default function ChatInterface() {
                       : msg.sender === 'system'
                       ? 'bg-rose-950/30 border-rose-800/40 text-rose-200 rounded-tl-none'
                       : 'bg-slate-900/90 border-slate-700/60 text-slate-200 rounded-tl-none'
-                  }`}
+                  } ${msg.mood ? `mood-${msg.mood}` : ''}`}
                 >
                   {msg.content}
 

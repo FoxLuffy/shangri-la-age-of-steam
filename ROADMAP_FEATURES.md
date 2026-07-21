@@ -50,7 +50,7 @@
 ## Phase 8: Multimedia & Atmosphere (Future)
 - [x] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
 - [x] **Dynamic Music**: Procedural music that reacts to player mood and location danger.
-- [ ] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
+- [x] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
 
 ## Phase 9: Social & Persistence (Future)
 - [ ] **Persistent World History**: A searchable "ledger" of all major narrative decisions.

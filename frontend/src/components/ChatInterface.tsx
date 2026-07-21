@@ -253,7 +253,7 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
-      <AudioManager locationId={currentLocationId} />
+      <AudioManager locationId={currentLocationId} mood={selectedMood} />
       {/* Top Header */}
       <header className="bg-slate-900/90 border-b border-amber-800/40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

@@ -25,6 +25,7 @@
 - [x] Environment Overview & Fast Travel
 
 ## Phase 4: Advanced Mechanics (Completed)
+- [x] **Character Creation & Presets**: Allow the player to choose from presets (e.g., Aristocrat, Scrapper, Alchemist) or create a custom character before starting.
 - [x] **Multi-Agent NPC Orchestration**: Autonomous NPC interactions.
 - [x] **Dynamic Inventory & Quest Tracking**: Persistent items, crafting, and quest states.
 - [x] **Real-Time Streaming**: SSE-based chunk-by-chunk narrative.

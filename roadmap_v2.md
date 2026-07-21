@@ -9,16 +9,16 @@
 
 ## Phase 1.5: UX & Immersion Overhaul 🎨
 *Smooth out interactions and add quality of life improvements.*
-- [ ] **Interactive Event Triggers:** Minigames (like lockpicking) and Combat UI should not auto-trigger and block the screen. Instead, a button should appear in the narrator's dialogue bubble allowing the player to initiate the screen when ready, or approach the event differently.
+- [x] **Interactive Event Triggers:** Narrative popups (combat, lockpicking, etc.) are triggered by UI buttons in the dialogue bubble rather than automatically overlaying the screen.
 - [ ] **Tutorial Settings & Overlays:** Add a settings menu where tutorials for new screens can be toggled. Enabled by default (can be toggled during Character Creation). Every new screen or major change must include a tutorial overlay.
-- [ ] **Dynamic Gear Generation:** Expand Character Creation to allow the player to write a prompt describing their starting gear/equipment. The LLM evaluates the prompt against their chosen class, granting reasonable starting items. Items must be explicitly acquired in-game and do not magically appear out of thin air.
+- [x] **Dynamic Gear Generation:** At character creation, add a prompt field to describe gear. System generates balanced starting items based on the class. (NO MAGICAL ITEM SPAWNS)
 
 ## Phase 2: Industrialist Empire & City Management 🏭
 *Transition from a wandering adventurer to a baron of industry.*
-- [ ] **Real Estate Engine:** Players can purchase properties across the city (e.g., empty warehouses in the Grand Foundry, a luxury penthouse in Clockwork Plaza).
-- [ ] **NPC Employment:** Hire existing NPCs or procedural vagrants to work in your factories, run your shops, or gather intelligence.
-- [ ] **Passive Resource Generation:** Factories generate Coal, Brass, and Aether over time (tied into the Dynamic Economy).
-- [ ] **Empire UI Panel:** A new management dashboard to view owned properties, assign workers, and collect profits.
+- [x] **Real Estate Engine:** Properties (factories, shops) can be bought and managed.
+- [x] **NPC Employment:** Hire NPCs as guards, managers, or laborers. Pay salaries.
+- [x] **Passive Resource Generation:** Background simulation tracks factory outputs and generates wealth over time.
+- [x] **Empire UI Panel:** Dedicated React dashboard to view holdings, worker morale, and net income.
 
 ## Phase 3: The Asynchronous Shared World 🌐
 *A living, breathing universe shaped by the community.*

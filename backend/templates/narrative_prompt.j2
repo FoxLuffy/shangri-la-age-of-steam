@@ -21,15 +21,25 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
   - **Memories:** {{ npc.memories }}
 {% endfor %}
 
-**Player Combat Stats:**
+**Player Stats & Wealth:**
 {% if player_stats %}
 - HP: {{ player_stats.hp }}/{{ player_stats.max_hp }}
 - Steam: {{ player_stats.steam }}/{{ player_stats.max_steam }}
 - Armor: {{ player_stats.armor }}
 - Status Effects: {{ player_stats.status_effects | join(', ') if player_stats.status_effects else 'None' }}
+- Wealth: {{ brass_coins }} Brass Coins
 {% endif %}
 **Is Combat Active?**: {{ is_combat_active }}
 
+**Available Properties Here:**
+{% for prop in location_properties %}
+- {{ prop.name }} (ID: {{ prop.id }}) [{{ prop.property_type|title }}] - Cost: {{ prop.price }} Coins. Income: {{ prop.income_per_tick }}/tick. Owner: {{ 'Player' if prop.owner_id == player_stats.id else 'None' }}
+{% endfor %}
+
+**Your Properties:**
+{% for prop in player_properties %}
+- {{ prop.name }} (ID: {{ prop.id }}, Location: {{ prop.location_id }})
+{% endfor %}
 
 **Inventory:**
 {% for item in inventory %}
@@ -102,6 +112,18 @@ If the player acquires or loses an item, or a quest is given/progresses, reflect
         "npc_id": "npc_1",
         "hp_change": -20,
         "status_effects_add": ["Stunned"]
+      }
+    ]
+  },
+  "empire_updates": {
+    "brass_coins_change": 0,
+    "properties_bought": [],
+    "workers_hired": [
+      {
+        "npc_id": "npc_id",
+        "property_id": 1,
+        "role": "manager",
+        "salary": 10
       }
     ]
   }

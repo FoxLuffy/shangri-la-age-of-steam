@@ -58,13 +58,19 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         })
 
     current_loc = getattr(state, "current_location", None)
+    loc_id = getattr(state, "current_location_id", "1")
     if current_loc is None:
-        loc_id = getattr(state, "current_location_id", "Steamworks")
         loc_name = str(loc_id) if loc_id else "Steamworks"
         loc_desc = ""
     else:
         loc_name = getattr(current_loc, "name", "Steamworks")
         loc_desc = getattr(current_loc, "description", "")
+
+    all_properties = getattr(state, "properties", [])
+    player_id = getattr(getattr(state, "player_stats", None), "id", None)
+    
+    location_properties = [p for p in all_properties if str(p.location_id) == str(loc_id)]
+    player_properties = [p for p in all_properties if p.owner_id == player_id] if player_id else []
 
     prompt_str = template.render(
         location={"name": loc_name, "description": loc_desc},
@@ -75,7 +81,10 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         quests=getattr(state, "quests", []),
         factions=getattr(state, "factions", []),
         player_stats=getattr(state, "player_stats", None),
-        is_combat_active=getattr(state, "is_combat_active", False)
+        is_combat_active=getattr(state, "is_combat_active", False),
+        brass_coins=getattr(state, "brass_coins", 0),
+        location_properties=location_properties,
+        player_properties=player_properties
     )
 
     if hasattr(action, 'mood') and action.mood:

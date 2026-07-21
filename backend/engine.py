@@ -115,7 +115,7 @@ class NarrativeEngine:
             if isinstance(chunk, dict):
                 if "choices" in chunk and len(chunk["choices"]) > 0:
                     choice = chunk["choices"][0]
-                    text = choice.get("text", "") or choice.get("message", {}).get("content", "")
+                    text = choice.get("text", "") or choice.get("delta", {}).get("content", "") or choice.get("message", {}).get("content", "")
                 elif "text" in chunk:
                     text = chunk["text"]
             elif isinstance(chunk, str):

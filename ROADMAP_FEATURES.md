@@ -41,14 +41,18 @@
 - [x] **Dynamic Economy Engine**: Simulated trade economy where coal, brass, and aether prices fluctuate dynamically based on world events and player actions.
 - [x] **Steam-Tech Augmentations**: Player character cybernetics (steampunk style). Replace limbs with pneumatic prosthetics for unique abilities.
 - [x] **Sabotage & Espionage Mini-games**: Text-based puzzle interfaces for hacking pneumatic tube networks, picking gear-locks, and deciphering alchemical recipes.
-- [ ] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
+- [x] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
 
-## Phase 7: Multimedia & Atmosphere (Future)
+## Phase 7: Frontend Systems & UI (Next)
+- [ ] **Character Creation Flow**: An introductory UI wizard shown at the beginning of the game to select a preset or customize character class, backstory, and initial stats.
+- [ ] **Stats & Backstory Panel**: A dedicated UI panel on the frontend displaying the player's current class, background story, and dynamic stats (`strength`, `intellect`, `charm`).
+
+## Phase 8: Multimedia & Atmosphere (Future)
 - [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
 - [ ] **Dynamic Music**: Procedural music that reacts to player mood and location danger.
 - [ ] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
 
-## Phase 8: Social & Persistence (Future)
+## Phase 9: Social & Persistence (Future)
 - [ ] **Persistent World History**: A searchable "ledger" of all major narrative decisions.
 - [ ] **Multiplayer Sync (Experimental)**: Shared world state for group exploration.
 - [ ] **Save State Serialization**: Full state exports/imports for cross-device play.

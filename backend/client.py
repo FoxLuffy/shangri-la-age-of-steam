@@ -35,10 +35,10 @@ class VLLMClient:
         """
         Generates text completion using the vLLM endpoint.
         """
-        endpoint = f"{self.api_base}/completions" if not self.api_base.endswith("/completions") else self.api_base
+        endpoint = f"{self.api_base}/chat/completions" if not self.api_base.endswith("/chat/completions") else self.api_base
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": temperature,
             "top_p": top_p,
@@ -71,10 +71,10 @@ class VLLMClient:
         """
         Generates text completion using the vLLM endpoint and yields chunks.
         """
-        endpoint = f"{self.api_base}/completions" if not self.api_base.endswith("/completions") else self.api_base
+        endpoint = f"{self.api_base}/chat/completions" if not self.api_base.endswith("/chat/completions") else self.api_base
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": temperature,
             "top_p": top_p,

@@ -41,7 +41,7 @@
 - [x] **Dynamic Economy Engine**: Simulated trade economy where coal, brass, and aether prices fluctuate dynamically based on world events and player actions.
 - [x] **Steam-Tech Augmentations**: Player character cybernetics (steampunk style). Replace limbs with pneumatic prosthetics for unique abilities.
 - [x] **Sabotage & Espionage Mini-games**: Text-based puzzle interfaces for hacking pneumatic tube networks, picking gear-locks, and deciphering alchemical recipes.
-- [ ] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
+- [x] **Airship Mobile Base**: Acquire, customize, and pilot a steam-dirigible to access high-altitude zones and airborne faction battles.
 
 ## Phase 7: Multimedia & Atmosphere (Future)
 - [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.

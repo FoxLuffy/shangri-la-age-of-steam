@@ -173,3 +173,12 @@ class Minigame(SQLModel, table=True):
     state: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     solved: bool = Field(default=False)
 
+class Airship(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    name: str
+    hull_integrity: float = Field(default=100.0)
+    fuel_level: float = Field(default=100.0)
+    current_altitude: int = Field(default=0)
+    modules: List[str] = Field(default=[], sa_column=Column(JSON))
+

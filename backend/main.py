@@ -347,3 +347,54 @@ async def perform_minigame_action(minigame_id: int, req: MinigameActionRequest):
         session.refresh(game)
         return game
 
+@app.post("/airships/acquire")
+async def acquire_airship(character_id: int, name: str):
+    """Acquires a new airship for a character."""
+    from backend.database import Airship
+    with get_session() as session:
+        ship = Airship(
+            character_id=character_id,
+            name=name
+        )
+        session.add(ship)
+        session.commit()
+        session.refresh(ship)
+        return ship
+
+@app.post("/airships/{airship_id}/install_module")
+async def install_airship_module(airship_id: int, module_name: str):
+    """Installs a module on an airship."""
+    from backend.database import Airship
+    with get_session() as session:
+        ship = session.exec(select(Airship).where(Airship.id == airship_id)).first()
+        if not ship:
+            raise HTTPException(status_code=404, detail="Airship not found")
+        
+        modules = ship.modules.copy()
+        if module_name not in modules:
+            modules.append(module_name)
+        ship.modules = modules
+        session.add(ship)
+        session.commit()
+        session.refresh(ship)
+        return ship
+
+@app.post("/airships/{airship_id}/fly")
+async def fly_airship(airship_id: int, altitude: int, distance: float):
+    """Flies the airship to a new altitude and distance, consuming fuel."""
+    from backend.database import Airship
+    with get_session() as session:
+        ship = session.exec(select(Airship).where(Airship.id == airship_id)).first()
+        if not ship:
+            raise HTTPException(status_code=404, detail="Airship not found")
+        
+        fuel_cost = (distance * 0.5) + (abs(altitude - ship.current_altitude) * 0.01)
+        if ship.fuel_level < fuel_cost:
+            raise HTTPException(status_code=400, detail="Not enough fuel")
+        
+        ship.current_altitude = altitude
+        ship.fuel_level -= fuel_cost
+        session.add(ship)
+        session.commit()
+        session.refresh(ship)
+        return ship

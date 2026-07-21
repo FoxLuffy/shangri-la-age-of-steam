@@ -143,7 +143,13 @@ async def play_minigame(payload: MinigamePlayPayload):
         import copy
         state = copy.deepcopy(mg.state)
         
-        if mg.type == "hack":
+        if payload.action == "abandon":
+            mg.solved = True
+            state["message"] = "Minigame abandoned."
+        elif payload.action == "reveal_hint":
+            state["hint_revealed"] = True
+            state["message"] = state.get("hint", "No hint available.")
+        elif mg.type == "hack":
             # Simple mastermind/hacking game logic
             if payload.action == "input":
                 seq_val = payload.data.get("value")
@@ -175,10 +181,6 @@ async def play_minigame(payload: MinigamePlayPayload):
                 if all(state["pins"]):
                     mg.solved = True
                     state["message"] = "Lock picked successfully."
-                    
-        elif payload.action == "abandon":
-            mg.solved = True
-            state["message"] = "Minigame abandoned."
 
         from sqlalchemy.orm.attributes import flag_modified
         mg.state = state
@@ -403,6 +405,7 @@ async def generate_npc_endpoint(flavor: str = "industrial"):
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
+    backstory: str = ""
     gear_prompt: str = ""
     show_tutorials: bool = True
     gear: List[Dict[str, Any]] = Field(default_factory=list)
@@ -495,7 +498,7 @@ async def create_character(req: CharacterCreateRequest):
         char = Character(
             name=req.name,
             character_class=req.preset,
-            background=preset_data["background"],
+            background=req.backstory if req.backstory.strip() else preset_data["background"],
             stats=preset_data["stats"],
             show_tutorials=req.show_tutorials
         )

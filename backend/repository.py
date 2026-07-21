@@ -301,18 +301,31 @@ class StateRepository:
         if existing:
             return
             
+        from backend.database import Character
+        char = self.session.get(Character, char_id)
+        stats = char.stats if char else {}
+        intellect = stats.get('intellect', 5)
+        strength = stats.get('strength', 5)
+        charm = stats.get('charm', 5)
+
         state = {}
         if minigame_type == "hack":
+            hint = "Hint Gear: The sequence often starts with 'A' and ends with 'C'." if intellect >= 6 else "Hint Gear jammed. Intellect too low."
             state = {
                 "sequence": ["A", "B", "C"], # Dummy sequence
                 "current_input": [],
                 "attempts_left": 3,
-                "message": "Terminal locked. Enter bypass sequence."
+                "message": "Terminal locked. Enter bypass sequence.",
+                "hint": hint,
+                "hint_revealed": False
             }
         elif minigame_type == "lockpick":
+            hint = "Hint Gear: Applying pressure to the second pin first might prevent it from resetting." if strength >= 6 else "Hint Gear jammed. Strength too low."
             state = {
                 "pins": [False, False, False],
-                "message": "3 pins to set. Careful not to break the pick."
+                "message": "3 pins to set. Careful not to break the pick.",
+                "hint": hint,
+                "hint_revealed": False
             }
             
         minigame = Minigame(character_id=char_id, type=minigame_type, state=state, solved=False)

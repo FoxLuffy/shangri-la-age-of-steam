@@ -25,7 +25,11 @@ interface Message {
   events?: any[];
 }
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  onStateUpdate?: (state: any) => void;
+}
+
+export default function ChatInterface({ onStateUpdate }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedMood, setSelectedMood] = useState<string>('');
@@ -132,6 +136,9 @@ export default function ChatInterface() {
         }
         if (data.state.global_event) {
           setGlobalEvent(data.state.global_event);
+        }
+        if (onStateUpdate) {
+          onStateUpdate(data.state);
         }
       }
       if (data.all_locations) {

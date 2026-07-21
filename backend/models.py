@@ -30,6 +30,8 @@ class WorldState(BaseModel):
     world_memories: Union[List[Dict[str, str]], str] = []
     current_location: Optional[Location] = None
     active_npcs: List[NPC] = []
+    inventory: List[Dict[str, Any]] = []
+    quests: List[Dict[str, Any]] = []
 
 class PlayerAction(BaseModel):
     action_text: str

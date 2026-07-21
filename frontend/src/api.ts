@@ -48,8 +48,10 @@ export interface WorldStateData {
   active_npcs_ids: string[];
   global_event?: string;
   world_memories?: { key: string; value: string }[];
-  current_location?: Location;
-  active_npcs?: NPC[];
+  current_location: Location;
+  active_npcs: NPC[];
+  inventory?: any[];
+  quests?: any[];
 }
 
 export interface GetStateResponse {

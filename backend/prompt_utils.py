@@ -65,7 +65,9 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         location={"name": loc_name, "description": loc_desc},
         active_npcs=active_npcs,
         npc_contexts=npc_contexts,
-        action_text=action.action_text
+        action_text=action.action_text,
+        inventory=getattr(state, "inventory", []),
+        quests=getattr(state, "quests", [])
     )
 
     if hasattr(action, 'mood') and action.mood:

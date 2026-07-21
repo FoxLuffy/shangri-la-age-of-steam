@@ -24,7 +24,7 @@
 
 ## Phase 4: Next Major Milestones (Future Roadmap)
 - [x] **Multi-Agent NPC Orchestration:** Enable real-time inter-NPC conversations in the same location.
-- [ ] **Dynamic Inventory & Quest Tracking:** Add item schemas, equipment management, and steam-tech crafting.
+- [x] **Dynamic Inventory & Quest Tracking:** Add item schemas, equipment management, and steam-tech crafting.
 - [x] **Automata Companions System:** Create models and state logic for robotic pets that can act in combat and exploration.
 - [ ] **VLLM Streaming Output (Server-Sent Events / WebSockets):** Token-by-token narrative streaming for ultra-low latency presentation.
 - [ ] **Sabotage & Espionage Mini-games Engine:** Interactive CLI-like puzzles in the UI for hacking and deciphering.

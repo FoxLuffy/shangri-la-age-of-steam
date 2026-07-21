@@ -45,13 +45,43 @@ class StateRepository:
                     memories=db_npc.memories or []
                 ))
 
+        from backend.database import Inventory, Item, Quest, QuestState, Character
+
+        inventory_list = []
+        quests_list = []
+        
+        # We assume single-player character_id = 1 for now
+        char = self.session.get(Character, 1)
+        if char:
+            inv_items = self.session.exec(select(Inventory).where(Inventory.character_id == char.id)).all()
+            for inv in inv_items:
+                item = self.session.get(Item, inv.item_id)
+                if item:
+                    inventory_list.append({
+                        "name": item.name,
+                        "description": item.description,
+                        "quantity": inv.quantity
+                    })
+            
+            q_states = self.session.exec(select(QuestState).where(QuestState.character_id == char.id)).all()
+            for qs in q_states:
+                quest = self.session.get(Quest, qs.quest_id)
+                if quest:
+                    quests_list.append({
+                        "title": quest.title,
+                        "description": quest.description,
+                        "state": qs.state
+                    })
+
         return WorldState(
             current_location_id=current_location.id,
             active_npcs_ids=active_npc_ids,
             global_event=db_state.global_event if db_state else None,
             world_memories=db_state.world_memories if db_state else [],
             current_location=current_location,
-            active_npcs=active_npcs
+            active_npcs=active_npcs,
+            inventory=inventory_list,
+            quests=quests_list
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -127,6 +157,79 @@ class StateRepository:
         self.session.add(entry)
         self.session.commit()
         return entry
+
+    def apply_inventory_update(self, update: Dict[str, Any]):
+        from backend.database import Inventory, Item, Character
+        
+        char_id = 1
+        action = update.get("action", "add")
+        item_name = update.get("item_name")
+        qty = update.get("quantity", 1)
+        if not item_name:
+            return
+            
+        # Find or create item
+        item = self.session.exec(select(Item).where(Item.name == item_name)).first()
+        if not item:
+            item = Item(name=item_name, description=update.get("description", "A mysterious item."), category="Consumables")
+            self.session.add(item)
+            self.session.commit()
+            self.session.refresh(item)
+            
+        inv = self.session.exec(select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)).first()
+        
+        if action == "add":
+            if inv:
+                inv.quantity += qty
+            else:
+                inv = Inventory(character_id=char_id, item_id=item.id, quantity=qty)
+            self.session.add(inv)
+        elif action == "remove":
+            if inv:
+                inv.quantity -= qty
+                if inv.quantity <= 0:
+                    self.session.delete(inv)
+                else:
+                    self.session.add(inv)
+                    
+        self.session.commit()
+
+    def apply_quest_update(self, update: Dict[str, Any]):
+        from backend.database import Quest, QuestState, QuestStateEnum
+        
+        char_id = 1
+        action = update.get("action", "add")
+        title = update.get("quest_title")
+        if not title:
+            return
+            
+        quest = self.session.exec(select(Quest).where(Quest.title == title)).first()
+        if not quest:
+            quest = Quest(title=title, description=update.get("description", ""))
+            self.session.add(quest)
+            self.session.commit()
+            self.session.refresh(quest)
+        elif update.get("description"):
+            # Update description if provided
+            quest.description = update["description"]
+            self.session.add(quest)
+            self.session.commit()
+            
+        q_state = self.session.exec(select(QuestState).where(QuestState.character_id == char_id, QuestState.quest_id == quest.id)).first()
+        
+        state_val = QuestStateEnum.active
+        if action == "complete":
+            state_val = QuestStateEnum.completed
+        elif action == "fail":
+            state_val = QuestStateEnum.failed
+            
+        if not q_state:
+            q_state = QuestState(character_id=char_id, quest_id=quest.id, state=state_val)
+        else:
+            q_state.state = state_val
+            
+        self.session.add(q_state)
+        self.session.commit()
 
 if __name__ == "__main__":
     with get_session() as session:

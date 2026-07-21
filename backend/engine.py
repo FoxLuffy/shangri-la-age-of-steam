@@ -170,6 +170,16 @@ class NarrativeEngine:
                 for npc_info in state_updates["active_npcs"]:
                     if isinstance(npc_info, dict):
                         repository.create_or_update_npc(npc_info, loc_id)
+                        
+            if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
+                for inv_update in state_updates["inventory_updates"]:
+                    if isinstance(inv_update, dict):
+                        repository.apply_inventory_update(inv_update)
+                        
+            if "quest_updates" in state_updates and isinstance(state_updates["quest_updates"], list):
+                for quest_update in state_updates["quest_updates"]:
+                    if isinstance(quest_update, dict):
+                        repository.apply_quest_update(quest_update)
 
             if state_updates.get("location_id"):
                 state.current_location_id = state_updates["location_id"]

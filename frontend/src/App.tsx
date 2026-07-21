@@ -11,6 +11,7 @@ function App() {
     return saved ? parseInt(saved, 10) : null;
   });
   const [character, setCharacter] = useState<Character | null>(null);
+  const [worldState, setWorldState] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ function App() {
     if (confirm("Are you sure you want to retire this character? This will allow you to create a new one.")) {
       setCharacterId(null);
       setCharacter(null);
+      setWorldState(null);
       localStorage.removeItem('saos_char_id');
     }
   };
@@ -49,9 +51,9 @@ function App() {
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full">
-        <ChatInterface />
+        <ChatInterface onStateUpdate={setWorldState} />
       </div>
-      <StatsPanel character={character} onReset={handleRetireCharacter} />
+      <StatsPanel character={character} worldState={worldState} onReset={handleRetireCharacter} />
     </div>
   );
 }

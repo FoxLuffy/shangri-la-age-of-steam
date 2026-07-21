@@ -7,3 +7,4 @@ pydantic
 openai
 jinja2
 sqlmodel
+python-multipart

@@ -3,6 +3,8 @@ import {
   sendAction, 
   fetchWorldState, 
   resetWorldState, 
+  importWorldState,
+  BACKEND_URL,
   WS_URL,
   type Location as LocationType, 
   type NPC as NPCType,
@@ -40,6 +42,28 @@ export default function ChatInterface() {
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportSave = () => {
+    window.open(`${BACKEND_URL}/export`, '_blank');
+  };
+
+  const handleImportSave = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      try {
+        setIsLoading(true);
+        await importWorldState(e.target.files[0]);
+        setStatusMessage('Save imported successfully');
+        await loadState();
+        setMessages([]); // clear chat history or keep it? clear makes sense for new world state
+      } catch (err) {
+        console.error('Import failed', err);
+        setStatusMessage('Failed to import save');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   // WebSocket connection for Multiplayer Sync
   useEffect(() => {
@@ -327,7 +351,28 @@ export default function ChatInterface() {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImportSave} 
+            className="hidden" 
+            accept=".db,.json" 
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-600/40 rounded transition-all flex items-center gap-1"
+            title="Import Save State"
+          >
+            📂 Import
+          </button>
+          <button
+            onClick={handleExportSave}
+            className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-600/40 rounded transition-all flex items-center gap-1"
+            title="Export Save State"
+          >
+            💾 Export
+          </button>
           <button
             onClick={() => setShowHistory(true)}
             className="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-600/40 rounded transition-all flex items-center gap-1"

@@ -165,33 +165,79 @@ class NarrativeEngine:
             "events": events or []
         }
 
-async def trigger_npc_interaction(location_id: int, npc_ids: List[int]):
+from sqlmodel import select
+from backend.database import ResourceMarket, WorldEvent, Location, NPC, get_session
+from backend.repository import StateRepository
+from backend.client import VLLMClient
+import random
+import os
+
+async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
     """
-    Placeholder for triggering and processing an interaction.
+    Generate dialogue between two NPCs in the same location and record it.
     """
-    # e.g., generate dialogue, create WorldEvent
-    logger.info(f"Interaction resolved for NPCs {npc_ids} at location {location_id}.")
+    logger.info(f"Interaction resolving for {npc1.name} and {npc2.name} at {location.name}.")
+    
+    prompt = (
+        f"You are the world engine for Shangri-la: Age of Steam. "
+        f"Two NPCs are interacting at {location.name}: {location.description}.\n"
+        f"NPC 1: {npc1.name}, Traits: {npc1.traits}\n"
+        f"NPC 2: {npc2.name}, Traits: {npc2.traits}\n"
+        f"Write a short, engaging 2-3 line dialogue between them reflecting their traits and the location."
+    )
+    
+    client = VLLMClient()
+    try:
+        response = client.generate(prompt=prompt, max_tokens=150, temperature=0.8)
+        dialogue = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+        
+        if dialogue:
+            with get_session() as session:
+                repo = StateRepository(session)
+                repo.record_ledger_entry(
+                    action=f"Overheard interaction between {npc1.name} and {npc2.name}",
+                    narration=dialogue,
+                    location_id=location.id
+                )
+            logger.info(f"Recorded NPC interaction at {location.name}")
+            
+            # Broadcast to clients
+            try:
+                from backend.main import manager
+                import json
+                await manager.broadcast(json.dumps({
+                    "type": "narrative_event",
+                    "data": {
+                        "narration": f"[NPC Interaction] {dialogue}",
+                        "state_updates": {},
+                        "events": []
+                    },
+                    "action": {
+                        "action_text": f"Overheard {npc1.name} and {npc2.name}",
+                        "client_id": "system"
+                    }
+                }))
+            except Exception as e:
+                logger.error(f"Failed to broadcast NPC interaction: {e}")
+                
+    except Exception as e:
+        logger.error(f"Failed to generate NPC interaction: {e}")
 
 async def scan_locations_and_trigger_interactions():
     """
     Background logic to scan locations and trigger NPC-to-NPC interactions.
     """
     logger.info("Scanning locations for NPC interactions...")
-    # Mock fetching locations with multiple NPCs
-    locations_with_npcs = [
-        {"location_id": 1, "npcs": [101, 102]},
-        {"location_id": 2, "npcs": [201]}
-    ]
-
-    for loc in locations_with_npcs:
-        if len(loc["npcs"]) > 1:
-            logger.info(f"Triggering interaction at location {loc['location_id']} between NPCs {loc['npcs']}")
-            # Here we would normally build the prompt using prompt_utils
-            # and call the LLM, then save a WorldEvent to the database.
-            await trigger_npc_interaction(loc["location_id"], loc["npcs"])
-
-from sqlmodel import select
-from backend.database import ResourceMarket, WorldEvent
+    with get_session() as session:
+        locations = session.exec(select(Location)).all()
+        for loc in locations:
+            npcs_in_loc = session.exec(select(NPC).where(NPC.location_id == loc.id)).all()
+            if len(npcs_in_loc) > 1:
+                # 30% chance for an interaction to happen if there are multiple NPCs
+                if random.random() < 0.3:
+                    npc1, npc2 = random.sample(npcs_in_loc, 2)
+                    logger.info(f"Triggering interaction at location {loc.id} between {npc1.name} and {npc2.name}")
+                    await trigger_npc_interaction(loc, npc1, npc2)
 
 def simulate_economy_tick(session: Session):
     """

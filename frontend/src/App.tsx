@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
 import CharacterCreation from './components/CharacterCreation';
 import StatsPanel from './components/StatsPanel';
@@ -10,7 +10,26 @@ import type { Character } from './api';
 
 import SettingsMenu from './components/SettingsMenu';
 
-function App() {
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div className="p-8 text-red-500 bg-slate-950 h-screen font-mono"><h1 className="text-2xl mb-4">Frontend Crash</h1><pre>{this.state.error?.stack}</pre></div>;
+    }
+    return this.props.children;
+  }
+}
+
+function MainApp() {
   const [characterId, setCharacterId] = useState<number | null>(() => {
     const saved = localStorage.getItem('saos_char_id');
     return saved ? parseInt(saved, 10) : null;
@@ -18,6 +37,11 @@ function App() {
   const [character, setCharacter] = useState<Character | null>(null);
   const [worldState, setWorldState] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const [showCombat, setShowCombat] = useState(false);
+  const [showMinigame, setShowMinigame] = useState(false);
+  const [showEmpire, setShowEmpire] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (characterId) {
@@ -52,11 +76,6 @@ function App() {
       localStorage.removeItem('saos_char_id');
     }
   };
-
-  const [showCombat, setShowCombat] = useState(false);
-  const [showMinigame, setShowMinigame] = useState(false);
-  const [showEmpire, setShowEmpire] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   const activeMinigame = worldState?.active_minigame;
 
@@ -93,4 +112,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
+  );
+}

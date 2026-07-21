@@ -96,6 +96,17 @@ export default function MinigamePanel({ minigame, character, onComplete }: { min
         <h2 className="text-xl font-serif text-amber-500 uppercase tracking-widest text-center">
           {minigame.type === 'hack' ? 'Terminal Override' : 'Lockpicking'}
         </h2>
+
+        {state.hint && !state.hint_revealed && (
+          <button
+            onClick={() => handlePlay('reveal_hint')}
+            disabled={loading}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center border border-amber-500 bg-amber-900/50 hover:bg-amber-800 text-amber-300 rounded-full animate-pulse transition-all shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+            title="Crack open a Hint Gear"
+          >
+            ⚙️
+          </button>
+        )}
         
         <TutorialBox 
           title="Minigame Mechanics" 

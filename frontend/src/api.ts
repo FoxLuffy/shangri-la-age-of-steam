@@ -78,8 +78,8 @@ export const fetchCharacter = async (characterId: number): Promise<Character> =>
   return data;
 };
 
-export const createCharacter = async (name: string, preset: string, gearPrompt: string = "", showTutorials: boolean = true, gear: any[] = []): Promise<Character> => {
-  const { data } = await api.post('/characters', { name, preset, gear_prompt: gearPrompt, show_tutorials: showTutorials, gear });
+export const createCharacter = async (name: string, preset: string, backstory: string = "", gearPrompt: string = "", showTutorials: boolean = true, gear: any[] = []): Promise<Character> => {
+  const { data } = await api.post('/characters', { name, preset, backstory, gear_prompt: gearPrompt, show_tutorials: showTutorials, gear });
   return data;
 };
 

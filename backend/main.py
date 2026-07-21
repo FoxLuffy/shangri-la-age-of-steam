@@ -127,6 +127,65 @@ async def get_world_state():
             "all_npcs": all_npcs
         }
 
+class MinigamePlayPayload(BaseModel):
+    minigame_id: int
+    action: str
+    data: Dict[str, Any]
+
+@app.post("/minigame/play")
+async def play_minigame(payload: MinigamePlayPayload):
+    with get_session() as session:
+        from backend.database import Minigame
+        mg = session.get(Minigame, payload.minigame_id)
+        if not mg or mg.solved:
+            raise HTTPException(status_code=400, detail="Minigame not found or already solved.")
+            
+        state = mg.state.copy()
+        
+        if mg.type == "hack":
+            # Simple mastermind/hacking game logic
+            if payload.action == "input":
+                seq_val = payload.data.get("value")
+                state["current_input"].append(seq_val)
+                
+                # Check if matches
+                target = state["sequence"]
+                curr = state["current_input"]
+                
+                if len(curr) == len(target):
+                    if curr == target:
+                        mg.solved = True
+                        state["message"] = "Bypass successful. Access granted."
+                    else:
+                        state["attempts_left"] -= 1
+                        state["current_input"] = []
+                        if state["attempts_left"] <= 0:
+                            mg.solved = True
+                            state["message"] = "Terminal lockout. Hacking failed."
+                        else:
+                            state["message"] = f"Sequence incorrect. {state['attempts_left']} attempts remaining."
+        
+        elif mg.type == "lockpick":
+            if payload.action == "set_pin":
+                pin_idx = payload.data.get("pin_index")
+                if 0 <= pin_idx < len(state["pins"]):
+                    state["pins"][pin_idx] = True
+                    
+                if all(state["pins"]):
+                    mg.solved = True
+                    state["message"] = "Lock picked successfully."
+                    
+        elif payload.action == "abandon":
+            mg.solved = True
+            state["message"] = "Minigame abandoned."
+
+        mg.state = state
+        session.add(mg)
+        session.commit()
+        session.refresh(mg)
+        
+        return {"status": "success", "solved": mg.solved, "state": mg.state}
+
 @app.post("/chat")
 async def chat(action: PlayerAction):
     loop = asyncio.get_running_loop()

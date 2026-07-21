@@ -181,6 +181,11 @@ class NarrativeEngine:
                     if isinstance(quest_update, dict):
                         repository.apply_quest_update(quest_update)
 
+            if "minigame_trigger" in state_updates:
+                minigame_type = state_updates["minigame_trigger"]
+                if minigame_type in ["hack", "lockpick"]:
+                    repository.trigger_minigame(minigame_type)
+
             if state_updates.get("location_id"):
                 state.current_location_id = state_updates["location_id"]
                 repository.save_state(state)

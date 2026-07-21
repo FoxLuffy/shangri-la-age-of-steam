@@ -32,6 +32,7 @@ class WorldState(BaseModel):
     active_npcs: List[NPC] = []
     inventory: List[Dict[str, Any]] = []
     quests: List[Dict[str, Any]] = []
+    active_minigame: Optional[Dict[str, Any]] = None
 
 class PlayerAction(BaseModel):
     action_text: str

@@ -72,6 +72,19 @@ class StateRepository:
                         "description": quest.description,
                         "state": qs.state
                     })
+                    
+            from backend.database import Minigame
+            mg = self.session.exec(select(Minigame).where(Minigame.character_id == char.id, Minigame.solved == False)).first()
+            if mg:
+                active_minigame = {
+                    "id": mg.id,
+                    "type": mg.type,
+                    "state": mg.state
+                }
+            else:
+                active_minigame = None
+        else:
+            active_minigame = None
 
         return WorldState(
             current_location_id=current_location.id,
@@ -81,7 +94,8 @@ class StateRepository:
             current_location=current_location,
             active_npcs=active_npcs,
             inventory=inventory_list,
-            quests=quests_list
+            quests=quests_list,
+            active_minigame=active_minigame
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -229,6 +243,33 @@ class StateRepository:
             q_state.state = state_val
             
         self.session.add(q_state)
+        self.session.commit()
+
+    def trigger_minigame(self, minigame_type: str):
+        from backend.database import Minigame, Character
+        char_id = 1
+        
+        # Check if already exists
+        existing = self.session.exec(select(Minigame).where(Minigame.character_id == char_id, Minigame.solved == False)).first()
+        if existing:
+            return
+            
+        state = {}
+        if minigame_type == "hack":
+            state = {
+                "sequence": ["A", "B", "C"], # Dummy sequence
+                "current_input": [],
+                "attempts_left": 3,
+                "message": "Terminal locked. Enter bypass sequence."
+            }
+        elif minigame_type == "lockpick":
+            state = {
+                "pins": [False, False, False],
+                "message": "3 pins to set. Careful not to break the pick."
+            }
+            
+        minigame = Minigame(character_id=char_id, type=minigame_type, state=state, solved=False)
+        self.session.add(minigame)
         self.session.commit()
 
 if __name__ == "__main__":

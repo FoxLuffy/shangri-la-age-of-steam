@@ -36,6 +36,7 @@ class PlayerAction(BaseModel):
     current_location_id: str = "1"
     mood: Optional[str] = None
     is_exploration: bool = False
+    client_id: Optional[str] = None
 
 class Prompt(BaseModel):
     system_prompt: str

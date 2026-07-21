@@ -4,7 +4,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -79,6 +79,27 @@ class LazyEngine:
             self._instance = NarrativeEngine(client)
         return self._instance.process_action(action, session)
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
 # This creates a proxy, not the real engine, so no connection happens on import.
 engine = LazyEngine(VLLM_API_BASE)
 
@@ -107,14 +128,32 @@ async def get_world_state():
 
 @app.post("/chat")
 async def chat(action: PlayerAction):
+    loop = asyncio.get_running_loop()
     def event_stream():
         with get_session() as session:
             for item in engine.process_action(action, session):
                 if isinstance(item, str):
                     yield f"data: {json.dumps({'chunk': item})}\n\n"
                 elif isinstance(item, dict):
+                    # Broadcast the completed result to all connected websockets
+                    # We wrap this inside run_coroutine_threadsafe to run concurrently
+                    asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps({
+                        "type": "narrative_event",
+                        "data": item,
+                        "action": action.model_dump()
+                    })), loop)
                     yield f"data: {json.dumps({'result': item})}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # We don't expect messages from client, but keep loop alive
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.post("/reset")
 async def reset_database():

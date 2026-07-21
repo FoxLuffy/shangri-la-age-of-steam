@@ -46,10 +46,15 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
             memories_str = str(memories_raw) if memories_raw else "None"
 
         npc_contexts.append({
+            "id": getattr(npc, "id", None),
             "name": getattr(npc, "name", "Unknown NPC"),
             "traits": getattr(npc, "traits", []) or [],
             "disposition": getattr(npc, "disposition", 0.0),
-            "memories": memories_str
+            "memories": memories_str,
+            "hp": getattr(npc, "hp", 100),
+            "max_hp": getattr(npc, "max_hp", 100),
+            "armor": getattr(npc, "armor", 0),
+            "status_effects": getattr(npc, "status_effects", []) or []
         })
 
     current_loc = getattr(state, "current_location", None)
@@ -67,7 +72,10 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         npc_contexts=npc_contexts,
         action_text=action.action_text,
         inventory=getattr(state, "inventory", []),
-        quests=getattr(state, "quests", [])
+        quests=getattr(state, "quests", []),
+        factions=getattr(state, "factions", []),
+        player_stats=getattr(state, "player_stats", None),
+        is_combat_active=getattr(state, "is_combat_active", False)
     )
 
     if hasattr(action, 'mood') and action.mood:

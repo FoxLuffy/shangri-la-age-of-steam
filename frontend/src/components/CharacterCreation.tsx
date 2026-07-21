@@ -17,13 +17,14 @@ const PRESETS: Preset[] = [
 export default function CharacterCreation({ onComplete }: { onComplete: (charId: number) => void }) {
   const [name, setName] = useState('');
   const [preset, setPreset] = useState('Wanderer');
+  const [gearPrompt, setGearPrompt] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset);
+      const char = await createCharacter(name, preset, gearPrompt);
       onComplete(char.id);
     } catch (e) {
       console.error(e);
@@ -66,6 +67,16 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-amber-600/70 uppercase mb-2">Requested Gear (Optional)</label>
+            <textarea 
+              value={gearPrompt}
+              onChange={(e) => setGearPrompt(e.target.value)}
+              className="w-full bg-slate-900 border border-amber-900/50 p-2 text-amber-100 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 resize-none h-24"
+              placeholder="Describe what gear or equipment you're carrying. The engine will grant items reasonable for your class..."
+            />
           </div>
 
           <button 

@@ -77,8 +77,8 @@ export const fetchCharacter = async (characterId: number): Promise<Character> =>
   return data;
 };
 
-export const createCharacter = async (name: string, preset: string): Promise<Character> => {
-  const { data } = await api.post('/characters', { name, preset });
+export const createCharacter = async (name: string, preset: string, gearPrompt: string = ""): Promise<Character> => {
+  const { data } = await api.post('/characters', { name, preset, gear_prompt: gearPrompt });
   return data;
 };
 

@@ -9,7 +9,7 @@ def vllm_client():
 
 def test_vllm_client_init(vllm_client):
     assert vllm_client.api_base == "http://localhost:8000/v1"
-    assert vllm_client.model == "default"
+    assert vllm_client.model == "gemma-4"
 
 @patch("httpx.Client.post")
 def test_vllm_client_generate_success(mock_post, vllm_client):

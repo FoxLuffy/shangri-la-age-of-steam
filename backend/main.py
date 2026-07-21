@@ -287,6 +287,16 @@ PRESETS = {
     }
 }
 
+@app.get("/characters/{character_id}")
+async def get_character(character_id: int):
+    """Retrieve character details."""
+    from backend.database import Character
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+        return char
+
 @app.post("/characters")
 async def create_character(req: CharacterCreateRequest):
     """Create a new character from a preset."""

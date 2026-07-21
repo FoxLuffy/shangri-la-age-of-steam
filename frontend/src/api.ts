@@ -9,6 +9,8 @@ if (typeof window !== 'undefined' && !import.meta.env.VITE_BACKEND_URL) {
   }
 }
 
+export const WS_URL = BACKEND_URL.replace(/^http/, 'ws') + '/ws';
+
 const api = axios.create({
   baseURL: BACKEND_URL,
   headers: {
@@ -21,6 +23,7 @@ export interface PlayerActionPayload {
   current_location_id: string;
   mood?: string;
   is_exploration?: boolean;
+  client_id?: string;
 }
 
 export interface NPC {

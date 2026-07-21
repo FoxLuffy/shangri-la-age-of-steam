@@ -3,6 +3,7 @@ import {
   sendAction, 
   fetchWorldState, 
   resetWorldState, 
+  WS_URL,
   type Location as LocationType, 
   type NPC as NPCType,
   type GetStateResponse
@@ -36,8 +37,49 @@ export default function ChatInterface() {
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
+  const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // WebSocket connection for Multiplayer Sync
+  useEffect(() => {
+    const ws = new WebSocket(WS_URL);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'narrative_event' && msg.action && msg.action.client_id !== clientId) {
+          const actionText = msg.action.action_text || 'Another player acted.';
+          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `peer-user-${Date.now()}`,
+              sender: 'user',
+              content: actionText,
+              timestamp: now,
+              mood: msg.action.mood
+            },
+            {
+              id: `peer-narrator-${Date.now()}`,
+              sender: 'narrator',
+              content: msg.data.narration || '',
+              timestamp: now,
+              mood: msg.action.mood,
+              stateUpdates: msg.data.state_updates,
+              events: msg.data.events
+            }
+          ]);
+          loadState(); // Refresh world state
+        }
+      } catch (err) {
+        console.error('WS parse error', err);
+      }
+    };
+    return () => {
+      ws.close();
+    };
+  }, [clientId]);
 
   // Auto-scroll message feed
   useEffect(() => {
@@ -127,7 +169,8 @@ export default function ChatInterface() {
         action_text: actionText,
         current_location_id: currentLocationId,
         mood: selectedMood || undefined,
-        is_exploration: isExploration
+        is_exploration: isExploration,
+        client_id: clientId
       }, (chunk) => {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -212,7 +255,8 @@ export default function ChatInterface() {
       const response = await sendAction({
         action_text: travelText,
         current_location_id: newLocId,
-        is_exploration: true
+        is_exploration: true,
+        client_id: clientId
       }, (chunk) => {
         setMessages((prev) =>
           prev.map((msg) =>

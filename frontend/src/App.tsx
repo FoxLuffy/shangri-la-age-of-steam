@@ -86,6 +86,7 @@ function MainApp() {
         {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
         <ChatInterface 
+          characterId={character.id}
           onStateUpdate={setWorldState} 
           onOpenCombat={() => setShowCombat(true)}
           onOpenMinigame={() => setShowMinigame(true)}

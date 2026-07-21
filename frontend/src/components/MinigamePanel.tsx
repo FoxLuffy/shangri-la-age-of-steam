@@ -37,7 +37,7 @@ export default function MinigamePanel({ minigame, character, onComplete }: { min
         </div>
         
         <div className="flex gap-2">
-          {['A', 'B', 'C'].map((char) => (
+          {['A', 'B', 'C', 'D', 'E'].map((char) => (
             <button
               key={char}
               disabled={loading}

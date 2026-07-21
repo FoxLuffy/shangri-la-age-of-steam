@@ -166,3 +166,10 @@ class Augmentation(SQLModel, table=True):
     augmentation_name: str
     stat_bonus: Dict[str, float] = Field(default={}, sa_column=Column(JSON))
 
+class Minigame(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    type: str = Field(index=True)
+    state: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+    solved: bool = Field(default=False)
+

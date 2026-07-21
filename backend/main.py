@@ -304,3 +304,46 @@ async def create_character(req: CharacterCreateRequest):
         session.refresh(char)
         return char
 
+class MinigameActionRequest(BaseModel):
+    action: str
+
+@app.post("/minigames/start")
+async def start_minigame(character_id: int, game_type: str = "gear_lock"):
+    """Starts a new sabotage or espionage minigame."""
+    from backend.database import Minigame
+    with get_session() as session:
+        state = {}
+        if game_type == "gear_lock":
+            state = {"gears": [0, 0, 0], "target": [5, 5, 5]}
+        game = Minigame(
+            character_id=character_id,
+            type=game_type,
+            state=state,
+            solved=False
+        )
+        session.add(game)
+        session.commit()
+        session.refresh(game)
+        return game
+
+@app.post("/minigames/{minigame_id}/action")
+async def perform_minigame_action(minigame_id: int, req: MinigameActionRequest):
+    """Performs an action on a minigame."""
+    from backend.database import Minigame
+    with get_session() as session:
+        game = session.exec(select(Minigame).where(Minigame.id == minigame_id)).first()
+        if not game:
+            raise HTTPException(status_code=404, detail="Minigame not found")
+        
+        if req.action == "solve_cheat":
+            game.solved = True
+        elif game.type == "gear_lock":
+            # Just an example of advancing state
+            game.state["gears"] = game.state["target"]
+            game.solved = True
+            
+        session.add(game)
+        session.commit()
+        session.refresh(game)
+        return game
+

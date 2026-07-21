@@ -25,7 +25,7 @@
 *Deepen the technical interactivity of minigames and story pacing.*
 - [x] **Cliffhanger Minigame Transitions:** Minigame triggers should suspend the narrative at a cliffhanger rather than resolving the outcome immediately. The narrative should only continue based on the actual outcome (success/failure) of the minigame.
 - [x] **Openable Hint Gears:** Tie narrator hints into the mechanics by adding openable hint gears in minigames, which become available depending on the player's specific skill level.
-- [ ] **Minigame Variability & Skills:** Overhaul the current static minigame logic (e.g., standard ABC combinations) to introduce variability, multiple puzzle types, and direct integration with different character skills.
+- [x] **Minigame Variability & Skills:** Overhaul the current static minigame logic (e.g., standard ABC combinations) to introduce variability, multiple puzzle types, and direct integration with different character skills.
 
 ## Phase 2: Industrialist Empire & City Management 🏭
 *Transition from a wandering adventurer to a baron of industry.*

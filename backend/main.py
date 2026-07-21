@@ -528,6 +528,38 @@ async def create_character(req: CharacterCreateRequest):
                 session.add(inv)
             session.commit()
             session.refresh(char)
+
+        # Generate a long overarching quest based on their backstory
+        from backend.client import VLLMClient
+        from backend.database import Quest, QuestState, QuestStateEnum
+        import json
+        import re
+        
+        client = VLLMClient()
+        quest_prompt = (
+            f"You are the game master. The player character '{char.name}' has the following background: '{char.background}'. "
+            "Generate a singular, grand, long-term overarching quest/goal for them in the steampunk world of Shangri-la. "
+            "Return ONLY a JSON object: {\"title\": \"Quest Title\", \"description\": \"A long detailed description of the overarching goal.\"}"
+        )
+        try:
+            response = client.generate(prompt=quest_prompt, max_tokens=150, temperature=0.7)
+            content = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                quest_data = json.loads(json_match.group(0))
+                quest = Quest(
+                    title=quest_data.get("title", "A Grand Endeavor"),
+                    description=quest_data.get("description", "A long journey awaits.")
+                )
+                session.add(quest)
+                session.commit()
+                session.refresh(quest)
+                
+                qs = QuestState(character_id=char.id, quest_id=quest.id, state=QuestStateEnum.active)
+                session.add(qs)
+                session.commit()
+        except Exception as e:
+            print(f"Failed to generate long quest: {e}")
             
         return char
 

@@ -309,21 +309,30 @@ class StateRepository:
         charm = stats.get('charm', 5)
 
         state = {}
+        import random
         if minigame_type == "hack":
-            hint = "Hint Gear: The sequence often starts with 'A' and ends with 'C'." if intellect >= 6 else "Hint Gear jammed. Intellect too low."
+            # Higher intellect gives fewer sequence nodes (easier) or more attempts
+            seq_length = max(2, 5 - (intellect // 3))
+            attempts = max(3, 2 + (intellect // 2))
+            letters = ["A", "B", "C", "D", "E"]
+            sequence = [random.choice(letters) for _ in range(seq_length)]
+            
+            hint = f"Hint Gear: The sequence has {seq_length} nodes. It begins with '{sequence[0]}'." if intellect >= 4 else "Hint Gear jammed. Intellect too low."
             state = {
-                "sequence": ["A", "B", "C"], # Dummy sequence
+                "sequence": sequence,
                 "current_input": [],
-                "attempts_left": 3,
-                "message": "Terminal locked. Enter bypass sequence.",
+                "attempts_left": attempts,
+                "message": f"Terminal locked. Enter {seq_length}-node bypass sequence.",
                 "hint": hint,
                 "hint_revealed": False
             }
         elif minigame_type == "lockpick":
-            hint = "Hint Gear: Applying pressure to the second pin first might prevent it from resetting." if strength >= 6 else "Hint Gear jammed. Strength too low."
+            # Higher strength/dexterity reduces the number of pins
+            num_pins = max(2, 5 - (strength // 3))
+            hint = f"Hint Gear: Focus on setting {num_pins} pins. Apply even pressure." if strength >= 4 else "Hint Gear jammed. Strength too low."
             state = {
-                "pins": [False, False, False],
-                "message": "3 pins to set. Careful not to break the pick.",
+                "pins": [False] * num_pins,
+                "message": f"{num_pins} pins to set. Careful not to break the pick.",
                 "hint": hint,
                 "hint_revealed": False
             }

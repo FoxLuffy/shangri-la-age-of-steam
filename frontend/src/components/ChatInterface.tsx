@@ -26,12 +26,13 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
+  characterId?: number;
   onStateUpdate?: (state: any) => void;
   onOpenCombat?: () => void;
   onOpenMinigame?: () => void;
 }
 
-export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinigame }: ChatInterfaceProps) {
+export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat, onOpenMinigame }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedMood, setSelectedMood] = useState<string>('');
@@ -119,12 +120,34 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
     }
   }, [messages, isLoading]);
 
+  // Sync messages to localStorage
+  useEffect(() => {
+    if (characterId && messages.length > 0) {
+      localStorage.setItem(`saos_chat_history_${characterId}`, JSON.stringify(messages));
+    }
+  }, [messages, characterId]);
+
   // Load initial state on component mount
   useEffect(() => {
-    loadState();
-  }, []);
+    let hasHistory = false;
+    if (characterId) {
+      const stored = localStorage.getItem(`saos_chat_history_${characterId}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            hasHistory = true;
+          }
+        } catch (e) {
+          console.error("Failed to parse chat history", e);
+        }
+      }
+    }
+    loadState(hasHistory);
+  }, [characterId]);
 
-  const loadState = async () => {
+  const loadState = async (hasHistory: boolean = false) => {
     try {
       const data: GetStateResponse = await fetchWorldState();
       if (data.state) {
@@ -154,14 +177,14 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
       }
 
       // Initial welcome message if messages list is empty
-      if (messages.length === 0) {
+      if (!hasHistory) {
         const welcomeMessage: Message = {
           id: 'msg-0',
           sender: 'narrator',
           content: `Welcome to Shangri-la: Age of Steam.\n\nYou stand in ${data.state?.current_location?.name || 'The Rusty Anchor Tavern'}. ${data.state?.current_location?.description || 'Steam discharges softly from the overhead copper valves.'}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages([welcomeMessage]);
+        setMessages(prev => prev.length === 0 ? [welcomeMessage] : prev);
       }
     } catch (err) {
       console.error('Failed to fetch world state:', err);

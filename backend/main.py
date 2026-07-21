@@ -35,14 +35,94 @@ async def world_simulation_loop():
             logger.error(f"Error in world simulation loop: {e}")
             await asyncio.sleep(60)
 
+async def simulate_global_market():
+    from backend.database import ResourceMarket
+    while True:
+        await asyncio.sleep(10) # Update market every 10 seconds
+        try:
+            with get_session() as session:
+                markets = session.exec(select(ResourceMarket)).all()
+                if not markets:
+                    # Initialize
+                    for res in ["Brass", "Copper", "Aetherium", "Coal"]:
+                        session.add(ResourceMarket(resource_name=res, base_price=10.0, current_price=10.0, volatility=0.1))
+                    session.commit()
+                    markets = session.exec(select(ResourceMarket)).all()
+                
+                # Simulate global player actions fluctuating the market
+                for m in markets:
+                    # Random drift
+                    drift = random.uniform(-m.volatility, m.volatility)
+                    m.current_price = max(1.0, m.current_price * (1.0 + drift))
+                    
+                    # Rare global spike (thousands of players buy)
+                    if random.random() < 0.05:
+                        m.current_price *= 1.5
+                        
+                    session.add(m)
+                session.commit()
+                
+                # Broadcast to clients
+                markets_data = [{"name": m.resource_name, "price": round(m.current_price, 2)} for m in markets]
+                await manager.broadcast(json.dumps({"type": "market_sync", "market": markets_data}))
+        except Exception as e:
+            logger.error(f"Error in market simulation: {e}")
+
+async def simulate_faction_wars():
+    from backend.database import FactionStanding, Location, Faction, WorldState
+    from sqlalchemy import func
+    while True:
+        await asyncio.sleep(20) # Check every 20 seconds
+        try:
+            with get_session() as session:
+                # Sum the standing of all characters for each faction
+                results = session.exec(select(FactionStanding.faction_id, func.sum(FactionStanding.standing)).group_by(FactionStanding.faction_id)).all()
+                for faction_id, total_standing in results:
+                    if total_standing > 10.0:
+                        # Faction is highly supported globally!
+                        # They will launch an offensive and take over a random location
+                        target_locs = session.exec(select(Location).where(Location.faction_id != faction_id)).all()
+                        if target_locs:
+                            target = random.choice(target_locs)
+                            target.faction_id = faction_id
+                            session.add(target)
+                            
+                            faction = session.exec(select(Faction).where(Faction.id == faction_id)).first()
+                            fact_name = faction.name if faction else faction_id
+                            event_msg = f"GLOBAL WAR ALERT: Due to overwhelming player support, the {fact_name} has permanently annexed {target.name}!"
+                            
+                            # Broadcast to WorldState global_event
+                            states = session.exec(select(WorldState)).all()
+                            for state in states:
+                                state.global_event = event_msg
+                                session.add(state)
+                                
+                            session.commit()
+                            
+                            # Broadcast immediately
+                            await manager.broadcast(json.dumps({"type": "global_event", "event": event_msg}))
+                            
+                            # Lower standing sum so they don't conquer everything instantly
+                            # Reset some players' standings towards this faction
+                            standings = session.exec(select(FactionStanding).where(FactionStanding.faction_id == faction_id)).all()
+                            for s in standings:
+                                s.standing = s.standing * 0.5
+                                session.add(s)
+                            session.commit()
+                            
+        except Exception as e:
+            logger.error(f"Error in faction war simulation: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize DB and start the background world tick
+    # Startup: Initialize DB and start the background tasks
     logger.info("Initializing database...")
     create_db_and_tables()
-    logger.info("Starting world simulation background task...")
+    logger.info("Starting world simulation, market tasks, and faction wars...")
     global world_task
     world_task = asyncio.create_task(world_simulation_loop())
+    asyncio.create_task(simulate_global_market())
+    asyncio.create_task(simulate_faction_wars())
     
     yield
     
@@ -657,3 +737,64 @@ async def fly_airship(airship_id: int, altitude: int, distance: float):
         session.commit()
         session.refresh(ship)
         return ship
+
+class MarketTradeRequest(BaseModel):
+    resource_name: str
+    quantity: int
+    action: str # "buy" or "sell"
+
+@app.get("/market")
+async def get_market():
+    from backend.database import ResourceMarket
+    with get_session() as session:
+        markets = session.exec(select(ResourceMarket)).all()
+        return [{"name": m.resource_name, "price": round(m.current_price, 2)} for m in markets]
+
+@app.post("/market/trade")
+async def trade_market(character_id: int, req: MarketTradeRequest):
+    from backend.database import Character, ResourceMarket, Inventory, Item
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == character_id)).first()
+        market = session.exec(select(ResourceMarket).where(ResourceMarket.resource_name == req.resource_name)).first()
+        if not char or not market:
+            raise HTTPException(status_code=404, detail="Character or Market not found")
+        
+        item = session.exec(select(Item).where(Item.name == req.resource_name)).first()
+        if not item:
+            item = Item(name=req.resource_name, description=f"Raw {req.resource_name}", category="Crafting_Materials")
+            session.add(item)
+            session.commit()
+            session.refresh(item)
+            
+        inv = session.exec(select(Inventory).where(Inventory.character_id == char.id, Inventory.item_id == item.id)).first()
+        
+        total_price = int(market.current_price * req.quantity)
+        
+        if req.action == "buy":
+            if char.brass_coins < total_price:
+                raise HTTPException(status_code=400, detail="Not enough brass coins")
+            char.brass_coins -= total_price
+            if not inv:
+                inv = Inventory(character_id=char.id, item_id=item.id, quantity=req.quantity)
+                session.add(inv)
+            else:
+                inv.quantity += req.quantity
+            market.current_price *= (1.0 + (0.01 * req.quantity))
+        elif req.action == "sell":
+            if not inv or inv.quantity < req.quantity:
+                raise HTTPException(status_code=400, detail="Not enough resources")
+            inv.quantity -= req.quantity
+            char.brass_coins += total_price
+            market.current_price *= (1.0 - (0.01 * req.quantity))
+            market.current_price = max(1.0, market.current_price)
+            
+        session.add(char)
+        session.add(market)
+        session.commit()
+        
+        markets = session.exec(select(ResourceMarket)).all()
+        markets_data = [{"name": m.resource_name, "price": round(m.current_price, 2)} for m in markets]
+        import json
+        asyncio.create_task(manager.broadcast(json.dumps({"type": "market_sync", "market": markets_data})))
+        
+        return {"status": "success", "brass_coins": char.brass_coins, "new_price": round(market.current_price, 2)}

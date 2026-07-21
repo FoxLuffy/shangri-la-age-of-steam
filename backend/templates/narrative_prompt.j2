@@ -21,6 +21,14 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
   - **Memories:** {{ npc.memories }}
 {% endfor %}
 
+{% if ghost_echoes %}
+**Ghost Echoes (Recent Actions of Others Here):**
+{% for echo in ghost_echoes %}
+- {{ echo }}
+{% endfor %}
+(Weave these subtle traces of other players into your narration if it feels naturally atmospheric.)
+{% endif %}
+
 **Player Stats & Wealth:**
 {% if player_stats %}
 - HP: {{ player_stats.hp }}/{{ player_stats.max_hp }}

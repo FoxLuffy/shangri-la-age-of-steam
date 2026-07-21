@@ -107,7 +107,32 @@ class NarrativeEngine:
                 active_npcs=[]
             )
 
-        prompt_str = build_narrative_prompt(state, action)
+        ghost_echoes = []
+        if session:
+            from backend.database import LedgerEntry, Character
+            from sqlmodel import select
+            import random
+            # Get recent actions from other characters in the same location
+            char_id = getattr(getattr(state, "player_stats", None), "id", None)
+            loc_id = getattr(state, "current_location_id", "1")
+            
+            # Fetch up to 10 recent ledger entries in this location, not by this character
+            echo_entries = session.exec(
+                select(LedgerEntry).where(
+                    LedgerEntry.location_id == str(loc_id),
+                    LedgerEntry.character_id != char_id
+                ).order_by(LedgerEntry.created_at.desc()).limit(10)
+            ).all()
+            
+            if echo_entries:
+                # Pick 1-2 random echoes to include as flavor
+                chosen = random.sample(echo_entries, min(2, len(echo_entries)))
+                for entry in chosen:
+                    char = session.get(Character, entry.character_id)
+                    char_name = char.name if char else "A stranger"
+                    ghost_echoes.append(f"{char_name} recently did this here: {entry.action}")
+
+        prompt_str = build_narrative_prompt(state, action, ghost_echoes=ghost_echoes)
 
         full_raw_data = ""
         is_narrating = True

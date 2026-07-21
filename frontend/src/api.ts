@@ -88,6 +88,20 @@ export const generateGear = async (preset: string, gearPrompt: string): Promise<
   return data.items || [];
 };
 
+export const getMarket = async () => {
+  const { data } = await api.get('/market');
+  return data;
+};
+
+export const tradeMarket = async (characterId: number, resourceName: string, quantity: number, action: string) => {
+  const { data } = await api.post(`/market/trade?character_id=${characterId}`, {
+    resource_name: resourceName,
+    quantity,
+    action
+  });
+  return data;
+};
+
 export const toggleTutorials = async (characterId: number, showTutorials: boolean): Promise<{status: string, show_tutorials: boolean}> => {
   const { data } = await api.post(`/characters/${characterId}/settings/tutorials`, { show_tutorials: showTutorials });
   return data;

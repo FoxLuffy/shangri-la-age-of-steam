@@ -36,9 +36,9 @@
 
 ## Phase 3: The Asynchronous Shared World 🌐
 *A living, breathing universe shaped by the community.*
-- [ ] **Global Market Sync:** The `ResourceMarket` connects to a global cloud database. If thousands of players buy Brass, the price skyrockets for everyone worldwide.
-- [ ] **Faction Wars & Global Pledged Standing:** Player actions contribute to a global ledger. If players overwhelmingly support the Iron Syndicate, the Syndicate may permanently take over locations like the Undercity Slums.
-- [ ] **Ghost Echoes:** Players can stumble upon the "echoes" of other players' actions in the world (e.g., arriving at a tavern to hear the bartender complain about a player who started a brawl there an hour ago).
+- [x] **Global Market Sync:** The `ResourceMarket` connects to a global cloud database. If thousands of players buy Brass, the price skyrockets for everyone worldwide.
+- [x] **Faction Wars & Global Pledged Standing:** Player actions contribute to a global ledger. If players overwhelmingly support the Iron Syndicate, the Syndicate may permanently take over locations like the Undercity Slums.
+- [x] **Ghost Echoes:** Players can stumble upon the "echoes" of other players' actions in the world (e.g., arriving at a tavern to hear the bartender complain about a player who started a brawl there an hour ago).
 
 ## Phase 4: Community Modding Ecosystem 🛠️
 *Give the players the keys to the steamworks.*

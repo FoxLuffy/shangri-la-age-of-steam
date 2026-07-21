@@ -2,8 +2,45 @@ import os
 from sqlmodel import Session, select
 from backend.database import create_db_and_tables, engine, Location, NPC, WorldState
 
+def migrate_db():
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE location ADD COLUMN faction_id VARCHAR;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN character_class VARCHAR DEFAULT 'Wanderer';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN background VARCHAR DEFAULT 'A mysterious wanderer with no past.';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN stats JSON DEFAULT '{\"strength\": 5, \"intellect\": 5, \"charm\": 5}';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE recipe ADD COLUMN required_faction_id VARCHAR;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE world_state ADD COLUMN active_automata_ids JSON DEFAULT '[]';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE playeraction ADD COLUMN mood VARCHAR;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE playeraction ADD COLUMN is_exploration BOOLEAN DEFAULT 0;"))
+        except Exception:
+            pass
+
 def seed_data():
     create_db_and_tables()
+    migrate_db()
     with Session(engine) as session:
         # Check if locations exist
         existing_loc = session.exec(select(Location)).first()

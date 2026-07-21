@@ -81,3 +81,12 @@ class DBWorldState(SQLModel, base=Base):
     world_memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
 
 
+class DBLedgerEntry(SQLModel, base=Base):
+    __tablename__ = "ledger_entry"
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    timestamp: datetime = SQLModelField(default_factory=datetime.utcnow)
+    action: str
+    narration: str
+    state_updates: Optional[Dict[str, Any]] = SQLModelField(default=None, sa_column=Column(JSON))
+    events: Optional[List[Dict[str, Any]]] = SQLModelField(default=None, sa_column=Column(JSON))
+    location_id: Optional[str] = None

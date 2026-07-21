@@ -182,3 +182,13 @@ class Airship(SQLModel, table=True):
     current_altitude: int = Field(default=0)
     modules: List[str] = Field(default=[], sa_column=Column(JSON))
 
+class LedgerEntry(SQLModel, table=True):
+    __tablename__ = "ledger_entry"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    timestamp: str = Field(default="")
+    action: str
+    narration: str
+    state_updates: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+    events: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSON))
+    location_id: Optional[str] = None
+

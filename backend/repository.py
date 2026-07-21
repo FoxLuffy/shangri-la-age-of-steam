@@ -113,6 +113,21 @@ class StateRepository:
         self.session.refresh(npc)
         return npc
 
+    def record_ledger_entry(self, action: str, narration: str, state_updates: Dict[str, Any], events: List[Dict[str, Any]], location_id: Optional[str] = None):
+        from backend.database import LedgerEntry
+        from datetime import datetime
+        entry = LedgerEntry(
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            action=action,
+            narration=narration,
+            state_updates=state_updates,
+            events=events,
+            location_id=location_id
+        )
+        self.session.add(entry)
+        self.session.commit()
+        return entry
+
 if __name__ == "__main__":
     with get_session() as session:
         repo = StateRepository(session)

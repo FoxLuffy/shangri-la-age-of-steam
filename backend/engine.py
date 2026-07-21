@@ -145,6 +145,15 @@ class NarrativeEngine:
             if state_updates.get("location_id"):
                 state.current_location_id = state_updates["location_id"]
                 repository.save_state(state)
+                
+        if repository:
+            repository.record_ledger_entry(
+                action=action.action_text,
+                narration=narration,
+                state_updates=state_updates,
+                events=events,
+                location_id=getattr(state, "current_location_id", "1")
+            )
 
         active_npcs = getattr(state, "active_npcs", []) or []
         npc_names = [getattr(npc, "name", str(npc)) for npc in active_npcs]

@@ -147,6 +147,24 @@ export const sendAction = async (
   return finalResult;
 };
 
+export interface LedgerEntry {
+  id: number;
+  timestamp: string;
+  action: string;
+  narration: string;
+  state_updates?: any;
+  events?: any[];
+  location_id?: string;
+}
+
+export async function fetchHistory(limit: number = 50): Promise<LedgerEntry[]> {
+  const response = await fetch(`${BACKEND_URL}/history?limit=${limit}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch history');
+  }
+  return response.json();
+}
+
 export const resetWorldState = async () => {
   const { data } = await api.post('/reset');
   return data;

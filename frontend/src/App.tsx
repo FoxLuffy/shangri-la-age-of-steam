@@ -38,12 +38,20 @@ function App() {
     return <CharacterCreation onComplete={setCharacterId} />;
   }
 
+  const handleRetireCharacter = () => {
+    if (confirm("Are you sure you want to retire this character? This will allow you to create a new one.")) {
+      setCharacterId(null);
+      setCharacter(null);
+      localStorage.removeItem('saos_char_id');
+    }
+  };
+
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full">
         <ChatInterface />
       </div>
-      <StatsPanel character={character} />
+      <StatsPanel character={character} onReset={handleRetireCharacter} />
     </div>
   );
 }

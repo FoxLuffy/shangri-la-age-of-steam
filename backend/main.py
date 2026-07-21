@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
@@ -250,4 +251,44 @@ async def generate_npc_endpoint(flavor: str = "industrial"):
     with get_session() as session:
         npc = generate_procedural_npc(session, location_flavor=flavor)
         return npc
+
+class CharacterCreateRequest(BaseModel):
+    name: str
+    preset: str = "Wanderer"
+
+PRESETS = {
+    "Aristocrat": {
+        "background": "Wealthy heir to a steam-engine fortune.",
+        "stats": {"strength": 3, "intellect": 7, "charm": 8}
+    },
+    "Scrapper": {
+        "background": "Grew up in the lower brass-works fighting for scraps.",
+        "stats": {"strength": 8, "intellect": 4, "charm": 3}
+    },
+    "Alchemist": {
+        "background": "Former student of the Transmutation Academy.",
+        "stats": {"strength": 3, "intellect": 9, "charm": 4}
+    },
+    "Wanderer": {
+        "background": "A mysterious wanderer with no past.",
+        "stats": {"strength": 5, "intellect": 5, "charm": 5}
+    }
+}
+
+@app.post("/characters")
+async def create_character(req: CharacterCreateRequest):
+    """Create a new character from a preset."""
+    from backend.database import Character
+    preset_data = PRESETS.get(req.preset, PRESETS["Wanderer"])
+    with get_session() as session:
+        char = Character(
+            name=req.name,
+            character_class=req.preset,
+            background=preset_data["background"],
+            stats=preset_data["stats"]
+        )
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+        return char
 

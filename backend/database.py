@@ -85,6 +85,9 @@ class QuestStateEnum(str, Enum):
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+    character_class: Optional[str] = Field(default="Wanderer")
+    background: Optional[str] = Field(default="A mysterious wanderer with no past.")
+    stats: Dict[str, int] = Field(default={"strength": 5, "intellect": 5, "charm": 5}, sa_column=Column(JSON))
 
 class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

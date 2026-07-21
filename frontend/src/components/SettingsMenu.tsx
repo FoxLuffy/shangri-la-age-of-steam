@@ -42,6 +42,32 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
               {loading ? '...' : showTutorials ? 'Enabled' : 'Disabled'}
             </button>
           </div>
+
+          <div className="flex flex-col gap-3 p-4 border border-amber-900/30 bg-slate-800/30">
+            <div>
+              <div className="text-sm uppercase text-amber-400">Narrator Speed</div>
+              <div className="text-xs text-amber-600/70 mt-1">Adjust how fast the narrator's text streams into the log.</div>
+            </div>
+            <div className="flex gap-2">
+              {['Fast', 'Normal', 'Slow'].map(speed => (
+                <button
+                  key={speed}
+                  onClick={() => {
+                    localStorage.setItem('saos_narrator_speed', speed);
+                    // Force re-render to show active state
+                    setLoading(true); setTimeout(() => setLoading(false), 50);
+                  }}
+                  className={`flex-1 py-2 text-xs uppercase tracking-wider border ${
+                    (localStorage.getItem('saos_narrator_speed') || 'Fast') === speed
+                      ? 'bg-amber-900/40 border-amber-500 text-amber-400 font-bold'
+                      : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  {speed}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ class VLLMClient:
         if not api_base:
             api_base = os.environ.get("VLLM_SERVER_URL") or os.environ.get("VLLM_API_BASE", "http://localhost:8000/v1")
         self.api_base = api_base.rstrip('/')
-        self.model = model or os.environ.get("VLLM_MODEL", "default")
+        self.model = model or os.environ.get("VLLM_MODEL", "gemma-4")
         self.timeout = timeout
         api_key = os.environ.get("VLLM_API_KEY", "NONE")
         self.headers = {"Authorization": f"Bearer {api_key}"}

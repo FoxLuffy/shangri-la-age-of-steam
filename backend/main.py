@@ -4,9 +4,10 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import shutil
 from pydantic import BaseModel
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
@@ -162,6 +163,26 @@ async def reset_database():
         repo = StateRepository(session)
         state = repo.get_latest_state()
         return {"status": "reset", "state": state}
+
+@app.get("/export")
+async def export_save():
+    db_path = os.getenv("DATABASE_PATH", "saos.db")
+    if not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Database file not found.")
+    return FileResponse(path=db_path, filename="saos_save.db", media_type="application/octet-stream")
+
+@app.post("/import")
+async def import_save(file: UploadFile = File(...)):
+    db_path = os.getenv("DATABASE_PATH", "saos.db")
+    try:
+        with open(db_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Optionally, verify the database or trigger any post-import hooks here.
+        # It's important the client calls /state immediately after to refresh data.
+        return {"status": "success", "message": "Save state imported successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to import save: {str(e)}")
 
 @app.get("/inventory")
 async def get_inventory(character_id: int):

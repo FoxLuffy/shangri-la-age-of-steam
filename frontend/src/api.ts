@@ -1,5 +1,5 @@
 import axios from 'axios';
-let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8003';
+export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8003';
 
 if (typeof window !== 'undefined' && !import.meta.env.VITE_BACKEND_URL) {
   if (window.location.hostname.match(/^\d+-/)) {
@@ -172,3 +172,15 @@ export const resetWorldState = async () => {
   const { data } = await api.post('/reset');
   return data;
 };
+
+export const importWorldState = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};
+

@@ -1,6 +1,6 @@
 import type { Character } from '../api';
 
-export default function StatsPanel({ character, worldState, onReset, onOpenEmpire }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void }) {
+export default function StatsPanel({ character, worldState, onReset, onOpenEmpire, onOpenSettings }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void, onOpenSettings?: () => void }) {
   return (
     <div className="w-64 bg-slate-900 border-l border-amber-900/30 flex flex-col p-4 overflow-y-auto">
       <div className="text-xs font-mono text-amber-600/70 uppercase tracking-widest mb-4 border-b border-amber-900/30 pb-2">
@@ -123,7 +123,14 @@ export default function StatsPanel({ character, worldState, onReset, onOpenEmpir
         </div>
       )}
 
-      <div className="mt-auto pt-4 border-t border-amber-900/30">
+      <div className="mt-auto pt-4 border-t border-amber-900/30 space-y-2">
+        <button
+          onClick={onOpenSettings}
+          className="w-full px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-300 border border-slate-700 hover:border-amber-700/50 rounded transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
+          title="Game Settings"
+        >
+          <span>⚙️</span> Settings
+        </button>
         <button
           onClick={onReset}
           className="w-full px-3 py-2 text-xs bg-slate-800 hover:bg-rose-900/40 text-rose-400/80 hover:text-rose-400 border border-slate-700 hover:border-rose-800/40 rounded transition-all flex items-center justify-center gap-2 uppercase tracking-wider"

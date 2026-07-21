@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../api';
+import TutorialBox from './TutorialBox';
+import type { Character } from '../api';
 
-export default function MinigamePanel({ minigame, onComplete }: { minigame: any, onComplete: () => void }) {
+export default function MinigamePanel({ minigame, character, onComplete }: { minigame: any, character: Character, onComplete: () => void }) {
   const [state, setState] = useState(minigame.state);
   const [loading, setLoading] = useState(false);
 
@@ -89,12 +91,18 @@ export default function MinigamePanel({ minigame, onComplete }: { minigame: any,
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-      <div className="w-[400px] border border-amber-900/50 bg-slate-900 p-6 shadow-2xl relative">
+      <div className="w-[400px] border border-amber-900/50 bg-slate-900 p-6 shadow-2xl relative flex flex-col gap-4">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-rose-500"></div>
-        <h2 className="text-xl font-serif text-amber-500 mb-4 uppercase tracking-widest text-center">
+        <h2 className="text-xl font-serif text-amber-500 uppercase tracking-widest text-center">
           {minigame.type === 'hack' ? 'Terminal Override' : 'Lockpicking'}
         </h2>
         
+        <TutorialBox 
+          title="Minigame Mechanics" 
+          message={minigame.type === 'hack' ? "Guess the correct character sequence to bypass the terminal. The narrator might offer hints in the narrative!" : "Carefully align the tumblers. Remember that rushing might break your pick."}
+          isEnabled={character.show_tutorials} 
+        />
+
         <div className="min-h-[200px] flex items-center justify-center">
           {minigame.type === 'hack' && renderHackGame()}
           {minigame.type === 'lockpick' && renderLockpickGame()}

@@ -70,6 +70,7 @@ export interface Character {
     intellect: number;
     charm: number;
   };
+  show_tutorials: boolean;
 }
 
 export const fetchCharacter = async (characterId: number): Promise<Character> => {
@@ -77,8 +78,13 @@ export const fetchCharacter = async (characterId: number): Promise<Character> =>
   return data;
 };
 
-export const createCharacter = async (name: string, preset: string, gearPrompt: string = ""): Promise<Character> => {
-  const { data } = await api.post('/characters', { name, preset, gear_prompt: gearPrompt });
+export const createCharacter = async (name: string, preset: string, gearPrompt: string = "", showTutorials: boolean = true): Promise<Character> => {
+  const { data } = await api.post('/characters', { name, preset, gear_prompt: gearPrompt, show_tutorials: showTutorials });
+  return data;
+};
+
+export const toggleTutorials = async (characterId: number, showTutorials: boolean): Promise<{status: string, show_tutorials: boolean}> => {
+  const { data } = await api.post(`/characters/${characterId}/settings/tutorials`, { show_tutorials: showTutorials });
   return data;
 };
 

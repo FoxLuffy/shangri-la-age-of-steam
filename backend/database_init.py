@@ -62,6 +62,10 @@ def migrate_db():
         except Exception:
             pass
         try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN show_tutorials BOOLEAN DEFAULT 1;"))
+        except Exception:
+            pass
+        try:
             conn.execute(text("ALTER TABLE world_state ADD COLUMN is_combat_active BOOLEAN DEFAULT 0;"))
         except Exception:
             pass

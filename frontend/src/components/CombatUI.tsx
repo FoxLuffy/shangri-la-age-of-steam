@@ -1,10 +1,12 @@
-
+import TutorialBox from './TutorialBox';
+import type { Character } from '../api';
 
 interface CombatUIProps {
   worldState: any;
+  character: Character;
 }
 
-export default function CombatUI({ worldState }: CombatUIProps) {
+export default function CombatUI({ worldState, character }: CombatUIProps) {
   if (!worldState || !worldState.is_combat_active) {
     return null;
   }
@@ -15,6 +17,13 @@ export default function CombatUI({ worldState }: CombatUIProps) {
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4 flex flex-col gap-4 pointer-events-none">
+      <div className="pointer-events-auto">
+        <TutorialBox 
+          title="Combat HUD" 
+          message="Type your combat actions in the chat! You can attack directly, use the environment, or attempt to flee. Watch your Vitality and Steam levels below." 
+          isEnabled={character.show_tutorials} 
+        />
+      </div>
       
       {/* Enemy Health Bars */}
       <div className="flex flex-col gap-2 pointer-events-auto items-center">

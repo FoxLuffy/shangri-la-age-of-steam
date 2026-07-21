@@ -1,4 +1,7 @@
-export default function EmpireUI({ worldState, onClose }: { worldState: any, onClose: () => void }) {
+import TutorialBox from './TutorialBox';
+import type { Character } from '../api';
+
+export default function EmpireUI({ worldState, character, onClose }: { worldState: any, character: Character, onClose: () => void }) {
   if (!worldState) return null;
 
   const playerProperties = worldState.properties?.filter((p: any) => p.owner_id === worldState.player_stats?.id) || [];
@@ -32,9 +35,15 @@ export default function EmpireUI({ worldState, onClose }: { worldState: any, onC
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 flex gap-6">
-          <div className="flex-1">
-            <h3 className="text-sm text-amber-600/70 font-mono uppercase tracking-widest mb-4 pb-2 border-b border-amber-900/30">Your Holdings</h3>
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          <TutorialBox 
+            title="Empire Management" 
+            message="Purchase properties in the narrative by asking the Narrator. Owned properties generate passive Brass Coins over time. You can also ask the narrator to hire NPCs for your properties to gain additional benefits!" 
+            isEnabled={character.show_tutorials} 
+          />
+          <div className="flex gap-6">
+            <div className="flex-1">
+              <h3 className="text-sm text-amber-600/70 font-mono uppercase tracking-widest mb-4 pb-2 border-b border-amber-900/30">Your Holdings</h3>
             {playerProperties.length === 0 ? (
               <div className="text-amber-100/40 text-center py-8 italic font-serif">
                 You own no properties. Invest your brass to build an empire.
@@ -92,6 +101,7 @@ export default function EmpireUI({ worldState, onClose }: { worldState: any, onC
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>

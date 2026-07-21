@@ -8,6 +8,8 @@ import EmpireUI from './components/EmpireUI';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
 
+import SettingsMenu from './components/SettingsMenu';
+
 function App() {
   const [characterId, setCharacterId] = useState<number | null>(() => {
     const saved = localStorage.getItem('saos_char_id');
@@ -54,14 +56,16 @@ function App() {
   const [showCombat, setShowCombat] = useState(false);
   const [showMinigame, setShowMinigame] = useState(false);
   const [showEmpire, setShowEmpire] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const activeMinigame = worldState?.active_minigame;
 
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
-        {showCombat && <CombatUI worldState={worldState} />}
-        {showEmpire && <EmpireUI worldState={worldState} onClose={() => setShowEmpire(false)} />}
+        {showCombat && <CombatUI worldState={worldState} character={character} />}
+        {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
+        {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
         <ChatInterface 
           onStateUpdate={setWorldState} 
           onOpenCombat={() => setShowCombat(true)}
@@ -70,6 +74,7 @@ function App() {
         {showMinigame && activeMinigame && (
           <MinigamePanel 
             minigame={activeMinigame} 
+            character={character}
             onComplete={() => {
               setShowMinigame(false);
               setWorldState({ ...worldState, active_minigame: null });
@@ -77,7 +82,13 @@ function App() {
           />
         )}
       </div>
-      <StatsPanel character={character} worldState={worldState} onReset={handleRetireCharacter} onOpenEmpire={() => setShowEmpire(true)} />
+      <StatsPanel 
+        character={character} 
+        worldState={worldState} 
+        onReset={handleRetireCharacter} 
+        onOpenEmpire={() => setShowEmpire(true)} 
+        onOpenSettings={() => setShowSettings(true)}
+      />
     </div>
   );
 }

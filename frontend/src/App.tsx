@@ -3,6 +3,7 @@ import ChatInterface from './components/ChatInterface';
 import CharacterCreation from './components/CharacterCreation';
 import StatsPanel from './components/StatsPanel';
 import MinigamePanel from './components/MinigamePanel';
+import CombatUI from './components/CombatUI';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
 
@@ -54,6 +55,7 @@ function App() {
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
+        <CombatUI worldState={worldState} />
         <ChatInterface onStateUpdate={setWorldState} />
         {activeMinigame && (
           <MinigamePanel 

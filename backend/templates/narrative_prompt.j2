@@ -13,11 +13,23 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 
 **Active NPCs:**
 {% for npc in npc_contexts %}
-- **Name:** {{ npc.name }}
-- **Traits:** {{ npc.traits | join(', ') }}
-- **Disposition:** {{ npc.disposition | round(2) }}
-- **Memories:** {{ npc.memories }}
+- **Name:** {{ npc.name }} (ID: {{ npc.id if npc.id else 'unknown' }})
+  - **HP:** {{ npc.hp if npc.hp else 100 }}/{{ npc.max_hp if npc.max_hp else 100 }}, **Armor:** {{ npc.armor if npc.armor else 0 }}
+  - **Status:** {{ npc.status_effects | join(', ') if npc.status_effects else 'None' }}
+  - **Traits:** {{ npc.traits | join(', ') }}
+  - **Disposition:** {{ npc.disposition | round(2) }}
+  - **Memories:** {{ npc.memories }}
 {% endfor %}
+
+**Player Combat Stats:**
+{% if player_stats %}
+- HP: {{ player_stats.hp }}/{{ player_stats.max_hp }}
+- Steam: {{ player_stats.steam }}/{{ player_stats.max_steam }}
+- Armor: {{ player_stats.armor }}
+- Status Effects: {{ player_stats.status_effects | join(', ') if player_stats.status_effects else 'None' }}
+{% endif %}
+**Is Combat Active?**: {{ is_combat_active }}
+
 
 **Inventory:**
 {% for item in inventory %}
@@ -76,5 +88,25 @@ If the player acquires or loses an item, or a quest is given/progresses, reflect
       "change": 0.1
     }
   ],
-  "minigame_trigger": "Only include this key with value 'hack' or 'lockpick' if the player attempts a complex sabotage, deciphering, or unlocking action."
+  "minigame_trigger": "Only include this key with value 'hack' or 'lockpick' if the player attempts a complex sabotage, deciphering, or unlocking action.",
+  "combat_updates": {
+    "is_combat_active": true,
+    "player_updates": {
+      "hp_change": 0,
+      "steam_change": -10,
+      "status_effects_add": ["Bleeding"],
+      "status_effects_remove": []
+    },
+    "npc_updates": [
+      {
+        "npc_id": "npc_1",
+        "hp_change": -20,
+        "status_effects_add": ["Stunned"]
+      }
+    ]
+  }
 }
+
+### CRITICAL RULES:
+1. ONLY return the JSON. No other text.
+2. If the player is in combat, deduct their Steam when they use abilities, and reduce HP if they take hits. If combat ends, set `is_combat_active` to false.

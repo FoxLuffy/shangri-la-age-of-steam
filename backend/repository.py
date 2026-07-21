@@ -42,7 +42,13 @@ class StateRepository:
                     traits=db_npc.traits or [],
                     current_dialogue=db_npc.current_dialogue,
                     disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
-                    memories=db_npc.memories or []
+                    memories=db_npc.memories or [],
+                    faction_id=db_npc.faction_id,
+                    hp=db_npc.hp,
+                    max_hp=db_npc.max_hp,
+                    armor=db_npc.armor,
+                    status_effects=db_npc.status_effects or [],
+                    is_hostile=db_npc.is_hostile
                 ))
 
         from backend.database import Inventory, Item, Quest, QuestState, Character
@@ -108,7 +114,16 @@ class StateRepository:
             inventory=inventory_list,
             quests=quests_list,
             factions=factions_list if 'factions_list' in locals() else [],
-            active_minigame=active_minigame
+            active_minigame=active_minigame,
+            is_combat_active=db_state.is_combat_active if db_state else False,
+            player_stats={
+                "hp": char.hp,
+                "max_hp": char.max_hp,
+                "armor": char.armor,
+                "steam": char.steam,
+                "max_steam": char.max_steam,
+                "status_effects": char.status_effects or []
+            } if char else None
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -304,6 +319,56 @@ class StateRepository:
         fs.standing = max(-1.0, min(1.0, fs.standing))
         
         self.session.add(fs)
+        self.session.commit()
+
+    def apply_combat_update(self, update: Dict[str, Any]):
+        from backend.database import Character, NPC, WorldState as DBWorldState
+        char_id = 1
+        
+        # Update WorldState is_combat_active
+        db_state = self.session.exec(select(DBWorldState)).first()
+        if db_state and "is_combat_active" in update:
+            db_state.is_combat_active = update["is_combat_active"]
+            self.session.add(db_state)
+            
+        # Update Player
+        player_updates = update.get("player_updates", {})
+        if player_updates:
+            char = self.session.get(Character, char_id)
+            if char:
+                char.hp += player_updates.get("hp_change", 0)
+                char.steam += player_updates.get("steam_change", 0)
+                char.hp = max(0, min(char.max_hp, char.hp))
+                char.steam = max(0, min(char.max_steam, char.steam))
+                
+                # Handling status effects
+                current_effects = set(char.status_effects or [])
+                for eff in player_updates.get("status_effects_add", []):
+                    current_effects.add(eff)
+                for eff in player_updates.get("status_effects_remove", []):
+                    current_effects.discard(eff)
+                char.status_effects = list(current_effects)
+                self.session.add(char)
+                
+        # Update NPCs
+        npc_updates = update.get("npc_updates", [])
+        for npc_u in npc_updates:
+            npc_id = npc_u.get("npc_id")
+            if not npc_id:
+                continue
+            npc = self.session.get(NPC, npc_id)
+            if npc:
+                npc.hp += npc_u.get("hp_change", 0)
+                npc.hp = max(0, min(npc.max_hp, npc.hp))
+                
+                current_effects = set(npc.status_effects or [])
+                for eff in npc_u.get("status_effects_add", []):
+                    current_effects.add(eff)
+                for eff in npc_u.get("status_effects_remove", []):
+                    current_effects.discard(eff)
+                npc.status_effects = list(current_effects)
+                self.session.add(npc)
+                
         self.session.commit()
 
 if __name__ == "__main__":

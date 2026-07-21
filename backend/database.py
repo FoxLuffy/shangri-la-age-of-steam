@@ -38,6 +38,13 @@ class NPC(SQLModel, table=True):
     faction_id: Optional[str] = Field(default=None, foreign_key="faction.id")
     location: Optional[Location] = Relationship()
 
+    # Combat Stats
+    hp: int = Field(default=100)
+    max_hp: int = Field(default=100)
+    armor: int = Field(default=0)
+    status_effects: List[str] = Field(default=[], sa_column=Column(JSON))
+    is_hostile: bool = Field(default=False)
+
 class WorldState(SQLModel, table=True):
     __tablename__ = "world_state"
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -46,11 +53,13 @@ class WorldState(SQLModel, table=True):
     active_automata_ids: List[int] = Field(default=[], sa_column=Column(JSON))
     global_event: Optional[str] = None
     world_memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
+    is_combat_active: bool = Field(default=False)
 
 class PlayerAction(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     action_text: str
     current_location_id: str
+    timestamp: str
     mood: Optional[str] = None
     is_exploration: bool = Field(default=False)
 
@@ -68,9 +77,9 @@ class RawResponse(SQLModel, table=True):
 class NarrativeResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     narration: str
-    state_updates: Optional[str] = Field(default=None, sa_column=Column(JSON))
+    state_updates: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     npcs: List[str] = Field(default=[], sa_column=Column(JSON))
-    events: Optional[str] = Field(default=None, sa_column=Column(JSON))
+    events: List[str] = Field(default=[], sa_column=Column(JSON))
 
 class ItemCategory(str, Enum):
     consumables = "Consumables"
@@ -101,6 +110,14 @@ class Character(SQLModel, table=True):
     character_class: Optional[str] = Field(default="Wanderer")
     background: Optional[str] = Field(default="A mysterious wanderer with no past.")
     stats: Dict[str, int] = Field(default={"strength": 5, "intellect": 5, "charm": 5}, sa_column=Column(JSON))
+    
+    # Combat Stats
+    hp: int = Field(default=100)
+    max_hp: int = Field(default=100)
+    armor: int = Field(default=5)
+    steam: int = Field(default=100)
+    max_steam: int = Field(default=100)
+    status_effects: List[str] = Field(default=[], sa_column=Column(JSON))
 
 class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

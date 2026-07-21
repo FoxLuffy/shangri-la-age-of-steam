@@ -22,6 +22,13 @@ class NPC(BaseModel):
     disposition: float = 0.0  # Range -1.0 (Hostile) to 1.0 (Friendly)
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
     faction_id: Optional[str] = None
+    
+    # Combat
+    hp: int = 100
+    max_hp: int = 100
+    armor: int = 0
+    status_effects: List[str] = []
+    is_hostile: bool = False
 
 class FactionStandingModel(BaseModel):
     faction_id: str
@@ -40,6 +47,8 @@ class WorldState(BaseModel):
     quests: List[Dict[str, Any]] = []
     factions: List[FactionStandingModel] = []
     active_minigame: Optional[Dict[str, Any]] = None
+    is_combat_active: bool = False
+    player_stats: Optional[Dict[str, Any]] = None
 
 class PlayerAction(BaseModel):
     action_text: str
@@ -63,6 +72,7 @@ class NarrativeResult(BaseModel):
     state_updates: Optional[Dict[str, Any]] = None
     npcs: Union[List[str], str] = []
     events: Optional[List[Dict[str, Any]]] = None
+    is_combat_active: bool = False
 
 # Database Models (SQLModel)
 

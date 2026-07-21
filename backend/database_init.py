@@ -14,6 +14,54 @@ def migrate_db():
         except Exception:
             pass
         try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN hp INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN max_hp INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN armor INTEGER DEFAULT 0;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN status_effects JSON DEFAULT '[]';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE npc ADD COLUMN is_hostile BOOLEAN DEFAULT 0;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN hp INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN max_hp INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN armor INTEGER DEFAULT 5;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN steam INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN max_steam INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN status_effects JSON DEFAULT '[]';"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE world_state ADD COLUMN is_combat_active BOOLEAN DEFAULT 0;"))
+        except Exception:
+            pass
+        try:
             conn.execute(text("ALTER TABLE character ADD COLUMN character_class VARCHAR DEFAULT 'Wanderer';"))
         except Exception:
             pass

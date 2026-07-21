@@ -186,6 +186,9 @@ class NarrativeEngine:
                     if isinstance(faction_update, dict):
                         repository.apply_faction_update(faction_update)
 
+            if "combat_updates" in state_updates:
+                repository.apply_combat_update(state_updates["combat_updates"])
+
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]
                 if minigame_type in ["hack", "lockpick"]:
@@ -211,7 +214,8 @@ class NarrativeEngine:
             "narration": narration,
             "state_updates": state_updates,
             "npcs": npc_names,
-            "events": events or []
+            "events": events or [],
+            "is_combat_active": getattr(state, "is_combat_active", False)
         }
 
 from sqlmodel import select

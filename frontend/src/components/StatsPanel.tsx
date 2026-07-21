@@ -1,16 +1,28 @@
 import type { Character } from '../api';
 
-export default function StatsPanel({ character, worldState, onReset }: { character: Character, worldState?: any, onReset: () => void }) {
+export default function StatsPanel({ character, worldState, onReset, onOpenEmpire }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void }) {
   return (
     <div className="w-64 bg-slate-900 border-l border-amber-900/30 flex flex-col p-4 overflow-y-auto">
       <div className="text-xs font-mono text-amber-600/70 uppercase tracking-widest mb-4 border-b border-amber-900/30 pb-2">
         Dossier
       </div>
 
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-xl font-serif text-amber-500 mb-1">{character.name}</h2>
         <div className="text-sm text-amber-400 font-mono uppercase">{character.character_class}</div>
       </div>
+
+      {worldState && (
+        <div className="mb-6 p-2 bg-slate-800/50 border border-amber-900/30 rounded flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors" onClick={onOpenEmpire}>
+          <div>
+            <div className="text-[10px] text-amber-600/70 uppercase font-mono">Wealth</div>
+            <div className="text-sm font-mono text-amber-400">{worldState.brass_coins || 0} Coins</div>
+          </div>
+          <button className="text-xs px-2 py-1 bg-amber-900/40 text-amber-500 rounded border border-amber-900 hover:bg-amber-800/60 uppercase tracking-wider">
+            Empire
+          </button>
+        </div>
+      )}
 
       <div className="mb-6">
         <div className="text-xs text-amber-600/70 uppercase mb-2">Stats</div>

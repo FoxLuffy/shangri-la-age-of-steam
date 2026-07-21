@@ -118,6 +118,27 @@ class Character(SQLModel, table=True):
     steam: int = Field(default=100)
     max_steam: int = Field(default=100)
     status_effects: List[str] = Field(default=[], sa_column=Column(JSON))
+    # Empire & Wealth
+    brass_coins: int = Field(default=100)
+
+class Property(SQLModel, table=True):
+    __tablename__ = "property"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: str
+    location_id: str = Field(foreign_key="location.id", index=True)
+    owner_id: Optional[int] = Field(default=None, foreign_key="character.id")
+    price: int = Field(default=1000)
+    income_per_tick: int = Field(default=10)
+    property_type: str = Field(default="factory")
+
+class Worker(SQLModel, table=True):
+    __tablename__ = "worker"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    npc_id: str = Field(foreign_key="npc.id", index=True)
+    property_id: int = Field(foreign_key="property.id", index=True)
+    role: str = Field(default="laborer")
+    salary: int = Field(default=5)
 
 class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

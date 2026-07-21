@@ -101,8 +101,24 @@ class StateRepository:
                 }
             else:
                 active_minigame = None
+                
+            from backend.database import Property, Worker
+            properties_list = []
+            all_props = self.session.exec(select(Property)).all()
+            for p in all_props:
+                properties_list.append({
+                    "id": p.id,
+                    "name": p.name,
+                    "description": p.description,
+                    "location_id": p.location_id,
+                    "owner_id": p.owner_id,
+                    "price": p.price,
+                    "income_per_tick": p.income_per_tick,
+                    "property_type": p.property_type
+                })
         else:
             active_minigame = None
+            properties_list = []
 
         return WorldState(
             current_location_id=current_location.id,
@@ -117,13 +133,16 @@ class StateRepository:
             active_minigame=active_minigame,
             is_combat_active=db_state.is_combat_active if db_state else False,
             player_stats={
+                "id": char.id if char else 1,
                 "hp": char.hp,
                 "max_hp": char.max_hp,
                 "armor": char.armor,
                 "steam": char.steam,
                 "max_steam": char.max_steam,
                 "status_effects": char.status_effects or []
-            } if char else None
+            } if char else None,
+            properties=properties_list,
+            brass_coins=char.brass_coins if char else 0
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -370,6 +389,32 @@ class StateRepository:
                 self.session.add(npc)
                 
         self.session.commit()
+
+    def apply_empire_update(self, update: Dict[str, Any]):
+        from backend.database import Character, Property, Worker
+        char_id = 1
+        char = self.session.get(Character, char_id)
+        if char:
+            coins_change = update.get("brass_coins_change", 0)
+            char.brass_coins += coins_change
+            self.session.add(char)
+            
+            bought = update.get("properties_bought", [])
+            for prop_id in bought:
+                prop = self.session.get(Property, prop_id)
+                if prop and prop.owner_id is None:
+                    prop.owner_id = char.id
+                    self.session.add(prop)
+                    
+            hired = update.get("workers_hired", [])
+            for worker_info in hired:
+                npc_id = worker_info.get("npc_id")
+                prop_id = worker_info.get("property_id")
+                if npc_id and prop_id:
+                    worker = Worker(npc_id=npc_id, property_id=prop_id, role=worker_info.get("role", "laborer"), salary=worker_info.get("salary", 5))
+                    self.session.add(worker)
+            
+            self.session.commit()
 
 if __name__ == "__main__":
     with get_session() as session:

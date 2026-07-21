@@ -35,6 +35,23 @@ class FactionStandingModel(BaseModel):
     faction_name: str
     standing: float
 
+class PropertyModel(BaseModel):
+    id: int
+    name: str
+    description: str
+    location_id: str
+    owner_id: Optional[int] = None
+    price: int
+    income_per_tick: int
+    property_type: str
+
+class WorkerModel(BaseModel):
+    id: int
+    npc_id: str
+    property_id: int
+    role: str
+    salary: int
+
 class WorldState(BaseModel):
     current_location_id: Optional[str] = "1"
     active_npcs_ids: Union[List[str], str] = []
@@ -49,6 +66,8 @@ class WorldState(BaseModel):
     active_minigame: Optional[Dict[str, Any]] = None
     is_combat_active: bool = False
     player_stats: Optional[Dict[str, Any]] = None
+    properties: List[PropertyModel] = []
+    brass_coins: int = 0
 
 class PlayerAction(BaseModel):
     action_text: str

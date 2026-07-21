@@ -189,6 +189,9 @@ class NarrativeEngine:
             if "combat_updates" in state_updates:
                 repository.apply_combat_update(state_updates["combat_updates"])
 
+            if "empire_updates" in state_updates:
+                repository.apply_empire_update(state_updates["empire_updates"])
+
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]
                 if minigame_type in ["hack", "lockpick"]:
@@ -336,8 +339,20 @@ async def world_tick():
     logger.info("World tick started.")
     await scan_locations_and_trigger_interactions()
     
-    from backend.database import get_session
+    from backend.database import get_session, Property, Character
     with get_session() as session:
         simulate_economy_tick(session)
+        
+        # Passive Income Generation
+        char_id = 1
+        char = session.get(Character, char_id)
+        if char:
+            properties = session.exec(select(Property).where(Property.owner_id == char_id)).all()
+            total_income = sum(p.income_per_tick for p in properties)
+            if total_income > 0:
+                char.brass_coins += total_income
+                session.add(char)
+                session.commit()
+                logger.info(f"Passive income generated: {total_income} coins for Character {char_id}")
         
     logger.info("World tick completed.")

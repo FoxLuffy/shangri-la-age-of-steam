@@ -4,6 +4,7 @@ import CharacterCreation from './components/CharacterCreation';
 import StatsPanel from './components/StatsPanel';
 import MinigamePanel from './components/MinigamePanel';
 import CombatUI from './components/CombatUI';
+import EmpireUI from './components/EmpireUI';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
 
@@ -52,6 +53,7 @@ function App() {
 
   const [showCombat, setShowCombat] = useState(false);
   const [showMinigame, setShowMinigame] = useState(false);
+  const [showEmpire, setShowEmpire] = useState(false);
 
   const activeMinigame = worldState?.active_minigame;
 
@@ -59,6 +61,7 @@ function App() {
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
         {showCombat && <CombatUI worldState={worldState} />}
+        {showEmpire && <EmpireUI worldState={worldState} onClose={() => setShowEmpire(false)} />}
         <ChatInterface 
           onStateUpdate={setWorldState} 
           onOpenCombat={() => setShowCombat(true)}
@@ -74,7 +77,7 @@ function App() {
           />
         )}
       </div>
-      <StatsPanel character={character} worldState={worldState} onReset={handleRetireCharacter} />
+      <StatsPanel character={character} worldState={worldState} onReset={handleRetireCharacter} onOpenEmpire={() => setShowEmpire(true)} />
     </div>
   );
 }

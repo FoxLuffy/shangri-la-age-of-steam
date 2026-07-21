@@ -58,6 +58,10 @@ def migrate_db():
         except Exception:
             pass
         try:
+            conn.execute(text("ALTER TABLE character ADD COLUMN brass_coins INTEGER DEFAULT 100;"))
+        except Exception:
+            pass
+        try:
             conn.execute(text("ALTER TABLE world_state ADD COLUMN is_combat_active BOOLEAN DEFAULT 0;"))
         except Exception:
             pass
@@ -196,8 +200,15 @@ def seed_data():
             res3 = ResourceMarket(resource_name="Aether", base_price=150.0, current_price=150.0, volatility=0.25)
             session.add_all([res1, res2, res3])
             
+            # Seed Properties
+            from backend.database import Property
+            prop1 = Property(name="Abandoned Warehouse", description="A dusty warehouse near the docks, suitable for a small factory.", location_id="1", price=500, income_per_tick=25, property_type="factory")
+            prop2 = Property(name="Clockwork Boutique", description="A small retail space in the plaza.", location_id="2", price=1200, income_per_tick=50, property_type="shop")
+            prop3 = Property(name="Grand Foundry Workshop", description="An industrial scale smelting facility.", location_id="3", price=5000, income_per_tick=200, property_type="factory")
+            session.add_all([prop1, prop2, prop3])
+            
             session.commit()
-            print("Database seeded with initial locations, NPCs, WorldState, and ResourceMarket.")
+            print("Database seeded with initial locations, NPCs, WorldState, Properties, and ResourceMarket.")
         else:
             print("Database already contains data.")
 

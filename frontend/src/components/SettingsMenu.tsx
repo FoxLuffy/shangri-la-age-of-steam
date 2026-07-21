@@ -1,0 +1,49 @@
+import { useState } from 'react';
+import { toggleTutorials } from '../api';
+import type { Character } from '../api';
+
+export default function SettingsMenu({ character, onClose, onUpdateCharacter }: { character: Character, onClose: () => void, onUpdateCharacter: (char: Character) => void }) {
+  const [showTutorials, setShowTutorials] = useState(character.show_tutorials);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggle = async () => {
+    setLoading(true);
+    try {
+      const result = await toggleTutorials(character.id, !showTutorials);
+      setShowTutorials(result.show_tutorials);
+      onUpdateCharacter({ ...character, show_tutorials: result.show_tutorials });
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-8 font-mono">
+      <div className="bg-slate-900 border-2 border-amber-900/50 shadow-2xl shadow-amber-900/20 max-w-md w-full flex flex-col">
+        <div className="p-4 border-b border-amber-900/30 bg-slate-800/50 flex justify-between items-center">
+          <h2 className="text-xl text-amber-500 uppercase tracking-widest font-serif">Settings</h2>
+          <button onClick={onClose} className="text-amber-500 hover:text-amber-300 text-2xl px-2">✕</button>
+        </div>
+        
+        <div className="p-6 space-y-6 text-amber-100">
+          <div className="flex items-center justify-between p-4 border border-amber-900/30 bg-slate-800/30">
+            <div>
+              <div className="text-sm uppercase text-amber-400">Interactive Tutorials</div>
+              <div className="text-xs text-amber-600/70 mt-1">Show tutorial overlays on new screens like Combat, Empire, and Minigames.</div>
+            </div>
+            <button 
+              onClick={handleToggle}
+              disabled={loading}
+              className={`px-4 py-2 text-xs uppercase tracking-wider border ${showTutorials ? 'bg-amber-900/40 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+            >
+              {loading ? '...' : showTutorials ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

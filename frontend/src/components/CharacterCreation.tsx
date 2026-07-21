@@ -18,13 +18,14 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
   const [name, setName] = useState('');
   const [preset, setPreset] = useState('Wanderer');
   const [gearPrompt, setGearPrompt] = useState('');
+  const [showTutorials, setShowTutorials] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset, gearPrompt);
+      const char = await createCharacter(name, preset, gearPrompt, showTutorials);
       onComplete(char.id);
     } catch (e) {
       console.error(e);
@@ -36,7 +37,7 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full text-amber-100 bg-slate-900 font-mono">
-      <div className="border border-amber-900/50 bg-slate-950 p-8 shadow-[0_0_15px_rgba(217,119,6,0.3)] w-full max-w-md">
+      <div className="border border-amber-900/50 bg-slate-950 p-8 shadow-[0_0_15px_rgba(217,119,6,0.3)] w-full max-w-md max-h-screen overflow-y-auto">
         <h1 className="text-3xl font-bold mb-6 text-amber-500 border-b border-amber-900/50 pb-2 text-center uppercase tracking-widest">
           Manifest
         </h1>
@@ -77,6 +78,19 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
               className="w-full bg-slate-900 border border-amber-900/50 p-2 text-amber-100 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 resize-none h-24"
               placeholder="Describe what gear or equipment you're carrying. The engine will grant items reasonable for your class..."
             />
+          </div>
+
+          <div className="flex items-center gap-3 mt-4 border border-amber-900/30 p-3 bg-slate-900/50">
+            <input 
+              type="checkbox" 
+              id="tutorials"
+              checked={showTutorials}
+              onChange={(e) => setShowTutorials(e.target.checked)}
+              className="w-4 h-4 accent-amber-600"
+            />
+            <label htmlFor="tutorials" className="text-xs text-amber-500/80 cursor-pointer select-none">
+              Enable Interactive Tutorials (Recommended for new players)
+            </label>
           </div>
 
           <button 

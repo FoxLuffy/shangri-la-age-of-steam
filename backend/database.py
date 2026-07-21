@@ -120,6 +120,8 @@ class Character(SQLModel, table=True):
     status_effects: List[str] = Field(default=[], sa_column=Column(JSON))
     # Empire & Wealth
     brass_coins: int = Field(default=100)
+    # Settings
+    show_tutorials: bool = Field(default=True)
 
 class Property(SQLModel, table=True):
     __tablename__ = "property"

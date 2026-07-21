@@ -10,7 +10,7 @@
 ## Phase 1.5: UX & Immersion Overhaul 🎨
 *Smooth out interactions and add quality of life improvements.*
 - [x] **Interactive Event Triggers:** Narrative popups (combat, lockpicking, etc.) are triggered by UI buttons in the dialogue bubble rather than automatically overlaying the screen.
-- [ ] **Tutorial Settings & Overlays:** Add a settings menu where tutorials for new screens can be toggled. Enabled by default (can be toggled during Character Creation). Every new screen or major change must include a tutorial overlay.
+- [x] **Tutorial Settings & Overlays:** Add a settings menu where tutorials for new screens can be toggled. Enabled by default (can be toggled during Character Creation). Every new screen or major change must include a tutorial overlay.
 - [x] **Dynamic Gear Generation:** At character creation, add a prompt field to describe gear. System generates balanced starting items based on the class. (NO MAGICAL ITEM SPAWNS)
 
 ## Phase 2: Industrialist Empire & City Management 🏭

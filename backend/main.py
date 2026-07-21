@@ -404,6 +404,7 @@ class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
     gear_prompt: str = ""
+    show_tutorials: bool = True
 
 PRESETS = {
     "Aristocrat": {
@@ -423,6 +424,23 @@ PRESETS = {
         "stats": {"strength": 5, "intellect": 5, "charm": 5}
     }
 }
+
+class ToggleTutorialsRequest(BaseModel):
+    show_tutorials: bool
+
+@app.post("/characters/{character_id}/settings/tutorials")
+async def toggle_tutorials(character_id: int, req: ToggleTutorialsRequest):
+    """Toggle tutorial overlays for a character."""
+    from backend.database import Character
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+        char.show_tutorials = req.show_tutorials
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+        return {"status": "success", "show_tutorials": char.show_tutorials}
 
 @app.get("/characters/{character_id}")
 async def get_character(character_id: int):
@@ -444,7 +462,8 @@ async def create_character(req: CharacterCreateRequest):
             name=req.name,
             character_class=req.preset,
             background=preset_data["background"],
-            stats=preset_data["stats"]
+            stats=preset_data["stats"],
+            show_tutorials=req.show_tutorials
         )
         session.add(char)
         session.commit()

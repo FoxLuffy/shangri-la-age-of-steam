@@ -3,12 +3,12 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick

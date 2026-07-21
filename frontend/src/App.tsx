@@ -94,9 +94,12 @@ function MainApp() {
           <MinigamePanel 
             minigame={activeMinigame} 
             character={character}
-            onComplete={() => {
+            onComplete={(message: string) => {
               setShowMinigame(false);
               setWorldState({ ...worldState, active_minigame: null });
+              if (message) {
+                window.dispatchEvent(new CustomEvent('saos_system_action', { detail: `Minigame resolution: ${message}` }));
+              }
             }} 
           />
         )}

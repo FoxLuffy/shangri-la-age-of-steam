@@ -169,20 +169,36 @@ export default function ChatInterface({ onStateUpdate, onOpenCombat, onOpenMinig
     }
   };
 
+  useEffect(() => {
+    const handleSystemAction = (e: any) => {
+      const msg = e.detail;
+      if (msg) {
+        submitAction(msg, true);
+      }
+    };
+    window.addEventListener('saos_system_action', handleSystemAction);
+    return () => window.removeEventListener('saos_system_action', handleSystemAction);
+  }, [isLoading]);
+
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (input.trim()) {
+      submitAction(input.trim(), false);
+    }
+  };
 
-    const actionText = input.trim();
+  const submitAction = async (actionText: string, isSystem: boolean = false) => {
+    if (!actionText || isLoading) return;
+
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     const userMsg: Message = {
       id: `user-${Date.now()}`,
-      sender: 'user',
+      sender: isSystem ? 'system' : 'user',
       content: actionText,
       timestamp: now,
-      mood: selectedMood || undefined,
-      isExploration
+      mood: isSystem ? undefined : selectedMood || undefined,
+      isExploration: isSystem ? false : isExploration
     };
 
     setMessages((prev) => [...prev, userMsg]);

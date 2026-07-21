@@ -14,8 +14,11 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
   const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const audioEnabled = localStorage.getItem('saos_audio_enabled') !== 'false';
+    
     // We wait for user interaction to start audio, standard browser policy
     const startAudio = () => {
+      if (!audioEnabled) return;
       if (audioCtxRef.current) return;
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioCtxRef.current = ctx;
@@ -71,10 +74,23 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
       setIsPlaying(true);
     };
 
-    window.addEventListener('click', startAudio, { once: true });
+    window.addEventListener('click', startAudio);
+    window.addEventListener('keydown', startAudio);
+    
+    const checkInterval = setInterval(() => {
+      const enabled = localStorage.getItem('saos_audio_enabled') !== 'false';
+      if (!enabled && audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+        setIsPlaying(false);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      }
+    }, 1000);
+
     return () => {
       window.removeEventListener('click', startAudio);
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      window.removeEventListener('keydown', startAudio);
+      clearInterval(checkInterval);
       if (audioCtxRef.current) {
         audioCtxRef.current.close();
         audioCtxRef.current = null;

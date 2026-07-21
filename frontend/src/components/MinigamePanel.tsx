@@ -4,7 +4,7 @@ import { BACKEND_URL } from '../api';
 import TutorialBox from './TutorialBox';
 import type { Character } from '../api';
 
-export default function MinigamePanel({ minigame, character, onComplete }: { minigame: any, character: Character, onComplete: () => void }) {
+export default function MinigamePanel({ minigame, character, onComplete }: { minigame: any, character: Character, onComplete: (message: string) => void }) {
   const [state, setState] = useState(minigame.state);
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +19,7 @@ export default function MinigamePanel({ minigame, character, onComplete }: { min
       setState(res.data.state);
       if (res.data.solved) {
         setTimeout(() => {
-          onComplete();
+          onComplete(res.data.state.message);
         }, 2000);
       }
     } catch (err) {

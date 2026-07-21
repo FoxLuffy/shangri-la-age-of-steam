@@ -54,7 +54,6 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
                   key={speed}
                   onClick={() => {
                     localStorage.setItem('saos_narrator_speed', speed);
-                    // Force re-render to show active state
                     setLoading(true); setTimeout(() => setLoading(false), 50);
                   }}
                   className={`flex-1 py-2 text-xs uppercase tracking-wider border ${
@@ -67,6 +66,28 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border border-amber-900/30 bg-slate-800/30">
+            <div>
+              <div className="text-sm uppercase text-amber-400">Audio</div>
+              <div className="text-xs text-amber-600/70 mt-1">Enable ambient background noises and procedural music.</div>
+            </div>
+            <button 
+              onClick={() => {
+                const current = localStorage.getItem('saos_audio_enabled') !== 'false';
+                localStorage.setItem('saos_audio_enabled', current ? 'false' : 'true');
+                setLoading(true); setTimeout(() => setLoading(false), 50);
+              }}
+              disabled={loading}
+              className={`px-4 py-2 text-xs uppercase tracking-wider border ${
+                localStorage.getItem('saos_audio_enabled') !== 'false' 
+                  ? 'bg-amber-900/40 border-amber-500 text-amber-400' 
+                  : 'bg-slate-800 border-slate-600 text-slate-400'
+              }`}
+            >
+              {localStorage.getItem('saos_audio_enabled') !== 'false' ? 'Enabled' : 'Disabled'}
+            </button>
           </div>
         </div>
       </div>

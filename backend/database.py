@@ -24,6 +24,7 @@ class Location(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     description: str
+    faction_id: Optional[str] = None
     npcs: List["NPC"] = Relationship(back_populates="location")
 
 class NPC(SQLModel, table=True):
@@ -107,6 +108,7 @@ class Recipe(SQLModel, table=True):
     description: Optional[str] = None
     result_item_id: int = Field(foreign_key="item.id")
     result_quantity: int = Field(default=1)
+    required_faction_id: Optional[str] = None
 
 class Inventory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

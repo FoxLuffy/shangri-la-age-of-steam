@@ -34,7 +34,7 @@
 - [x] **Complex Relationship & Faction System**: Faction standing (Iron Syndicate vs. Alchemists Guild).
 - [x] **Dynamic World Events**: Procedural world events (steam leaks, riots, industrial accidents).
 - [x] **Procedural NPC Generation**: Randomized unique NPCs based on local regional "flavors."
-- [ ] **Faction-based Crafting**: Certain items only craftable in specific faction zones.
+- [x] **Faction-based Crafting**: Certain items only craftable in specific faction zones.
 
 ## Phase 6: Deep Gameplay Mechanics (New)
 - [x] **Automata Companions**: Build, upgrade, and customize robotic steam-driven companions (clockwork owls, brass hounds) to assist in quests.

@@ -136,13 +136,25 @@ async def get_inventory(character_id: int):
 @app.post("/craft")
 async def craft_item(character_id: int, recipe_id: int):
     """
-    Crafting Logic: 'Steam-Tech Crafting'
+    Crafts an item based on a recipe.
     Atomically deducts required materials from character's inventory and adds the new item.
     """
+    from backend.database import Recipe, RecipeRequirement, Inventory, WorldState, Location
     with get_session() as session:
-        recipe = session.get(Recipe, recipe_id)
+        recipe = session.exec(select(Recipe).where(Recipe.id == recipe_id)).first()
         if not recipe:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+
+        # Faction check
+        if recipe.required_faction_id:
+            ws = session.exec(select(WorldState)).first()
+            if ws:
+                loc = session.exec(select(Location).where(Location.id == ws.current_location_id)).first()
+                if not loc or loc.faction_id != recipe.required_faction_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"This recipe requires the '{recipe.required_faction_id}' faction facilities."
+                    )
             
         requirements = session.exec(
             select(RecipeRequirement).where(RecipeRequirement.recipe_id == recipe_id)

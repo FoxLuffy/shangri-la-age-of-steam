@@ -30,7 +30,7 @@
 - [ ] **Sabotage & Espionage Mini-games Engine:** Interactive CLI-like puzzles in the UI for hacking and deciphering.
 - [x] **Dynamic Economy Engine:** State-driven fluctuating prices for resources.
 - [ ] **Complex Relationship & Faction System:** Deepen NPC disposition formulas with faction standing (e.g., Iron Syndicate vs Alchemists Guild).
-- [ ] **Audio Ambience & Sound Effects:** Add atmospheric steam/machinery audio clips and background music.
+- [x] **Audio Ambience & Sound Effects:** Add atmospheric steam/machinery audio clips and background music.
 - [x] **Character Creation UI Wizard:** Interactive React component shown before gameplay to set up a player's class, stats, and backstory.
 - [x] **Stats & Backstory Panel:** Persistent React sidebar/panel displaying the current character's statistics and history.
 

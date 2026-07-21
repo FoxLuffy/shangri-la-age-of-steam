@@ -48,7 +48,7 @@
 - [x] **Stats & Backstory Panel**: A dedicated UI panel on the frontend displaying the player's current class, background story, and dynamic stats (`strength`, `intellect`, `charm`).
 
 ## Phase 8: Multimedia & Atmosphere (Future)
-- [ ] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
+- [x] **Audio Ambience & Sound Effects**: Spatial audio and machinery-driven soundscapes.
 - [ ] **Dynamic Music**: Procedural music that reacts to player mood and location danger.
 - [ ] **Visual Narrative Effects**: Dynamic text styling (shake, color shifts) based on content sentiment.
 

@@ -960,3 +960,77 @@ def get_logs(admin: User = fastapi.Depends(get_admin_user)):
     with get_session() as session:
         entries = session.exec(select(LedgerEntry).order_by(LedgerEntry.timestamp.desc()).limit(50)).all()
         return {"logs": [{"id": e.id, "character_id": e.character_id, "action": e.action, "narration": e.narration, "timestamp": e.timestamp} for e in entries]}
+
+class BugReportRequest(BaseModel):
+    user_id: Optional[int] = None
+    text: str
+
+@app.post("/bugreports")
+def submit_bugreport(req: BugReportRequest):
+    from backend.database import BugReport
+    from backend.client import VLLMClient
+    import logging
+    logger = logging.getLogger(__name__)
+
+    with get_session() as session:
+        bug = BugReport(
+            user_id=req.user_id,
+            original_text=req.text,
+            created_at=datetime.utcnow().isoformat() + "Z"
+        )
+        session.add(bug)
+        session.commit()
+        session.refresh(bug)
+        
+        # Call VLLMClient to optimize the text
+        try:
+            client = VLLMClient()
+            prompt = f"You are an AI assistant. The user is reporting a bug in their web application. Rewrite their report into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to fix the bug.\n\nUser Bug Report:\n{req.text}\n\nOptimized Prompt for AI Agent:"
+            response = client.generate(prompt=prompt, max_tokens=300, temperature=0.7)
+            
+            optimized_text = ""
+            if isinstance(response, dict) and "choices" in response and len(response["choices"]) > 0:
+                choice = response["choices"][0]
+                if "text" in choice:
+                    optimized_text = choice["text"]
+                elif "message" in choice:
+                    optimized_text = choice["message"].get("content", "")
+            elif isinstance(response, dict) and "text" in response:
+                optimized_text = response["text"]
+            elif isinstance(response, str):
+                optimized_text = response
+            
+            if optimized_text:
+                bug.optimized_text = optimized_text.strip()
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to optimize bug report: {e}")
+            
+        return {"status": "success", "bug_id": bug.id}
+
+@app.get("/admin/bugreports")
+def get_bugreports(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import BugReport
+    with get_session() as session:
+        bugs = session.exec(select(BugReport).order_by(BugReport.id.desc())).all()
+        return {"bugreports": [
+            {
+                "id": b.id, 
+                "user_id": b.user_id, 
+                "original_text": b.original_text, 
+                "optimized_text": b.optimized_text,
+                "status": b.status,
+                "created_at": b.created_at
+            } for b in bugs
+        ]}
+
+@app.delete("/admin/bugreports/{bug_id}")
+def delete_bugreport(bug_id: int, admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import BugReport
+    with get_session() as session:
+        bug = session.get(BugReport, bug_id)
+        if not bug:
+            raise HTTPException(status_code=404, detail="Bug report not found")
+        session.delete(bug)
+        session.commit()
+        return {"status": "success"}

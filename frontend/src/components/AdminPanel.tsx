@@ -7,9 +7,10 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ token, onClose }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'users' | 'logs' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'logs' | 'bugreports' | 'settings'>('users');
   const [users, setUsers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+  const [bugreports, setBugReports] = useState<any[]>([]);
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -64,9 +65,26 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
     }
   };
 
+  const fetchBugReports = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}/admin/bugreports`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch bug reports');
+      const data = await res.json();
+      setBugReports(data.bugreports);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     else if (activeTab === 'logs') fetchLogs();
+    else if (activeTab === 'bugreports') fetchBugReports();
     else if (activeTab === 'settings') fetchSettings();
   }, [activeTab]);
 
@@ -126,6 +144,12 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
             Narrative Logs (Audit)
           </button>
           <button 
+            className={`flex-1 py-2 ${activeTab === 'bugreports' ? 'bg-amber-900/50 text-amber-300' : 'hover:bg-slate-800'}`}
+            onClick={() => setActiveTab('bugreports')}
+          >
+            Bug Reports
+          </button>
+          <button 
             className={`flex-1 py-2 ${activeTab === 'settings' ? 'bg-amber-900/50 text-amber-300' : 'hover:bg-slate-800'}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -182,6 +206,33 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
                         <span className="text-blue-300 font-bold">Narration: </span>
                         {log.narration}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'bugreports' && (
+                <div className="space-y-4">
+                  {bugreports.map(bug => (
+                    <div key={bug.id} className="border border-orange-900 bg-slate-950 p-4 rounded flex flex-col gap-4">
+                      <div className="flex justify-between text-xs text-orange-500 border-b border-orange-900/50 pb-2">
+                        <span>Report ID: {bug.id} | User ID: {bug.user_id}</span>
+                        <span>{new Date(bug.created_at).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-orange-300 font-bold mb-1">User Input (Original):</h4>
+                        <div className="text-orange-100 bg-orange-950/20 p-2 rounded text-sm whitespace-pre-wrap">
+                          {bug.original_text}
+                        </div>
+                      </div>
+                      {bug.optimized_text && (
+                        <div>
+                          <h4 className="text-green-400 font-bold mb-1">AI Optimized Prompt:</h4>
+                          <div className="text-green-100 bg-green-950/20 p-2 rounded text-sm whitespace-pre-wrap">
+                            {bug.optimized_text}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

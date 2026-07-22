@@ -3,7 +3,7 @@ console.log("Cache buster: v3");
 export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '__VITE_BACKEND_URL__';
 
 // If the environment variable wasn't replaced by Docker at runtime, or is empty, use the smart router
-if (!BACKEND_URL || BACKEND_URL === '__VITE_BACKEND_URL__') {
+if (!BACKEND_URL || BACKEND_URL.startsWith('__VITE_')) {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     // Local development (localhost, IPs, or Codespaces)

@@ -1,5 +1,5 @@
 import axios from 'axios';
-// Cache buster: v2
+console.log("Cache buster: v3");
 export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '__VITE_BACKEND_URL__';
 
 // If the environment variable wasn't replaced by Docker at runtime, or is empty, use the smart router

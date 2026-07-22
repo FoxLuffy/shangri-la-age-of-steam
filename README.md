@@ -10,10 +10,12 @@ This project uses a modern, production-ready architecture designed for low-laten
 - **State-Aware Environment:** The world state is managed as a core JSON schema, synchronized across the backend and frontend to ensure a consistent narrative experience.
 - **Real-time React Frontend:** A responsive terminal-style UI built with React and Vite, optimized for low-latency interaction with the AI backend.
 
+- **Global Asynchronous World:** The backend synchronizes a global ledger and resource market, simulating an evolving world shaped by players.
+- **Account & Session Management:** Integrated login authentication with a Session Control Plane supporting Solo and Synchronous Multiplayer lobbies.
+
 ## Tech Stack
-- **Backend:** Python, FastAPI, vLLM
+- **Backend:** Python, FastAPI, vLLM, SQLite
 - **Frontend:** React, Vite, Tailwind CSS
-- **Data:** JSON/SQLite for world state
 
 ## Building and Running locally
 
@@ -43,6 +45,7 @@ To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for 
 | :---|---|
 | `BACKEND_PORT` | `8000` |
 | `FRONTEND_PORT` | `5173` |
+| `SAOS_ADMIN_SECRET` | *(Optional)* The secret code to grant admin access on registration. |
 
 ### Storage (Host Path)
 | Name | Host Path | Mount Path |
@@ -65,6 +68,7 @@ services:
     environment:
       - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
+      - SAOS_ADMIN_SECRET=${SAOS_ADMIN_SECRET}
     volumes:
       - /mnt/tank/saos_data:/data
 
@@ -82,6 +86,18 @@ services:
 ```
 
 *Note: Ensure your vLLM server is accessible to these containers. You may need to use the host's local IP address in the frontend configuration.*
+
+## Administrator Panel
+
+This project includes a dedicated **Administrator Panel** to manage the server. The panel allows admins to:
+- View all registered players (Callsigns).
+- Delete (terminate) malicious or rule-breaking users.
+- Inspect the narrative AI logs to monitor prompts for abuse.
+
+**How to get Admin Access:**
+1. Set the `SAOS_ADMIN_SECRET` environment variable in your backend deployment.
+2. During account registration in the frontend UI, enter that exact secret into the "Admin Override Code" field.
+3. Once logged in, an "Admin Panel" button will appear in the top-right corner of the interface.
 
 ## CI/CD (GitHub Actions)
 The following workflow provides a manual trigger to build and publish the artifacts.
@@ -167,9 +183,10 @@ jobs:
 ```
 
 ## Project Status
-- [x] Phase 1: Foundation & Core API
-- [x] Phase 2: Frontend Shell
-- [x] Phase 3: AI Narrative Logic
-- [x] Phase 4: Polish & Deployment (Initial)
+- [x] Phase 1: Narrative-Driven Tactical Combat ⚔️
+- [x] Phase 2: Industrialist Empire & City Management 🏭
+- [x] Phase 3: The Asynchronous Shared World 🌐
+- [x] Phase 4: Synchronous Multiplayer Sessions & Accounts 👥
+- [ ] Phase 5: Community Modding Ecosystem 🛠️
 
-Status: Core foundations complete.
+Status: Multiplayer Session Control Plane & Accounts Integrated.

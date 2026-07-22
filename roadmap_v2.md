@@ -42,10 +42,11 @@
 
 ## Phase 4: Synchronous Multiplayer Sessions & Accounts 👥
 *Evolving from an asynchronous ghost-town to a true co-op RPG experience.*
-- [ ] **Account Management:** Implement user registration, passwords, and profile management to save character progress securely.
-- [ ] **Session Control Plane:** Create a separate microservice/container for lobby management. Players can choose to play Solo, Start a Co-op Campaign, Join a Public Session, or Join a Private Session with a password (max 4 players per session).
+- [x] **Account Management:** Implement user registration, passwords, and profile management to save character progress securely.
+- [ ] **Session Control Plane (Frontend):** Lobby management is handled directly in the frontend UI communicating with our primary backend. Players can choose to play Solo, Start a Co-op Campaign, Join a Public Session, or Join a Private Session with a password (max 4 players per session).
 - [ ] **Active Players UI:** When players occupy the same location, they appear in a new "Active Players" list alongside NPCs, allowing you to see some of their stats (HP, Class, Steam).
 - [ ] **Turn-Based Multiplayer Combat:** Overhaul combat to support synchronous, turn-based encounters. Speed stats (and specific skills) will determine the initiative order, meaning players must wait their turn to act.
+- [x] **Administrator API & Panel:** A completely separate admin API/service to manage the platform. The administrator can reset passwords, delete players/characters, and inspect LLM prompts/narrative logs for abuse or malicious use.
 
 ## Phase 5: Community Modding Ecosystem 🛠️
 *Give the players the keys to the steamworks.*

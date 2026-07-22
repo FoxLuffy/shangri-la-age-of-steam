@@ -14,7 +14,7 @@ const PRESETS: Preset[] = [
   { id: 'Alchemist', name: 'Alchemist', desc: 'High intellect. Masters steam and chemicals.' },
 ];
 
-export default function CharacterCreation({ onComplete }: { onComplete: (charId: number) => void }) {
+export default function CharacterCreation({ onComplete, userId }: { onComplete: (charId: number) => void, userId?: number | null }) {
   const [name, setName] = useState('');
   const [preset, setPreset] = useState('Wanderer');
   const [backstory, setBackstory] = useState('');
@@ -45,7 +45,7 @@ export default function CharacterCreation({ onComplete }: { onComplete: (charId:
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset, backstory, gearPrompt, showTutorials, gearList);
+      const char = await createCharacter(name, preset, backstory, gearPrompt, showTutorials, gearList, userId);
       onComplete(char.id);
     } catch (e) {
       console.error(e);

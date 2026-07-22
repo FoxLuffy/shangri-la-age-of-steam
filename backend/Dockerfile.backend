@@ -24,10 +24,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy the contents of the backend folder to /app/
 COPY backend/ .
 
-# Expose the port the app runs on
-EXPOSE 8000
+# Expose default port (can be overridden)
+EXPOSE 8003
 
 # Command to run the app
-# Since we copied the contents of 'backend' to '/', we refer to main.py directly
-# We use entrypoint.sh to handle DB initialization
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${BACKEND_PORT:-8003}"]

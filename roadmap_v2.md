@@ -44,13 +44,13 @@
 *Evolving from an asynchronous ghost-town to a true co-op RPG experience.*
 - [x] **Account Management:** Implement user registration, passwords, and profile management to save character progress securely.
 - [x] **Session Control Plane (Frontend):** Lobby management is handled directly in the frontend UI communicating with our primary backend. Players can choose to play Solo, Start a Co-op Campaign, Join a Public Session, or Join a Private Session with a password (max 4 players per session).
-- [ ] **Active Players UI:** When players occupy the same location, they appear in a new "Active Players" list alongside NPCs, allowing you to see some of their stats (HP, Class, Steam).
+- [x] **Active Players UI:** When players occupy the same location, they appear in a new "Active Players" list alongside NPCs, allowing you to see some of their stats (HP, Class, Steam).
 - [ ] **Turn-Based Multiplayer Combat:** Overhaul combat to support synchronous, turn-based encounters. Speed stats (and specific skills) will determine the initiative order, meaning players must wait their turn to act.
 - [x] **Administrator API & Panel:** Master admin override login (bypassing registration). The panel allows the admin to reset passwords, delete players, toggle global registrations, and inspect narrative audit logs.
 - [x] **AI-Optimized Bug Reporting:** Operatives can submit bug reports globally. The backend uses vLLM to rewrite the user complaint into a technical, step-by-step prompt optimized specifically for an AI Coding Agent to execute the fix, visible in the Admin Panel.
 
 ## Phase 5: Community Modding Ecosystem 🛠️
 *Give the players the keys to the steamworks.*
-- [ ] **JSON Module Support:** A system allowing players to upload custom JSON files defining new Locations, NPCs, Items, and Factions.
+- [x] **JSON Module Support:** A system allowing players to upload custom JSON files defining new Locations, NPCs, Items, and Factions.
 - [ ] **Steam Workshop / Mod Browser:** An in-game hub to download and inject popular community modules directly into a local save state.
 - [ ] **Custom AI System Prompts:** Advanced users can tweak the narrative prompt parameters of their custom NPCs to create entirely new genres within the engine.

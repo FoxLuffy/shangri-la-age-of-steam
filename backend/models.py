@@ -22,6 +22,7 @@ class NPC(BaseModel):
     disposition: float = 0.0  # Range -1.0 (Hostile) to 1.0 (Friendly)
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
     faction_id: Optional[str] = None
+    custom_system_prompt: Optional[str] = None
     
     # Combat
     hp: int = 100
@@ -58,6 +59,7 @@ class WorldState(BaseModel):
     active_automata_ids: List[int] = []
     global_event: Optional[str] = None
     world_memories: Union[List[Dict[str, str]], str] = []
+    global_system_prompt: Optional[str] = None
     current_location: Optional[Location] = None
     active_npcs: List[NPC] = []
     inventory: List[Dict[str, Any]] = []
@@ -112,6 +114,7 @@ class DBNPC(SQLModel, base=Base):
     disposition: float = SQLModelField(default=0.0)
     memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
     location_id: str = SQLModelField(default="1", index=True, foreign_key="location.id")
+    custom_system_prompt: Optional[str] = None
 
 class DBWorldState(SQLModel, base=Base):
     __tablename__ = "world_state"

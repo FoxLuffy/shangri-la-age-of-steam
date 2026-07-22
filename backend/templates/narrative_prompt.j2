@@ -19,6 +19,9 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
   - **Traits:** {{ npc.traits | join(', ') }}
   - **Disposition:** {{ npc.disposition | round(2) }}
   - **Memories:** {{ npc.memories }}
+{% if npc.custom_system_prompt %}
+  - **Custom Rules:** {{ npc.custom_system_prompt }}
+{% endif %}
 {% endfor %}
 
 {% if ghost_echoes %}

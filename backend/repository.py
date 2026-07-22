@@ -9,6 +9,10 @@ class StateRepository:
         self.session = session
 
     def get_latest_state(self, character_id: Optional[int] = 1) -> WorldState:
+        from backend.database import SystemSettings
+        settings = self.session.exec(select(SystemSettings)).first()
+        global_sys_prompt = settings.global_system_prompt if settings else None
+
         db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
         if not db_state:
             seed_data()
@@ -50,7 +54,8 @@ class StateRepository:
                     max_hp=db_npc.max_hp,
                     armor=db_npc.armor,
                     status_effects=db_npc.status_effects or [],
-                    is_hostile=db_npc.is_hostile
+                    is_hostile=db_npc.is_hostile,
+                    custom_system_prompt=db_npc.custom_system_prompt
                 ))
 
         from backend.database import Inventory, Item, Quest, QuestState
@@ -126,6 +131,7 @@ class StateRepository:
             active_npcs_ids=active_npc_ids,
             global_event=db_state.global_event if db_state else None,
             world_memories=db_state.world_memories if db_state else [],
+            global_system_prompt=global_sys_prompt,
             current_location=current_location,
             active_npcs=active_npcs,
             inventory=inventory_list,

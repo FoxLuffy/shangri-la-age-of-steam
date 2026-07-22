@@ -7,10 +7,12 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ token, onClose }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'users' | 'logs' | 'bugreports' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'logs' | 'bugreports' | 'settings' | 'prompts'>('users');
   const [users, setUsers] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [bugreports, setBugReports] = useState<any[]>([]);
+  const [npcs, setNpcs] = useState<any[]>([]);
+  const [globalPrompt, setGlobalPrompt] = useState<string>('');
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,6 +60,7 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
       if (!res.ok) throw new Error('Failed to fetch settings');
       const data = await res.json();
       setRegistrationOpen(data.registration_open);
+      setGlobalPrompt(data.global_system_prompt || '');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -81,11 +84,66 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
     }
   };
 
+  const fetchNpcs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}/admin/npcs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch npcs');
+      const data = await res.json();
+      setNpcs(data.npcs);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveGlobalPrompt = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/admin/settings`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ registration_open: registrationOpen, global_system_prompt: globalPrompt })
+      });
+      if (!res.ok) throw new Error('Update failed');
+      alert('Global prompt saved successfully');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleSaveNpcPrompt = async (npcId: string, customPrompt: string) => {
+    try {
+      const res = await fetch(`${baseUrl}/admin/npcs/${npcId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ custom_system_prompt: customPrompt })
+      });
+      if (!res.ok) throw new Error('Update failed');
+      alert('NPC prompt saved successfully');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     else if (activeTab === 'logs') fetchLogs();
     else if (activeTab === 'bugreports') fetchBugReports();
     else if (activeTab === 'settings') fetchSettings();
+    else if (activeTab === 'prompts') {
+      fetchSettings();
+      fetchNpcs();
+    }
   }, [activeTab]);
 
   const handleDeleteUser = async (userId: number) => {
@@ -168,6 +226,12 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
             onClick={() => setActiveTab('settings')}
           >
             System Settings
+          </button>
+          <button 
+            className={`flex-1 py-2 ${activeTab === 'prompts' ? 'bg-amber-900/50 text-amber-300' : 'hover:bg-slate-800'}`}
+            onClick={() => setActiveTab('prompts')}
+          >
+            AI Prompts
           </button>
         </div>
 
@@ -280,6 +344,57 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
                     >
                       {registrationOpen ? 'OPEN (ALLOW NEW)' : 'CLOSED (BLOCK NEW)'}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'prompts' && (
+                <div className="space-y-6">
+                  <div className="border border-slate-700 bg-slate-950 p-6 rounded flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-amber-400">Global System Prompt Override</h3>
+                      <p className="text-sm text-slate-400">Appended or used as the global instructions for the engine.</p>
+                    </div>
+                    <textarea 
+                      className="w-full h-32 bg-slate-900 border border-slate-700 p-2 text-sm text-slate-200"
+                      value={globalPrompt}
+                      onChange={e => setGlobalPrompt(e.target.value)}
+                      placeholder="Enter global prompt instructions here..."
+                    />
+                    <button 
+                      onClick={handleSaveGlobalPrompt}
+                      className="self-end px-4 py-2 bg-amber-700 hover:bg-amber-600 text-white rounded font-bold"
+                    >
+                      Save Global Prompt
+                    </button>
+                  </div>
+                  
+                  <div className="border border-slate-700 bg-slate-950 p-6 rounded flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-amber-400">NPC Custom Prompts</h3>
+                      <p className="text-sm text-slate-400">Tweak narrative prompt parameters for specific NPCs.</p>
+                    </div>
+                    {npcs.map(npc => (
+                      <div key={npc.id} className="border border-slate-800 p-4 rounded bg-slate-900 flex flex-col gap-2">
+                        <div className="font-bold text-amber-500">{npc.name} (ID: {npc.id})</div>
+                        <textarea 
+                          className="w-full h-20 bg-slate-950 border border-slate-700 p-2 text-sm text-slate-200"
+                          defaultValue={npc.custom_system_prompt || ''}
+                          onBlur={(e) => {
+                            if (e.target.value !== npc.custom_system_prompt) {
+                              setNpcs(npcs.map(n => n.id === npc.id ? { ...n, custom_system_prompt: e.target.value } : n));
+                            }
+                          }}
+                          placeholder={`Custom instructions for ${npc.name}...`}
+                        />
+                        <button 
+                          onClick={() => handleSaveNpcPrompt(npc.id, npcs.find(n => n.id === npc.id)?.custom_system_prompt || '')}
+                          className="self-end px-4 py-1 bg-amber-800 hover:bg-amber-700 text-white rounded text-xs font-bold"
+                        >
+                          Save NPC Prompt
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -364,12 +364,11 @@ class StateRepository:
         self.session.add(fs)
         self.session.commit()
 
-    def apply_combat_update(self, update: Dict[str, Any]):
+    def apply_combat_update(self, update: Dict[str, Any], char_id: int):
         from backend.database import Character, NPC, WorldState as DBWorldState
-        char_id = 1
         
         # Update WorldState is_combat_active
-        db_state = self.session.exec(select(DBWorldState)).first()
+        db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
         if db_state and "is_combat_active" in update:
             db_state.is_combat_active = update["is_combat_active"]
             self.session.add(db_state)
@@ -414,9 +413,8 @@ class StateRepository:
                 
         self.session.commit()
 
-    def apply_empire_update(self, update: Dict[str, Any]):
+    def apply_empire_update(self, update: Dict[str, Any], char_id: int):
         from backend.database import Character, Property, Worker
-        char_id = 1
         char = self.session.get(Character, char_id)
         if char:
             coins_change = update.get("brass_coins_change", 0)

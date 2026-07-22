@@ -47,7 +47,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
-  const [isEnvExpanded, setIsEnvExpanded] = useState(true);
+  const [isMinigameActive, setIsMinigameActive] = useState(false);
+  const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -177,8 +178,20 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           setActivePlayers([]);
         }
         
-        // Auto-expand environment if there are NPCs or if we just loaded
-        setIsEnvExpanded(true);
+        // Auto-expand environment if there are NPCs or if we just loaded, ONLY IF SETTINGS ALLOW IT
+        const shouldAutoExpand = localStorage.getItem('saos_auto_expand_env') === 'true';
+        if (shouldAutoExpand) {
+          const locationChanged = data.state.current_location_id !== currentLocationId;
+          const newNpcs = data.state.active_npcs || [];
+          const oldNpcIds = activeNpcs.map(n => n.id).sort().join(',');
+          const newNpcIds = newNpcs.map((n: any) => n.id).sort().join(',');
+          if (locationChanged || oldNpcIds !== newNpcIds) {
+            setIsEnvExpanded(true);
+            localStorage.setItem('saos_env_expanded', 'true');
+          }
+        }
+        
+        setIsMinigameActive(!!data.state.active_minigame);
 
         if (data.state.global_event) {
           setGlobalEvent(data.state.global_event);
@@ -611,13 +624,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."
-                className="flex-1 bg-slate-900 border border-amber-800/50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-amber-100 placeholder-slate-500 shadow-inner"
-                disabled={isLoading}
+                placeholder={isMinigameActive ? "Focus on the minigame..." : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
+                className="flex-1 bg-slate-900 border border-amber-800/50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-amber-100 placeholder-slate-500 shadow-inner disabled:opacity-50"
+                disabled={isLoading || isMinigameActive}
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || isMinigameActive}
                 className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-bold px-6 py-3 rounded-lg text-sm transition-all shadow-lg flex items-center gap-2"
               >
                 <span>SEND</span>
@@ -631,7 +644,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         {isEnvExpanded ? (
           <aside className="w-full md:w-80 bg-slate-900/40 p-4 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col gap-4 overflow-y-auto relative transition-all">
             <button 
-              onClick={() => setIsEnvExpanded(false)} 
+              onClick={() => {
+                setIsEnvExpanded(false);
+                localStorage.setItem('saos_env_expanded', 'false');
+              }} 
               className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-slate-800 rounded transition-colors"
               title="Collapse Environment Pane"
             >
@@ -713,7 +729,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         ) : (
           <div className="h-full flex flex-col items-center py-4 gap-4 overflow-y-auto w-12 border-l border-amber-900/20 bg-slate-900/40">
             <button 
-              onClick={() => setIsEnvExpanded(true)}
+              onClick={() => {
+                setIsEnvExpanded(true);
+                localStorage.setItem('saos_env_expanded', 'true');
+              }}
               className="text-amber-500/70 hover:text-amber-400 p-2 hover:bg-slate-800 rounded transition-colors"
               title="Expand Environment Pane"
             >
@@ -721,7 +740,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             </button>
             {activePlayers.length > 0 && (
               <button 
-                onClick={() => setIsEnvExpanded(true)}
+                onClick={() => {
+                  setIsEnvExpanded(true);
+                  localStorage.setItem('saos_env_expanded', 'true');
+                }}
                 className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
                 title={`Active Players: ${activePlayers.length}`}
               >
@@ -732,7 +754,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
             {activeNpcs.length > 0 && (
               <button 
-                onClick={() => setIsEnvExpanded(true)}
+                onClick={() => {
+                  setIsEnvExpanded(true);
+                  localStorage.setItem('saos_env_expanded', 'true');
+                }}
                 className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
                 title={`Active NPCs: ${activeNpcs.length}`}
               >

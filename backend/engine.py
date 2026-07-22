@@ -212,10 +212,10 @@ class NarrativeEngine:
                         repository.apply_faction_update(faction_update)
 
             if "combat_updates" in state_updates:
-                repository.apply_combat_update(state_updates["combat_updates"])
+                repository.apply_combat_update(state_updates["combat_updates"], action.character_id or 1)
 
             if "empire_updates" in state_updates:
-                repository.apply_empire_update(state_updates["empire_updates"])
+                repository.apply_empire_update(state_updates["empire_updates"], action.character_id or 1)
 
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]

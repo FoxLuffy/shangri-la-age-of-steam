@@ -102,6 +102,20 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
     }
   };
 
+  const handleDeleteBugReport = async (bugId: number) => {
+    if (!confirm('Delete this bug report?')) return;
+    try {
+      const res = await fetch(`${baseUrl}/admin/bugreports/${bugId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      setBugReports(bugreports.filter(b => b.id !== bugId));
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const handleToggleRegistration = async () => {
     try {
       const newState = !registrationOpen;
@@ -214,10 +228,16 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
               {activeTab === 'bugreports' && (
                 <div className="space-y-4">
                   {bugreports.map(bug => (
-                    <div key={bug.id} className="border border-orange-900 bg-slate-950 p-4 rounded flex flex-col gap-4">
+                    <div key={bug.id} className="border border-orange-900 bg-slate-950 p-4 rounded flex flex-col gap-4 relative">
+                      <button 
+                        onClick={() => handleDeleteBugReport(bug.id)}
+                        className="absolute top-2 right-2 text-xs bg-red-900/50 hover:bg-red-900 text-red-200 px-2 py-1 rounded"
+                      >
+                        DELETE
+                      </button>
                       <div className="flex justify-between text-xs text-orange-500 border-b border-orange-900/50 pb-2">
                         <span>Report ID: {bug.id} | User ID: {bug.user_id}</span>
-                        <span>{new Date(bug.created_at).toLocaleString()}</span>
+                        <span className="mr-16">{new Date(bug.created_at).toLocaleString()}</span>
                       </div>
                       <div>
                         <h4 className="text-orange-300 font-bold mb-1">User Input (Original):</h4>
@@ -226,9 +246,18 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
                         </div>
                       </div>
                       {bug.optimized_text && (
-                        <div>
+                        <div className="relative">
                           <h4 className="text-green-400 font-bold mb-1">AI Optimized Prompt:</h4>
-                          <div className="text-green-100 bg-green-950/20 p-2 rounded text-sm whitespace-pre-wrap">
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(bug.optimized_text);
+                              alert('Copied to clipboard!');
+                            }}
+                            className="absolute top-0 right-0 text-xs bg-green-900/50 hover:bg-green-900 text-green-200 px-2 py-1 rounded"
+                          >
+                            COPY
+                          </button>
+                          <div className="text-green-100 bg-green-950/20 p-2 rounded text-sm whitespace-pre-wrap mt-2">
                             {bug.optimized_text}
                           </div>
                         </div>

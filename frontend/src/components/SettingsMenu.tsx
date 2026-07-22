@@ -89,6 +89,28 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
               {localStorage.getItem('saos_audio_enabled') !== 'false' ? 'Enabled' : 'Disabled'}
             </button>
           </div>
+
+          <div className="flex items-center justify-between p-4 border border-amber-900/30 bg-slate-800/30">
+            <div>
+              <div className="text-sm uppercase text-amber-400">Auto-expand Environment</div>
+              <div className="text-xs text-amber-600/70 mt-1">Automatically open the Environment pane when NPCs or location changes.</div>
+            </div>
+            <button 
+              onClick={() => {
+                const current = localStorage.getItem('saos_auto_expand_env') === 'true';
+                localStorage.setItem('saos_auto_expand_env', current ? 'false' : 'true');
+                setLoading(true); setTimeout(() => setLoading(false), 50);
+              }}
+              disabled={loading}
+              className={`px-4 py-2 text-xs uppercase tracking-wider border ${
+                localStorage.getItem('saos_auto_expand_env') === 'true' 
+                  ? 'bg-amber-900/40 border-amber-500 text-amber-400' 
+                  : 'bg-slate-800 border-slate-600 text-slate-400'
+              }`}
+            >
+              {localStorage.getItem('saos_auto_expand_env') === 'true' ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

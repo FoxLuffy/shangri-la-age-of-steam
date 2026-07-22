@@ -75,6 +75,7 @@ class PlayerAction(BaseModel):
     mood: Optional[str] = None
     is_exploration: bool = False
     client_id: Optional[str] = None
+    character_id: Optional[int] = None
 
 class Prompt(BaseModel):
     system_prompt: str

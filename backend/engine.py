@@ -95,7 +95,7 @@ class NarrativeEngine:
     def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:
             repository = StateRepository(session)
-            state = repository.get_latest_state()
+            state = repository.get_latest_state(action.character_id)
         elif self.initial_state:
             repository = None
             state = self.initial_state
@@ -224,6 +224,12 @@ class NarrativeEngine:
 
             if state_updates.get("location_id"):
                 state.current_location_id = state_updates["location_id"]
+                if action.character_id:
+                    from backend.database import Character
+                    char_to_update = session.get(Character, action.character_id)
+                    if char_to_update:
+                        char_to_update.location_id = state_updates["location_id"]
+                        session.add(char_to_update)
                 repository.save_state(state)
                 
         if repository:

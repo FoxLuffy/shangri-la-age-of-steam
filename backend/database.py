@@ -11,8 +11,16 @@ sqlite_file_name = os.getenv("DATABASE_PATH", "saos.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 engine = create_engine(sqlite_url, echo=False)
 
+from sqlalchemy import text
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    try:
+        with Session(engine) as session:
+            session.execute(text("ALTER TABLE character ADD COLUMN location_id VARCHAR"))
+            session.commit()
+    except Exception:
+        pass
 
 @contextmanager
 def get_session():

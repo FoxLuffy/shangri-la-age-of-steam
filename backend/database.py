@@ -139,6 +139,10 @@ class Character(SQLModel, table=True):
     # Settings
     show_tutorials: bool = Field(default=True)
 
+class SystemSettings(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    registration_open: bool = Field(default=True)
+
 class Property(SQLModel, table=True):
     __tablename__ = "property"
     id: Optional[int] = Field(default=None, primary_key=True)

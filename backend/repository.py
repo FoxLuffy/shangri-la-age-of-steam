@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from sqlmodel import Session as SQLModelSession, select
-from backend.database import engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState
+from backend.database import engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Character
 from backend.models import WorldState, Location, NPC
 from backend.database_init import seed_data
 
@@ -53,7 +53,7 @@ class StateRepository:
                     is_hostile=db_npc.is_hostile
                 ))
 
-        from backend.database import Inventory, Item, Quest, QuestState, Character
+        from backend.database import Inventory, Item, Quest, QuestState
 
         inventory_list = []
         quests_list = []

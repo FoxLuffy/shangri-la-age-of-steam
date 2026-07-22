@@ -891,6 +891,19 @@ def login(req: LoginRequest):
 class SettingsUpdate(BaseModel):
     registration_open: bool
 
+def get_admin_user(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization.split("Bearer ")[1]
+    with get_session() as session:
+        user_session = session.exec(select(UserSession).where(UserSession.token == token)).first()
+        if not user_session:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = session.get(User, user_session.user_id)
+        if not user or not user.is_admin:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+        return user
+
 @app.get("/admin/settings")
 def get_settings(admin: User = fastapi.Depends(get_admin_user)):
     from backend.database import SystemSettings
@@ -914,19 +927,6 @@ def update_settings(req: SettingsUpdate, admin: User = fastapi.Depends(get_admin
         settings.registration_open = req.registration_open
         session.commit()
         return {"status": "success"}
-
-def get_admin_user(authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    token = authorization.split("Bearer ")[1]
-    with get_session() as session:
-        user_session = session.exec(select(UserSession).where(UserSession.token == token)).first()
-        if not user_session:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = session.get(User, user_session.user_id)
-        if not user or not user.is_admin:
-            raise HTTPException(status_code=403, detail="Admin privileges required")
-        return user
 
 @app.get("/admin/users")
 def get_users(admin: User = fastapi.Depends(get_admin_user)):

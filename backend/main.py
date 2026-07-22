@@ -196,16 +196,38 @@ async def health_check():
     return {"status": "ok", "vllm_api": VLLM_API_BASE}
 
 @app.get("/state")
-async def get_world_state():
+async def get_world_state(character_id: Optional[int] = None):
     with get_session() as session:
         repo = StateRepository(session)
-        state = repo.get_latest_state()
+        state = repo.get_latest_state(character_id)
         all_locations = session.exec(select(DBLocation)).all()
         all_npcs = session.exec(select(DBNPC)).all()
+        
+        active_players = []
+        if character_id:
+            from backend.database import Character
+            current_char = session.get(Character, character_id)
+            if current_char and getattr(current_char, "location_id", None):
+                same_loc_chars = session.exec(select(Character).where(Character.location_id == current_char.location_id, Character.id != character_id)).all()
+            else:
+                same_loc_chars = session.exec(select(Character).where(Character.id != character_id)).all()
+                
+            for c in same_loc_chars:
+                active_players.append({
+                    "id": c.id,
+                    "name": c.name,
+                    "character_class": c.character_class,
+                    "hp": c.hp,
+                    "max_hp": c.max_hp,
+                    "steam": c.steam,
+                    "max_steam": c.max_steam
+                })
+
         return {
             "state": state,
             "all_locations": all_locations,
-            "all_npcs": all_npcs
+            "all_npcs": all_npcs,
+            "active_players": active_players
         }
 
 class MinigamePlayPayload(BaseModel):

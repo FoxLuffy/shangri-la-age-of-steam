@@ -138,6 +138,7 @@ class Character(SQLModel, table=True):
     brass_coins: int = Field(default=100)
     # Settings
     show_tutorials: bool = Field(default=True)
+    location_id: str = Field(default="1", index=True)
 
 class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

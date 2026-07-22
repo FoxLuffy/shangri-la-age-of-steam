@@ -8,13 +8,15 @@ class StateRepository:
     def __init__(self, session: SQLModelSession):
         self.session = session
 
-    def get_latest_state(self) -> WorldState:
+    def get_latest_state(self, character_id: Optional[int] = 1) -> WorldState:
         db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
         if not db_state:
             seed_data()
             db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
 
-        loc_id = db_state.current_location_id if db_state else "1"
+        char = self.session.get(Character, character_id) if character_id else None
+        
+        loc_id = char.location_id if char and hasattr(char, "location_id") else (db_state.current_location_id if db_state else "1")
         db_loc = self.session.get(DBLocation, loc_id)
         if not db_loc:
             current_location = Location(
@@ -56,8 +58,7 @@ class StateRepository:
         inventory_list = []
         quests_list = []
         
-        # We assume single-player character_id = 1 for now
-        char = self.session.get(Character, 1)
+        # Use the provided character_id
         if char:
             inv_items = self.session.exec(select(Inventory).where(Inventory.character_id == char.id)).all()
             for inv in inv_items:

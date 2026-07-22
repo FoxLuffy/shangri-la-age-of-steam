@@ -42,6 +42,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [currentLocation, setCurrentLocation] = useState<LocationType | null>(null);
   const [allLocations, setAllLocations] = useState<LocationType[]>([]);
   const [activeNpcs, setActiveNpcs] = useState<NPCType[]>([]);
+  const [activePlayers, setActivePlayers] = useState<any[]>([]);
   const [globalEvent, setGlobalEvent] = useState<string>('');
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
@@ -160,7 +161,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   const loadState = async (hasHistory: boolean = false) => {
     try {
-      const data: GetStateResponse = await fetchWorldState();
+      const data: GetStateResponse = await fetchWorldState(characterId);
       if (data.state) {
         if (data.state.current_location_id) {
           setCurrentLocationId(data.state.current_location_id);
@@ -170,6 +171,11 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         }
         setAllLocations(data.all_locations || []);
         setActiveNpcs(data.state.active_npcs || []);
+        if (data.active_players) {
+          setActivePlayers(data.active_players);
+        } else {
+          setActivePlayers([]);
+        }
         
         // Auto-expand environment if there are NPCs or if we just loaded
         setIsEnvExpanded(true);
@@ -257,7 +263,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         current_location_id: currentLocationId,
         mood: selectedMood || undefined,
         is_exploration: isExploration,
-        client_id: clientId
+        client_id: clientId,
+        character_id: characterId
       }, (chunk) => {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -704,7 +711,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             )}
           </aside>
         ) : (
-          <div className="w-12 bg-slate-900/60 border-l border-slate-800 flex flex-col items-center py-4 gap-4 transition-all">
+          <div className="h-full flex flex-col items-center py-4 gap-4 overflow-y-auto w-12 border-l border-amber-900/20 bg-slate-900/40">
             <button 
               onClick={() => setIsEnvExpanded(true)}
               className="text-amber-500/70 hover:text-amber-400 p-2 hover:bg-slate-800 rounded transition-colors"
@@ -712,6 +719,17 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             >
               🧭
             </button>
+            {activePlayers.length > 0 && (
+              <button 
+                onClick={() => setIsEnvExpanded(true)}
+                className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
+                title={`Active Players: ${activePlayers.length}`}
+              >
+                👥
+                <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-[9px] font-bold px-1 rounded-full">{activePlayers.length}</span>
+              </button>
+            )}
+
             {activeNpcs.length > 0 && (
               <button 
                 onClick={() => setIsEnvExpanded(true)}

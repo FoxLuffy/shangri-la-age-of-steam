@@ -24,6 +24,7 @@ export interface PlayerActionPayload {
   mood?: string;
   is_exploration?: boolean;
   client_id?: string;
+  character_id?: number;
 }
 
 export interface NPC {
@@ -58,6 +59,7 @@ export interface GetStateResponse {
   state: WorldStateData;
   all_locations: Location[];
   all_npcs: NPC[];
+  active_players?: any[];
 }
 
 export interface Character {
@@ -128,8 +130,8 @@ export const fetchHealth = async () => {
   return data;
 };
 
-export const fetchWorldState = async (): Promise<GetStateResponse> => {
-  const { data } = await api.get('/state');
+export const fetchWorldState = async (characterId?: number): Promise<GetStateResponse> => {
+  const { data } = await api.get('/state' + (characterId ? `?character_id=${characterId}` : ''));
   return data;
 };
 

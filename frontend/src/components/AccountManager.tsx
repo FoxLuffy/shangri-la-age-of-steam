@@ -9,6 +9,7 @@ export default function AccountManager({ onLogin }: AccountManagerProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [adminSecret, setAdminSecret] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,7 @@ export default function AccountManager({ onLogin }: AccountManagerProps) {
       const res = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, admin_secret: adminSecret || undefined })
       });
       
       const data = await res.json();
@@ -78,6 +79,19 @@ export default function AccountManager({ onLogin }: AccountManagerProps) {
             />
           </div>
           
+          {!isLogin && (
+            <div>
+              <label className="block text-sm mb-1 text-amber-600">Admin Override Code (Optional)</label>
+              <input
+                type="password"
+                value={adminSecret}
+                onChange={(e) => setAdminSecret(e.target.value)}
+                placeholder="Leave blank for standard user"
+                className="w-full bg-slate-950 border border-amber-900 rounded p-2 text-amber-100 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading || !username || !password}

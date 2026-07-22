@@ -813,6 +813,7 @@ from backend.database import User, UserSession
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    admin_secret: Optional[str] = None
 
 class LoginRequest(BaseModel):
     username: str
@@ -828,11 +829,16 @@ def register(req: RegisterRequest):
         if existing:
             raise HTTPException(status_code=400, detail="Username already taken")
         
+        is_admin_user = False
+        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
+        if admin_secret_env and req.admin_secret == admin_secret_env:
+            is_admin_user = True
+
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
             created_at=datetime.utcnow().isoformat() + "Z",
-            is_admin=False
+            is_admin=is_admin_user
         )
         session.add(user)
         session.commit()

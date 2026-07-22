@@ -45,6 +45,7 @@ To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for 
 | :---|---|
 | `BACKEND_PORT` | `8000` |
 | `FRONTEND_PORT` | `5173` |
+| `SAOS_ADMIN_SECRET` | *(Optional)* The secret code to grant admin access on registration. |
 
 ### Storage (Host Path)
 | Name | Host Path | Mount Path |
@@ -67,6 +68,7 @@ services:
     environment:
       - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
+      - SAOS_ADMIN_SECRET=${SAOS_ADMIN_SECRET}
     volumes:
       - /mnt/tank/saos_data:/data
 
@@ -84,6 +86,18 @@ services:
 ```
 
 *Note: Ensure your vLLM server is accessible to these containers. You may need to use the host's local IP address in the frontend configuration.*
+
+## Administrator Panel
+
+This project includes a dedicated **Administrator Panel** to manage the server. The panel allows admins to:
+- View all registered players (Callsigns).
+- Delete (terminate) malicious or rule-breaking users.
+- Inspect the narrative AI logs to monitor prompts for abuse.
+
+**How to get Admin Access:**
+1. Set the `SAOS_ADMIN_SECRET` environment variable in your backend deployment.
+2. During account registration in the frontend UI, enter that exact secret into the "Admin Override Code" field.
+3. Once logged in, an "Admin Panel" button will appear in the top-right corner of the interface.
 
 ## CI/CD (GitHub Actions)
 The following workflow provides a manual trigger to build and publish the artifacts.

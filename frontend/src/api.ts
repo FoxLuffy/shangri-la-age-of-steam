@@ -1,11 +1,18 @@
 import axios from 'axios';
-export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8003';
+export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-if (typeof window !== 'undefined' && !import.meta.env.VITE_BACKEND_URL) {
-  if (window.location.hostname.match(/^\d+-/)) {
-    BACKEND_URL = `${window.location.protocol}//${window.location.hostname.replace(/^\d+-/, '8003-')}`;
+if (!BACKEND_URL) {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Local development (localhost, IPs, or Codespaces)
+    if (hostname === 'localhost' || hostname.match(/^\d+\.\d+\.\d+\.\d+$/) || hostname.match(/^\d+-/)) {
+      BACKEND_URL = `${window.location.protocol}//${hostname.replace(/^\d+-/, '8003-')}:8003`;
+    } else {
+      // Production domain mapping
+      BACKEND_URL = `https://api.${hostname}`;
+    }
   } else {
-    BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:8003`;
+    BACKEND_URL = 'http://localhost:8003';
   }
 }
 

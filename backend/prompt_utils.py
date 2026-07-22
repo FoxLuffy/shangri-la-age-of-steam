@@ -23,7 +23,7 @@ def get_dynamic_narration(action: Optional[PlayerAction] = None,
 
     return "[Narration]The atmosphere is thick with mystery."
 
-def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
+def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes: list = None) -> str:
     template_path = os.path.join(os.path.dirname(__file__), "templates", "narrative_prompt.j2")
     with open(template_path, "r") as f:
         template_str = f.read()
@@ -84,7 +84,9 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction) -> str:
         is_combat_active=getattr(state, "is_combat_active", False),
         brass_coins=getattr(state, "brass_coins", 0),
         location_properties=location_properties,
-        player_properties=player_properties
+        player_properties=player_properties,
+        ghost_echoes=ghost_echoes,
+        character_name=getattr(getattr(state, "player_stats", None), "name", "Traveler")
     )
 
     if hasattr(action, 'mood') and action.mood:

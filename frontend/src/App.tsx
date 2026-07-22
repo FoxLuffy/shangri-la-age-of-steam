@@ -9,6 +9,7 @@ import { fetchCharacter } from './api';
 import type { Character } from './api';
 
 import SettingsMenu from './components/SettingsMenu';
+import MarketUI from './components/MarketUI';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -42,6 +43,7 @@ function MainApp() {
   const [showMinigame, setShowMinigame] = useState(false);
   const [showEmpire, setShowEmpire] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMarket, setShowMarket] = useState(false);
 
   useEffect(() => {
     if (characterId) {
@@ -85,6 +87,7 @@ function MainApp() {
         {showCombat && <CombatUI worldState={worldState} character={character} />}
         {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
+        {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
         <ChatInterface 
           characterId={character.id}
           onStateUpdate={setWorldState} 
@@ -110,6 +113,7 @@ function MainApp() {
         worldState={worldState} 
         onReset={handleRetireCharacter} 
         onOpenEmpire={() => setShowEmpire(true)} 
+        onOpenMarket={() => setShowMarket(true)} 
         onOpenSettings={() => setShowSettings(true)}
       />
     </div>

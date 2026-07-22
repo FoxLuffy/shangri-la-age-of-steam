@@ -79,7 +79,18 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'narrative_event' && msg.action && msg.action.client_id !== clientId) {
+        if (msg.type === 'market_sync') {
+          window.dispatchEvent(new CustomEvent('saos_market_sync', { detail: msg }));
+        } else if (msg.type === 'global_event') {
+          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const newMsg: Message = {
+            id: Date.now().toString(),
+            sender: 'system',
+            content: `[GLOBAL BROADCAST] ${msg.event}`,
+            timestamp: now
+          };
+          setMessages(prev => [...prev, newMsg]);
+        } else if (msg.type === 'narrative_event' && msg.action && msg.action.client_id !== clientId) {
           const actionText = msg.action.action_text || 'Another player acted.';
           const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           

@@ -121,10 +121,10 @@ class NarrativeEngine:
                 select(LedgerEntry).where(
                     LedgerEntry.location_id == str(loc_id),
                     LedgerEntry.character_id != char_id
-                ).order_by(LedgerEntry.created_at.desc()).limit(10)
+                ).order_by(LedgerEntry.timestamp.desc()).limit(10)
             ).all()
             
-            if echo_entries:
+            if isinstance(echo_entries, list) and echo_entries:
                 # Pick 1-2 random echoes to include as flavor
                 chosen = random.sample(echo_entries, min(2, len(echo_entries)))
                 for entry in chosen:
@@ -232,7 +232,8 @@ class NarrativeEngine:
                 narration=narration,
                 state_updates=state_updates,
                 events=events,
-                location_id=getattr(state, "current_location_id", "1")
+                location_id=getattr(state, "current_location_id", "1"),
+                character_id=getattr(getattr(state, "player_stats", None), "id", None)
             )
 
         active_npcs = getattr(state, "active_npcs", []) or []
@@ -278,6 +279,8 @@ async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
                 repo.record_ledger_entry(
                     action=f"Overheard interaction between {npc1.name} and {npc2.name}",
                     narration=dialogue,
+                    state_updates={},
+                    events=[],
                     location_id=location.id
                 )
             logger.info(f"Recorded NPC interaction at {location.name}")

@@ -237,6 +237,7 @@ class Airship(SQLModel, table=True):
 class LedgerEntry(SQLModel, table=True):
     __tablename__ = "ledger_entry"
     id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: Optional[int] = Field(default=None, foreign_key="character.id", index=True)
     timestamp: str = Field(default="")
     action: str
     narration: str

@@ -45,7 +45,7 @@ jobs:
         run: docker build -t ghcr.io/${{ env.REPO_LOWER }}/backend:latest -f Dockerfile.backend .
 
       - name: Build Frontend Image
-        run: docker build --build-arg VITE_BACKEND_URL=https://api.saos.atelierbungle.org -t ghcr.io/${{ env.REPO_LOWER }}/frontend:latest -f Dockerfile.frontend .
+        run: docker build -t ghcr.io/${{ env.REPO_LOWER }}/frontend:latest -f Dockerfile.frontend .
 
       - name: Login to Registry
         uses: docker/login-action@v3

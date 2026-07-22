@@ -22,8 +22,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-      args:
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-https://api.saos.atelierbungle.org}
     image: ${PROJECT_NAME:-shangri-la}/shangri-la-frontend:latest
     container_name: shangri-la-frontend
     restart: unless-stopped

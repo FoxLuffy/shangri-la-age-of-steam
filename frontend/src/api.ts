@@ -1,14 +1,15 @@
 import axios from 'axios';
-export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '__VITE_BACKEND_URL__';
 
-if (!BACKEND_URL) {
+// If the environment variable wasn't replaced by Docker at runtime, or is empty, use the smart router
+if (!BACKEND_URL || BACKEND_URL === '__VITE_BACKEND_URL__') {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     // Local development (localhost, IPs, or Codespaces)
     if (hostname === 'localhost' || hostname.match(/^\d+\.\d+\.\d+\.\d+$/) || hostname.match(/^\d+-/)) {
       BACKEND_URL = `${window.location.protocol}//${hostname.replace(/^\d+-/, '8003-')}:8003`;
     } else {
-      // Production domain mapping
+      // Generic production domain fallback
       BACKEND_URL = `https://api.${hostname}`;
     }
   } else {

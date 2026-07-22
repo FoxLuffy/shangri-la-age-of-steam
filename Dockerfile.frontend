@@ -10,6 +10,8 @@ RUN npm run build
 FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 COPY --from=builder /app/dist .
+COPY frontend/entrypoint.sh /docker-entrypoint.d/99-inject-env.sh
+RUN chmod +x /docker-entrypoint.d/99-inject-env.sh
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

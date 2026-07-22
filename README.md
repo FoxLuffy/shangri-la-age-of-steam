@@ -43,8 +43,9 @@ To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for 
 ### Environment Variables
 | Name | Value |
 | :---|---|
-| `BACKEND_PORT` | `8000` |
+| `BACKEND_PORT` | `8003` |
 | `FRONTEND_PORT` | `5173` |
+| `VITE_BACKEND_URL` | *(Optional)* The full URL to your API backend (e.g., `https://api.yourdomain.com`). If not set, the frontend auto-routes based on the browser URL. |
 | `SAOS_ADMIN_SECRET` | *(Optional)* The secret code to grant admin access on registration. |
 
 ### Storage (Host Path)
@@ -64,7 +65,7 @@ services:
     container_name: shangri-la-backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8003:8003"
     environment:
       - BACKEND_PORT=8003
       - VLLM_API_KEY=${VLLM_API_KEY}
@@ -81,6 +82,7 @@ services:
     environment:
       - FRONTEND_PORT=5173
       - VLLM_SERVER_URL=http://<YOUR_TRUENAS_HOST_IP>:<VLLM_PORT>
+      - VITE_BACKEND_URL=https://api.yourdomain.com  # Set your custom domain here!
     volumes:
       - /mnt/tank/saos_data:/data
 ```

@@ -248,3 +248,14 @@ export const importWorldState = async (file: File) => {
   return data;
 };
 
+export const uploadModData = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/modding/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};
+

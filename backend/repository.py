@@ -125,6 +125,17 @@ class StateRepository:
         else:
             active_minigame = None
             properties_list = []
+            factions_list = []
+
+        from backend.database import CombatSession
+        combat_session = self.session.exec(select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active == True)).first()
+        combat_state = None
+        if combat_session:
+            combat_state = {
+                "turn_order": combat_session.turn_order,
+                "current_turn_index": combat_session.current_turn_index,
+                "is_active": combat_session.is_active
+            }
 
         return WorldState(
             current_location_id=current_location.id,
@@ -136,9 +147,10 @@ class StateRepository:
             active_npcs=active_npcs,
             inventory=inventory_list,
             quests=quests_list,
-            factions=factions_list if 'factions_list' in locals() else [],
+            factions=factions_list,
             active_minigame=active_minigame,
             is_combat_active=db_state.is_combat_active if db_state else False,
+            combat_state=combat_state,
             player_stats={
                 "id": char.id if char else 1,
                 "hp": char.hp,
@@ -371,18 +383,68 @@ class StateRepository:
         self.session.commit()
 
     def apply_combat_update(self, update: Dict[str, Any], char_id: int):
-        from backend.database import Character, NPC, WorldState as DBWorldState
-        
+        from backend.database import Character, NPC, WorldState as DBWorldState, CombatSession
+
+        # Get character to find location
+        char = self.session.get(Character, char_id)
+        if not char: return
+        loc_id = char.location_id
+
         # Update WorldState is_combat_active
         db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
         if db_state and "is_combat_active" in update:
             db_state.is_combat_active = update["is_combat_active"]
             self.session.add(db_state)
             
+            # Manage CombatSession
+            combat_session = self.session.exec(select(CombatSession).where(CombatSession.location_id == loc_id)).first()
+            if update["is_combat_active"]:
+                if not combat_session or not combat_session.is_active:
+                    # Start combat session
+                    active_npc_ids = db_state.active_npcs_ids if isinstance(db_state.active_npcs_ids, list) else []
+                    
+                    participants = []
+                    # Get all players in this location
+                    players = self.session.exec(select(Character).where(Character.location_id == loc_id)).all()
+                    for p in players:
+                        participants.append({
+                            "id": f"player_{p.id}",
+                            "type": "player",
+                            "name": p.name,
+                            "speed": p.stats.get("speed", 5) if p.stats else 5
+                        })
+                        
+                    for npc_id in active_npc_ids:
+                        n = self.session.get(NPC, npc_id)
+                        if n:
+                            participants.append({
+                                "id": f"npc_{n.id}",
+                                "type": "npc",
+                                "name": n.name,
+                                "speed": getattr(n, "speed", 5)
+                            })
+                            
+                    # Sort by speed descending
+                    participants.sort(key=lambda x: x["speed"], reverse=True)
+                    
+                    if not combat_session:
+                        combat_session = CombatSession(location_id=loc_id, is_active=True, turn_order=participants, current_turn_index=0)
+                    else:
+                        combat_session.is_active = True
+                        combat_session.turn_order = participants
+                        combat_session.current_turn_index = 0
+                    self.session.add(combat_session)
+                else:
+                    # Advance turn if needed or if explicitly advanced
+                    pass
+            else:
+                if combat_session:
+                    combat_session.is_active = False
+                    self.session.add(combat_session)
+
         # Update Player
         player_updates = update.get("player_updates", {})
         if player_updates:
-            char = self.session.get(Character, char_id)
             if char:
                 char.hp += player_updates.get("hp_change", 0)
                 char.steam += player_updates.get("steam_change", 0)

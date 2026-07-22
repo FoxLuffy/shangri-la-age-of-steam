@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useMemo, type FormEvent } from 'react';
 import { 
   sendAction, 
   fetchWorldState, 
@@ -48,6 +48,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
   const [isMinigameActive, setIsMinigameActive] = useState(false);
+  const [combatState, setCombatState] = useState<any>(null);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -192,6 +193,11 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         }
         
         setIsMinigameActive(!!data.state.active_minigame);
+        if (data.state.combat_state) {
+          setCombatState(data.state.combat_state);
+        } else {
+          setCombatState(null);
+        }
 
         if (data.state.global_event) {
           setGlobalEvent(data.state.global_event);
@@ -233,6 +239,16 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     return () => window.removeEventListener('saos_system_action', handleSystemAction);
   }, [isLoading]);
 
+  const isMyTurn = useMemo(() => {
+    if (!combatState || !combatState.is_active) return true;
+    const { turn_order, current_turn_index } = combatState;
+    if (!turn_order || current_turn_index >= turn_order.length) return true;
+    const currentActor = turn_order[current_turn_index];
+    return currentActor.type === 'player' && currentActor.id === player_;
+  }, [combatState, characterId]);
+  
+  const currentTurnActor = combatState?.turn_order?.[combatState?.current_turn_index]?.name || '';
+  
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (input.trim()) {

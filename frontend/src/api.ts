@@ -62,6 +62,8 @@ export interface WorldStateData {
   active_npcs: NPC[];
   inventory?: any[];
   quests?: any[];
+  active_minigame?: any;
+  is_combat_active?: boolean;
 }
 
 export interface GetStateResponse {

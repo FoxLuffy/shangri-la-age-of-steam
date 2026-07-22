@@ -259,3 +259,12 @@ export const uploadModData = async (file: File) => {
   return data;
 };
 
+export const fetchWorkshopMods = async () => {
+  const { data } = await api.get('/workshop/mods');
+  return data;
+};
+
+export const installWorkshopMod = async (modId: string) => {
+  const { data } = await api.post(`/workshop/mods/${modId}/install`);
+  return data;
+};

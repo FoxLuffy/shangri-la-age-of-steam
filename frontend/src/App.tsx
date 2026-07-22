@@ -13,6 +13,7 @@ import AccountManager from './components/AccountManager';
 import AdminPanel from './components/AdminPanel';
 import SessionLobby from './components/SessionLobby';
 import BugReportModal from './components/BugReportModal';
+import { WorkshopBrowser } from './components/WorkshopBrowser';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -60,6 +61,7 @@ function MainApp() {
   const [showMarket, setShowMarket] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showBugReport, setShowBugReport] = useState(false);
+  const [showWorkshop, setShowWorkshop] = useState(false);
 
   useEffect(() => {
     if (characterId) {
@@ -194,6 +196,14 @@ function MainApp() {
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         {showBugReport && <BugReportModal userId={userId} onClose={() => setShowBugReport(false)} />}
+        {showWorkshop && (
+          <div className="absolute inset-0 z-40 bg-slate-950/80 p-4 sm:p-12 flex flex-col items-center">
+             <div className="w-full max-w-4xl relative">
+                <button onClick={() => setShowWorkshop(false)} className="absolute top-2 right-2 text-white bg-red-600 px-3 py-1 rounded">Close</button>
+                <WorkshopBrowser />
+             </div>
+          </div>
+        )}
         <ChatInterface 
           characterId={character.id}
           onStateUpdate={setWorldState} 
@@ -221,6 +231,7 @@ function MainApp() {
         onOpenEmpire={() => setShowEmpire(true)} 
         onOpenMarket={() => setShowMarket(true)} 
         onOpenSettings={() => setShowSettings(true)}
+        onOpenWorkshop={() => setShowWorkshop(true)}
       />
     </div>
   );

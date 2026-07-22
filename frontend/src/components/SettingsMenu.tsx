@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toggleTutorials } from '../api';
+import { toggleTutorials, uploadModData } from '../api';
 import type { Character } from '../api';
 
 export default function SettingsMenu({ character, onClose, onUpdateCharacter }: { character: Character, onClose: () => void, onUpdateCharacter: (char: Character) => void }) {
@@ -19,6 +19,23 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
       setLoading(false);
     }
   };
+
+  const handleModUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setLoading(true);
+    try {
+      await uploadModData(file);
+      alert('Mod data uploaded successfully!');
+    } catch (e: any) {
+      console.error(e);
+      alert(`Failed to upload mod data: ${e.response?.data?.detail || e.message}`);
+    } finally {
+      setLoading(false);
+      e.target.value = '';
+    }
+  };
+
 
   return (
     <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-8 font-mono">
@@ -110,6 +127,22 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
             >
               {localStorage.getItem('saos_auto_expand_env') === 'true' ? 'Enabled' : 'Disabled'}
             </button>
+          </div>
+          
+          <div className="flex flex-col gap-3 p-4 border border-amber-900/30 bg-slate-800/30">
+            <div>
+              <div className="text-sm uppercase text-amber-400">Modding (JSON Support)</div>
+              <div className="text-xs text-amber-600/70 mt-1">Upload a custom JSON file defining new Locations, NPCs, Items, and Factions.</div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input type="file" accept=".json" id="mod-upload" className="hidden" onChange={handleModUpload} />
+              <label 
+                htmlFor="mod-upload" 
+                className={`flex-1 py-2 text-center text-xs uppercase tracking-wider border ${loading ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-600 text-slate-400' : 'cursor-pointer bg-amber-900/40 border-amber-500 text-amber-400 hover:bg-amber-800/60'}`}
+              >
+                {loading ? 'Uploading...' : 'Upload JSON'}
+              </label>
+            </div>
           </div>
         </div>
       </div>

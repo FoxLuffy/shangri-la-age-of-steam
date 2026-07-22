@@ -219,7 +219,7 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
             className={`flex-1 py-2 ${activeTab === 'bugreports' ? 'bg-amber-900/50 text-amber-300' : 'hover:bg-slate-800'}`}
             onClick={() => setActiveTab('bugreports')}
           >
-            Bug Reports
+            Reports
           </button>
           <button 
             className={`flex-1 py-2 ${activeTab === 'settings' ? 'bg-amber-900/50 text-amber-300' : 'hover:bg-slate-800'}`}
@@ -291,6 +291,37 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
 
               {activeTab === 'bugreports' && (
                 <div className="space-y-4">
+                  <div className="flex justify-end mb-4">
+                    <button 
+                      onClick={() => {
+                        let content = "# Generated Roadmap Input\n\n";
+                        content += "Here are the compiled bug reports and feature requests from the user community. Please analyze them and create a prioritized roadmap.\n\n";
+                        bugreports.forEach(report => {
+                          content += `## ${report.type === 'feature' ? 'Feature Request' : 'Bug Report'} #${report.id}\n`;
+                          content += `**Date:** ${new Date(report.created_at).toLocaleString()}\n`;
+                          content += `**Status:** ${report.status}\n`;
+                          content += `### Original Request\n${report.original_text}\n\n`;
+                          if (report.optimized_text) {
+                            content += `### AI Optimized Prompt\n${report.optimized_text}\n\n`;
+                          }
+                          content += "---\n\n";
+                        });
+
+                        const blob = new Blob([content], { type: 'text/markdown' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `saos_roadmap_input_${new Date().toISOString().split('T')[0]}.md`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold transition-colors"
+                    >
+                      Export Roadmap for Gemini
+                    </button>
+                  </div>
                   {bugreports.map(bug => (
                     <div key={bug.id} className="border border-orange-900 bg-slate-950 p-4 rounded flex flex-col gap-4 relative">
                       <button 
@@ -300,7 +331,7 @@ export default function AdminPanel({ token, onClose }: AdminPanelProps) {
                         DELETE
                       </button>
                       <div className="flex justify-between text-xs text-orange-500 border-b border-orange-900/50 pb-2">
-                        <span>Report ID: {bug.id} | User ID: {bug.user_id}</span>
+                        <span>[{bug.type === 'feature' ? 'Feature' : 'Bug'}] Report ID: {bug.id} | User ID: {bug.user_id}</span>
                         <span className="mr-16">{new Date(bug.created_at).toLocaleString()}</span>
                       </div>
                       <div>

@@ -158,6 +158,7 @@ class SystemSettings(SQLModel, table=True):
 class BugReport(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="user_account.id")
+    type: str = Field(default="bug")
     original_text: str
     optimized_text: Optional[str] = Field(default=None)
     created_at: str

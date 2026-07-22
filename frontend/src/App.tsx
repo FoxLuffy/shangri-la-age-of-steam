@@ -12,7 +12,7 @@ import MarketUI from './components/MarketUI';
 import AccountManager from './components/AccountManager';
 import AdminPanel from './components/AdminPanel';
 import SessionLobby from './components/SessionLobby';
-import BugReportModal from './components/BugReportModal';
+import ReportModal from './components/ReportModal';
 import { WorkshopBrowser } from './components/WorkshopBrowser';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
@@ -60,7 +60,7 @@ function MainApp() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [showBugReport, setShowBugReport] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showWorkshop, setShowWorkshop] = useState(false);
 
   useEffect(() => {
@@ -118,15 +118,15 @@ function MainApp() {
               Admin Panel
             </button>
           )}
-          <button onClick={() => setShowBugReport(true)} className="bg-orange-900/50 hover:bg-orange-900 text-orange-200 px-4 py-2 border border-orange-900 rounded">
-            Report Bug
+          <button onClick={() => setShowReportModal(true)} className="bg-orange-900/50 hover:bg-orange-900 text-orange-200 px-4 py-2 border border-orange-900 rounded">
+            Report
           </button>
           <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
             Logout
           </button>
         </div>
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
-        {showBugReport && <BugReportModal userId={userId} onClose={() => setShowBugReport(false)} />}
+        {showReportModal && <ReportModal userId={userId} onClose={() => setShowReportModal(false)} />}
         <SessionLobby onSessionSelect={(mode, sId, pwd) => {
           const info = { mode, sessionId: sId, password: pwd };
           setSessionInfo(info);
@@ -149,15 +149,15 @@ function MainApp() {
               Admin Panel
             </button>
           )}
-          <button onClick={() => setShowBugReport(true)} className="bg-orange-900/50 hover:bg-orange-900 text-orange-200 px-4 py-2 border border-orange-900 rounded">
-            Report Bug
+          <button onClick={() => setShowReportModal(true)} className="bg-orange-900/50 hover:bg-orange-900 text-orange-200 px-4 py-2 border border-orange-900 rounded">
+            Report
           </button>
           <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
             Logout
           </button>
         </div>
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
-        {showBugReport && <BugReportModal userId={userId} onClose={() => setShowBugReport(false)} />}
+        {showReportModal && <ReportModal userId={userId} onClose={() => setShowReportModal(false)} />}
         <CharacterCreation onComplete={setCharacterId} userId={userId} />
       </div>
     );
@@ -183,8 +183,8 @@ function MainApp() {
               Admin Panel
             </button>
           )}
-          <button onClick={() => setShowBugReport(true)} className="bg-orange-900/50 text-orange-200 px-2 py-1 text-xs border border-orange-900 rounded">
-            Report Bug
+          <button onClick={() => setShowReportModal(true)} className="bg-orange-900/50 text-orange-200 px-2 py-1 text-xs border border-orange-900 rounded">
+            Report
           </button>
           <button onClick={handleLogout} className="bg-red-900/50 text-red-200 px-2 py-1 text-xs border border-red-900 rounded">
             Logout
@@ -195,7 +195,7 @@ function MainApp() {
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
-        {showBugReport && <BugReportModal userId={userId} onClose={() => setShowBugReport(false)} />}
+        {showReportModal && <ReportModal userId={userId} onClose={() => setShowReportModal(false)} />}
         {showWorkshop && (
           <div className="absolute inset-0 z-40 bg-slate-950/80 p-4 sm:p-12 flex flex-col items-center">
              <div className="w-full max-w-4xl relative">

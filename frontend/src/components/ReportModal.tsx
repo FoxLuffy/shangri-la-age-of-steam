@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { BACKEND_URL } from '../api';
 
-interface BugReportModalProps {
+interface ReportModalProps {
   userId: number | null;
   onClose: () => void;
 }
 
-export default function BugReportModal({ userId, onClose }: BugReportModalProps) {
+export default function ReportModal({ userId, onClose }: ReportModalProps) {
+  const [type, setType] = useState('bug');
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,10 +22,10 @@ export default function BugReportModal({ userId, onClose }: BugReportModalProps)
       const res = await fetch(`${BACKEND_URL}/bugreports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, text })
+        body: JSON.stringify({ user_id: userId, text, type })
       });
       if (!res.ok) {
-        throw new Error('Failed to submit bug report');
+        throw new Error('Failed to submit report');
       }
       setSuccess(true);
       setTimeout(onClose, 2000);
@@ -38,16 +39,28 @@ export default function BugReportModal({ userId, onClose }: BugReportModalProps)
   return (
     <div className="absolute inset-0 bg-slate-950/80 z-[200] flex items-center justify-center p-4 font-mono text-amber-500">
       <div className="bg-slate-900 border border-amber-900 w-full max-w-lg p-6 rounded-lg shadow-2xl">
-        <h2 className="text-xl font-bold mb-4 text-amber-400">File a Bug Report</h2>
+        <h2 className="text-xl font-bold mb-4 text-amber-400">Submit a Report</h2>
         {success ? (
           <div className="text-green-400 py-8 text-center">
-            Bug report submitted successfully!
+            Report submitted successfully!
             <br/><span className="text-sm text-slate-400">Our AI agents are analyzing it.</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-amber-500">Report Type</label>
+              <select 
+                value={type} 
+                onChange={e => setType(e.target.value)}
+                className="bg-slate-950 border border-amber-900/50 rounded p-2 text-amber-100 focus:outline-none focus:border-amber-500"
+                disabled={loading}
+              >
+                <option value="bug">Bug Report</option>
+                <option value="feature">Feature Request</option>
+              </select>
+            </div>
             <p className="text-sm text-slate-400 mb-2">
-              Describe the issue you encountered. Be as specific as possible so our AI can automatically generate a fix prompt.
+              Describe the {type === 'bug' ? 'issue you encountered' : 'feature you would like'}. Be as specific as possible so our AI can automatically generate an implementation prompt.
             </p>
             <textarea
               className="w-full h-32 bg-slate-950 border border-amber-900/50 rounded p-2 focus:outline-none focus:border-amber-500 text-amber-100"

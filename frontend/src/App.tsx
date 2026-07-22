@@ -108,11 +108,17 @@ function MainApp() {
   if (!sessionInfo) {
     return (
       <div className="w-full h-screen bg-slate-950 flex flex-col relative overflow-hidden">
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {isAdmin && (
+            <button onClick={() => setShowAdmin(true)} className="bg-purple-900/50 hover:bg-purple-900 text-purple-200 px-4 py-2 border border-purple-900 rounded">
+              Admin Panel
+            </button>
+          )}
           <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
             Logout
           </button>
         </div>
+        {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         <SessionLobby onSessionSelect={(mode, sId, pwd) => {
           const info = { mode, sessionId: sId, password: pwd };
           setSessionInfo(info);
@@ -129,11 +135,17 @@ function MainApp() {
   if (!characterId || !character) {
     return (
       <div className="w-full h-screen bg-slate-950 flex flex-col relative overflow-hidden">
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          {isAdmin && (
+            <button onClick={() => setShowAdmin(true)} className="bg-purple-900/50 hover:bg-purple-900 text-purple-200 px-4 py-2 border border-purple-900 rounded">
+              Admin Panel
+            </button>
+          )}
           <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
             Logout
           </button>
         </div>
+        {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         <CharacterCreation onComplete={setCharacterId} userId={userId} />
       </div>
     );

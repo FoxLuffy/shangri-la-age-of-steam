@@ -813,7 +813,6 @@ from backend.database import User, UserSession
 class RegisterRequest(BaseModel):
     username: str
     password: str
-    admin_secret: Optional[str] = None
 
 class LoginRequest(BaseModel):
     username: str
@@ -824,21 +823,21 @@ def hash_password(password: str) -> str:
 
 @app.post("/auth/register")
 def register(req: RegisterRequest):
+    from backend.database import SystemSettings
     with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if settings and not settings.registration_open:
+            raise HTTPException(status_code=403, detail="Registration is currently closed.")
+
         existing = session.exec(select(User).where(User.username == req.username)).first()
         if existing:
             raise HTTPException(status_code=400, detail="Username already taken")
-        
-        is_admin_user = False
-        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
-        if admin_secret_env and req.admin_secret == admin_secret_env:
-            is_admin_user = True
 
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
             created_at=datetime.utcnow().isoformat() + "Z",
-            is_admin=is_admin_user
+            is_admin=False
         )
         session.add(user)
         session.commit()
@@ -858,9 +857,23 @@ def register(req: RegisterRequest):
 @app.post("/auth/login")
 def login(req: LoginRequest):
     with get_session() as session:
-        user = session.exec(select(User).where(User.username == req.username)).first()
-        if not user or user.password_hash != hash_password(req.password):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
+        if req.username == "admin" and admin_secret_env and req.password == admin_secret_env:
+            user = session.exec(select(User).where(User.username == "admin")).first()
+            if not user:
+                user = User(
+                    username="admin",
+                    password_hash=hash_password(req.password),
+                    created_at=datetime.utcnow().isoformat() + "Z",
+                    is_admin=True
+                )
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+        else:
+            user = session.exec(select(User).where(User.username == req.username)).first()
+            if not user or user.password_hash != hash_password(req.password):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
             
         token = secrets.token_hex(32)
         user_session = UserSession(
@@ -874,6 +887,32 @@ def login(req: LoginRequest):
         return {"status": "success", "token": token, "user_id": user.id, "is_admin": user.is_admin}
 
 # --- ADMINISTRATOR API ---
+class SettingsUpdate(BaseModel):
+    registration_open: bool
+
+@app.get("/admin/settings")
+def get_settings(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import SystemSettings
+    with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if not settings:
+            settings = SystemSettings()
+            session.add(settings)
+            session.commit()
+            session.refresh(settings)
+        return {"registration_open": settings.registration_open}
+
+@app.post("/admin/settings")
+def update_settings(req: SettingsUpdate, admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import SystemSettings
+    with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if not settings:
+            settings = SystemSettings()
+            session.add(settings)
+        settings.registration_open = req.registration_open
+        session.commit()
+        return {"status": "success"}
 
 def get_admin_user(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):

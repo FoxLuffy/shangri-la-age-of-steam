@@ -1138,6 +1138,7 @@ def get_logs(admin: User = fastapi.Depends(get_admin_user)):
 class BugReportRequest(BaseModel):
     user_id: Optional[int] = None
     text: str
+    type: str = "bug"
 
 @app.post("/bugreports")
 def submit_bugreport(req: BugReportRequest):
@@ -1149,6 +1150,7 @@ def submit_bugreport(req: BugReportRequest):
     with get_session() as session:
         bug = BugReport(
             user_id=req.user_id,
+            type=req.type,
             original_text=req.text,
             created_at=datetime.utcnow().isoformat() + "Z"
         )
@@ -1159,7 +1161,10 @@ def submit_bugreport(req: BugReportRequest):
         # Call VLLMClient to optimize the text
         try:
             client = VLLMClient()
-            prompt = f"You are an AI assistant. The user is reporting a bug in their web application. Rewrite their report into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to fix the bug.\n\nUser Bug Report:\n{req.text}\n\nOptimized Prompt for AI Agent:"
+            if req.type == "feature":
+                prompt = f"You are an AI assistant. The user is requesting a new feature for their web application. Rewrite their request into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to implement the feature.\n\nUser Feature Request:\n{req.text}\n\nOptimized Prompt for AI Agent:"
+            else:
+                prompt = f"You are an AI assistant. The user is reporting a bug in their web application. Rewrite their report into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to fix the bug.\n\nUser Bug Report:\n{req.text}\n\nOptimized Prompt for AI Agent:"
             response = client.generate(prompt=prompt, max_tokens=300, temperature=0.7)
             
             optimized_text = ""
@@ -1191,6 +1196,7 @@ def get_bugreports(admin: User = fastapi.Depends(get_admin_user)):
             {
                 "id": b.id, 
                 "user_id": b.user_id, 
+                "type": b.type,
                 "original_text": b.original_text, 
                 "optimized_text": b.optimized_text,
                 "status": b.status,

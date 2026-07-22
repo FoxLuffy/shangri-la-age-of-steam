@@ -10,6 +10,8 @@ import type { Character } from './api';
 import SettingsMenu from './components/SettingsMenu';
 import MarketUI from './components/MarketUI';
 import AccountManager from './components/AccountManager';
+import AdminPanel from './components/AdminPanel';
+import SessionLobby from './components/SessionLobby';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -42,6 +44,10 @@ function MainApp() {
     const saved = localStorage.getItem('saos_char_id');
     return saved ? parseInt(saved, 10) : null;
   });
+  const [sessionInfo, setSessionInfo] = useState<any>(() => {
+    const saved = localStorage.getItem('saos_session_info');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [character, setCharacter] = useState<Character | null>(null);
   const [worldState, setWorldState] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +57,7 @@ function MainApp() {
   const [showEmpire, setShowEmpire] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     if (characterId) {
@@ -86,14 +93,33 @@ function MainApp() {
     setCharacterId(null);
     setCharacter(null);
     setWorldState(null);
+    setSessionInfo(null);
     localStorage.removeItem('saos_auth_token');
     localStorage.removeItem('saos_user_id');
     localStorage.removeItem('saos_is_admin');
     localStorage.removeItem('saos_char_id');
+    localStorage.removeItem('saos_session_info');
   };
 
   if (!authToken) {
     return <AccountManager onLogin={handleLogin} />;
+  }
+
+  if (!sessionInfo) {
+    return (
+      <div className="w-full h-screen bg-slate-950 flex flex-col relative overflow-hidden">
+        <div className="absolute top-4 right-4 z-50">
+          <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
+            Logout
+          </button>
+        </div>
+        <SessionLobby onSessionSelect={(mode, sId, pwd) => {
+          const info = { mode, sessionId: sId, password: pwd };
+          setSessionInfo(info);
+          localStorage.setItem('saos_session_info', JSON.stringify(info));
+        }} />
+      </div>
+    );
   }
 
   if (loading) {
@@ -129,7 +155,7 @@ function MainApp() {
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
         <div className="absolute top-2 right-2 z-50 flex gap-2">
           {isAdmin && (
-            <button onClick={() => window.open('/admin', '_blank')} className="bg-purple-900/50 text-purple-200 px-2 py-1 text-xs border border-purple-900 rounded">
+            <button onClick={() => setShowAdmin(true)} className="bg-purple-900/50 text-purple-200 px-2 py-1 text-xs border border-purple-900 rounded">
               Admin Panel
             </button>
           )}
@@ -141,6 +167,7 @@ function MainApp() {
         {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
+        {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         <ChatInterface 
           characterId={character.id}
           onStateUpdate={setWorldState} 

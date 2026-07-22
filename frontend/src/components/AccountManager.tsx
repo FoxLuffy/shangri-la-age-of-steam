@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { BACKEND_URL } from '../api';
 
 interface AccountManagerProps {
   onLogin: (token: string, userId: number, isAdmin: boolean) => void;
@@ -17,7 +18,7 @@ export default function AccountManager({ onLogin }: AccountManagerProps) {
     setLoading(true);
 
     const endpoint = isLogin ? '/auth/login' : '/auth/register';
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+    const baseUrl = BACKEND_URL;
 
     try {
       const res = await fetch(`${baseUrl}${endpoint}`, {

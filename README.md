@@ -10,10 +10,12 @@ This project uses a modern, production-ready architecture designed for low-laten
 - **State-Aware Environment:** The world state is managed as a core JSON schema, synchronized across the backend and frontend to ensure a consistent narrative experience.
 - **Real-time React Frontend:** A responsive terminal-style UI built with React and Vite, optimized for low-latency interaction with the AI backend.
 
+- **Global Asynchronous World:** The backend synchronizes a global ledger and resource market, simulating an evolving world shaped by players.
+- **Account & Session Management:** Integrated login authentication with a Session Control Plane supporting Solo and Synchronous Multiplayer lobbies.
+
 ## Tech Stack
-- **Backend:** Python, FastAPI, vLLM
+- **Backend:** Python, FastAPI, vLLM, SQLite
 - **Frontend:** React, Vite, Tailwind CSS
-- **Data:** JSON/SQLite for world state
 
 ## Building and Running locally
 
@@ -167,9 +169,10 @@ jobs:
 ```
 
 ## Project Status
-- [x] Phase 1: Foundation & Core API
-- [x] Phase 2: Frontend Shell
-- [x] Phase 3: AI Narrative Logic
-- [x] Phase 4: Polish & Deployment (Initial)
+- [x] Phase 1: Narrative-Driven Tactical Combat ⚔️
+- [x] Phase 2: Industrialist Empire & City Management 🏭
+- [x] Phase 3: The Asynchronous Shared World 🌐
+- [x] Phase 4: Synchronous Multiplayer Sessions & Accounts 👥
+- [ ] Phase 5: Community Modding Ecosystem 🛠️
 
-Status: Core foundations complete.
+Status: Multiplayer Session Control Plane & Accounts Integrated.

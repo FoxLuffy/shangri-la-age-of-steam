@@ -104,8 +104,24 @@ class FactionStanding(SQLModel, table=True):
     faction_id: str = Field(foreign_key="faction.id", index=True)
     standing: float = Field(default=0.0) # -1.0 (hated) to 1.0 (revered)
 
+class User(SQLModel, table=True):
+    __tablename__ = "user_account"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True)
+    password_hash: str
+    is_admin: bool = Field(default=False)
+    created_at: str = Field(default="")
+
+class UserSession(SQLModel, table=True):
+    __tablename__ = "user_session"
+    token: str = Field(primary_key=True)
+    user_id: int = Field(foreign_key="user_account.id", index=True)
+    created_at: str = Field(default="")
+    expires_at: str = Field(default="")
+
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="user_account.id", index=True)
     name: str
     character_class: Optional[str] = Field(default="Wanderer")
     background: Optional[str] = Field(default="A mysterious wanderer with no past.")

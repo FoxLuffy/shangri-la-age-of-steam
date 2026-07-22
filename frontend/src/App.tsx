@@ -7,9 +7,9 @@ import CombatUI from './components/CombatUI';
 import EmpireUI from './components/EmpireUI';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
-
 import SettingsMenu from './components/SettingsMenu';
 import MarketUI from './components/MarketUI';
+import AccountManager from './components/AccountManager';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -31,6 +31,13 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 function MainApp() {
+  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('saos_auth_token'));
+  const [userId, setUserId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('saos_user_id');
+    return saved ? parseInt(saved, 10) : null;
+  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => localStorage.getItem('saos_is_admin') === 'true');
+
   const [characterId, setCharacterId] = useState<number | null>(() => {
     const saved = localStorage.getItem('saos_char_id');
     return saved ? parseInt(saved, 10) : null;
@@ -50,6 +57,7 @@ function MainApp() {
       setLoading(true);
       fetchCharacter(characterId)
         .then(char => {
+          // If the character belongs to another user, we might want to handle it, but for now we just load it
           setCharacter(char);
           localStorage.setItem('saos_char_id', char.id.toString());
         })
@@ -62,12 +70,47 @@ function MainApp() {
     }
   }, [characterId]);
 
+  const handleLogin = (token: string, uId: number, adminStatus: boolean) => {
+    setAuthToken(token);
+    setUserId(uId);
+    setIsAdmin(adminStatus);
+    localStorage.setItem('saos_auth_token', token);
+    localStorage.setItem('saos_user_id', uId.toString());
+    localStorage.setItem('saos_is_admin', adminStatus.toString());
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setUserId(null);
+    setIsAdmin(false);
+    setCharacterId(null);
+    setCharacter(null);
+    setWorldState(null);
+    localStorage.removeItem('saos_auth_token');
+    localStorage.removeItem('saos_user_id');
+    localStorage.removeItem('saos_is_admin');
+    localStorage.removeItem('saos_char_id');
+  };
+
+  if (!authToken) {
+    return <AccountManager onLogin={handleLogin} />;
+  }
+
   if (loading) {
     return <div className="w-full h-screen bg-slate-950 text-amber-500 flex items-center justify-center font-mono">Loading...</div>;
   }
 
   if (!characterId || !character) {
-    return <CharacterCreation onComplete={setCharacterId} />;
+    return (
+      <div className="w-full h-screen bg-slate-950 flex flex-col relative overflow-hidden">
+        <div className="absolute top-4 right-4 z-50">
+          <button onClick={handleLogout} className="bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 border border-red-900 rounded">
+            Logout
+          </button>
+        </div>
+        <CharacterCreation onComplete={setCharacterId} userId={userId} />
+      </div>
+    );
   }
 
   const handleRetireCharacter = () => {
@@ -84,6 +127,16 @@ function MainApp() {
   return (
     <div className="w-full h-screen bg-slate-950 flex overflow-hidden relative">
       <div className="flex-1 flex flex-col p-2 sm:p-4 h-full relative">
+        <div className="absolute top-2 right-2 z-50 flex gap-2">
+          {isAdmin && (
+            <button onClick={() => window.open('/admin', '_blank')} className="bg-purple-900/50 text-purple-200 px-2 py-1 text-xs border border-purple-900 rounded">
+              Admin Panel
+            </button>
+          )}
+          <button onClick={handleLogout} className="bg-red-900/50 text-red-200 px-2 py-1 text-xs border border-red-900 rounded">
+            Logout
+          </button>
+        </div>
         {showCombat && <CombatUI worldState={worldState} character={character} />}
         {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}

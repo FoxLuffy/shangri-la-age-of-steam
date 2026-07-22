@@ -489,6 +489,7 @@ class CharacterCreateRequest(BaseModel):
     gear_prompt: str = ""
     show_tutorials: bool = True
     gear: List[Dict[str, Any]] = Field(default_factory=list)
+    user_id: Optional[int] = None
 
 class GenerateGearRequest(BaseModel):
     preset: str
@@ -580,7 +581,8 @@ async def create_character(req: CharacterCreateRequest):
             character_class=req.preset,
             background=req.backstory if req.backstory.strip() else preset_data["background"],
             stats=preset_data["stats"],
-            show_tutorials=req.show_tutorials
+            show_tutorials=req.show_tutorials,
+            user_id=req.user_id
         )
         session.add(char)
         session.commit()
@@ -798,3 +800,118 @@ async def trade_market(character_id: int, req: MarketTradeRequest):
         asyncio.create_task(manager.broadcast(json.dumps({"type": "market_sync", "market": markets_data})))
         
         return {"status": "success", "brass_coins": char.brass_coins, "new_price": round(market.current_price, 2)}
+
+
+# --- AUTHENTICATION & ACCOUNT MANAGEMENT ---
+import hashlib
+import secrets
+import fastapi
+from fastapi import Header
+from datetime import datetime
+from backend.database import User, UserSession
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+@app.post("/auth/register")
+def register(req: RegisterRequest):
+    with get_session() as session:
+        existing = session.exec(select(User).where(User.username == req.username)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        
+        user = User(
+            username=req.username,
+            password_hash=hash_password(req.password),
+            created_at=datetime.utcnow().isoformat() + "Z",
+            is_admin=False
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        
+        token = secrets.token_hex(32)
+        user_session = UserSession(
+            token=token,
+            user_id=user.id,
+            created_at=datetime.utcnow().isoformat() + "Z"
+        )
+        session.add(user_session)
+        session.commit()
+        
+        return {"status": "success", "token": token, "user_id": user.id}
+
+@app.post("/auth/login")
+def login(req: LoginRequest):
+    with get_session() as session:
+        user = session.exec(select(User).where(User.username == req.username)).first()
+        if not user or user.password_hash != hash_password(req.password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+            
+        token = secrets.token_hex(32)
+        user_session = UserSession(
+            token=token,
+            user_id=user.id,
+            created_at=datetime.utcnow().isoformat() + "Z"
+        )
+        session.add(user_session)
+        session.commit()
+        
+        return {"status": "success", "token": token, "user_id": user.id, "is_admin": user.is_admin}
+
+# --- ADMINISTRATOR API ---
+
+def get_admin_user(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization.split("Bearer ")[1]
+    with get_session() as session:
+        user_session = session.exec(select(UserSession).where(UserSession.token == token)).first()
+        if not user_session:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = session.get(User, user_session.user_id)
+        if not user or not user.is_admin:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+        return user
+
+@app.get("/admin/users")
+def get_users(admin: User = fastapi.Depends(get_admin_user)):
+    with get_session() as session:
+        users = session.exec(select(User)).all()
+        return {"users": [{"id": u.id, "username": u.username, "is_admin": u.is_admin} for u in users]}
+
+@app.delete("/admin/users/{user_id}")
+def delete_user(user_id: int, admin: User = fastapi.Depends(get_admin_user)):
+    with get_session() as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        session.delete(user)
+        session.commit()
+        return {"status": "success"}
+
+@app.post("/admin/reset-password/{user_id}")
+def reset_password(user_id: int, req: RegisterRequest, admin: User = fastapi.Depends(get_admin_user)):
+    with get_session() as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        user.password_hash = hash_password(req.password)
+        session.add(user)
+        session.commit()
+        return {"status": "success"}
+
+@app.get("/admin/logs")
+def get_logs(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import LedgerEntry
+    with get_session() as session:
+        entries = session.exec(select(LedgerEntry).order_by(LedgerEntry.timestamp.desc()).limit(50)).all()
+        return {"logs": [{"id": e.id, "character_id": e.character_id, "action": e.action, "narration": e.narration, "timestamp": e.timestamp} for e in entries]}

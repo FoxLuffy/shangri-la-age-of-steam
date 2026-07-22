@@ -64,6 +64,7 @@ export interface WorldStateData {
   quests?: any[];
   active_minigame?: any;
   is_combat_active?: boolean;
+  combat_state?: any;
 }
 
 export interface GetStateResponse {

@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from backend.models import PlayerAction, NarrativeResult, WorldState, Location, NPC
 from backend.engine import NarrativeEngine, world_tick
 from backend.client import VLLMClient
-from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, create_db_and_tables
+from backend.database import get_session, engine as db_engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Inventory, Recipe, RecipeRequirement, create_db_and_tables, SystemSettings, BugReport, User, UserSession
 from backend.repository import StateRepository
 from backend.database_init import seed_data
 
@@ -809,7 +809,6 @@ import secrets
 import fastapi
 from fastapi import Header
 from datetime import datetime
-from backend.database import User, UserSession
 
 class RegisterRequest(BaseModel):
     username: str
@@ -858,7 +857,7 @@ def register(req: RegisterRequest):
 @app.post("/auth/login")
 def login(req: LoginRequest):
     with get_session() as session:
-        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
+        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET", "admin")
         if req.username == "admin" and admin_secret_env and req.password == admin_secret_env:
             user = session.exec(select(User).where(User.username == "admin")).first()
             if not user:

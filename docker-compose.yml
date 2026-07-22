@@ -30,6 +30,5 @@ services:
     environment:
       - FRONTEND_PORT=5173
       - VLLM_SERVER_URL=http://${TRUENAS_HOST_IP}:${VLLM_PORT}
-      - VITE_BACKEND_URL=http://localhost:8003
     volumes:
       - /mnt/tank/saos_data:/data

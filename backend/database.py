@@ -48,6 +48,7 @@ class NPC(SQLModel, table=True):
     custom_system_prompt: Optional[str] = Field(default=None)
 
     # Combat Stats
+    speed: int = Field(default=5)
     hp: int = Field(default=100)
     max_hp: int = Field(default=100)
     armor: int = Field(default=0)
@@ -134,7 +135,7 @@ class Character(SQLModel, table=True):
     name: str
     character_class: Optional[str] = Field(default="Wanderer")
     background: Optional[str] = Field(default="A mysterious wanderer with no past.")
-    stats: Dict[str, int] = Field(default={"strength": 5, "intellect": 5, "charm": 5}, sa_column=Column(JSON))
+    stats: Dict[str, int] = Field(default={"strength": 5, "intellect": 5, "charm": 5, "speed": 5}, sa_column=Column(JSON))
     
     # Combat Stats
     hp: int = Field(default=100)
@@ -283,4 +284,12 @@ class LedgerEntry(SQLModel, table=True):
     state_updates: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     events: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSON))
     location_id: Optional[str] = None
+
+class CombatSession(SQLModel, table=True):
+    __tablename__ = "combat_session"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    location_id: str = Field(index=True, unique=True)
+    is_active: bool = Field(default=False)
+    turn_order: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSON)) # [{"id": "...", "type": "player|npc", "speed": 10, "name": "..."}]
+    current_turn_index: int = Field(default=0)
 

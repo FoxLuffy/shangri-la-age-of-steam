@@ -25,6 +25,7 @@ class NPC(BaseModel):
     custom_system_prompt: Optional[str] = None
     
     # Combat
+    speed: int = 5
     hp: int = 100
     max_hp: int = 100
     armor: int = 0
@@ -67,6 +68,7 @@ class WorldState(BaseModel):
     factions: List[FactionStandingModel] = []
     active_minigame: Optional[Dict[str, Any]] = None
     is_combat_active: bool = False
+    combat_state: Optional[Dict[str, Any]] = None
     player_stats: Optional[Dict[str, Any]] = None
     properties: List[PropertyModel] = []
     brass_coins: int = 0

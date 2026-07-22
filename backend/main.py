@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -813,7 +814,6 @@ from backend.database import User, UserSession
 class RegisterRequest(BaseModel):
     username: str
     password: str
-    admin_secret: Optional[str] = None
 
 class LoginRequest(BaseModel):
     username: str
@@ -824,21 +824,21 @@ def hash_password(password: str) -> str:
 
 @app.post("/auth/register")
 def register(req: RegisterRequest):
+    from backend.database import SystemSettings
     with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if settings and not settings.registration_open:
+            raise HTTPException(status_code=403, detail="Registration is currently closed.")
+
         existing = session.exec(select(User).where(User.username == req.username)).first()
         if existing:
             raise HTTPException(status_code=400, detail="Username already taken")
-        
-        is_admin_user = False
-        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
-        if admin_secret_env and req.admin_secret == admin_secret_env:
-            is_admin_user = True
 
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
             created_at=datetime.utcnow().isoformat() + "Z",
-            is_admin=is_admin_user
+            is_admin=False
         )
         session.add(user)
         session.commit()
@@ -858,9 +858,23 @@ def register(req: RegisterRequest):
 @app.post("/auth/login")
 def login(req: LoginRequest):
     with get_session() as session:
-        user = session.exec(select(User).where(User.username == req.username)).first()
-        if not user or user.password_hash != hash_password(req.password):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        admin_secret_env = os.environ.get("SAOS_ADMIN_SECRET")
+        if req.username == "admin" and admin_secret_env and req.password == admin_secret_env:
+            user = session.exec(select(User).where(User.username == "admin")).first()
+            if not user:
+                user = User(
+                    username="admin",
+                    password_hash=hash_password(req.password),
+                    created_at=datetime.utcnow().isoformat() + "Z",
+                    is_admin=True
+                )
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+        else:
+            user = session.exec(select(User).where(User.username == req.username)).first()
+            if not user or user.password_hash != hash_password(req.password):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
             
         token = secrets.token_hex(32)
         user_session = UserSession(
@@ -874,6 +888,8 @@ def login(req: LoginRequest):
         return {"status": "success", "token": token, "user_id": user.id, "is_admin": user.is_admin}
 
 # --- ADMINISTRATOR API ---
+class SettingsUpdate(BaseModel):
+    registration_open: bool
 
 def get_admin_user(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -887,6 +903,30 @@ def get_admin_user(authorization: Optional[str] = Header(None)):
         if not user or not user.is_admin:
             raise HTTPException(status_code=403, detail="Admin privileges required")
         return user
+
+@app.get("/admin/settings")
+def get_settings(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import SystemSettings
+    with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if not settings:
+            settings = SystemSettings()
+            session.add(settings)
+            session.commit()
+            session.refresh(settings)
+        return {"registration_open": settings.registration_open}
+
+@app.post("/admin/settings")
+def update_settings(req: SettingsUpdate, admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import SystemSettings
+    with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if not settings:
+            settings = SystemSettings()
+            session.add(settings)
+        settings.registration_open = req.registration_open
+        session.commit()
+        return {"status": "success"}
 
 @app.get("/admin/users")
 def get_users(admin: User = fastapi.Depends(get_admin_user)):
@@ -921,3 +961,77 @@ def get_logs(admin: User = fastapi.Depends(get_admin_user)):
     with get_session() as session:
         entries = session.exec(select(LedgerEntry).order_by(LedgerEntry.timestamp.desc()).limit(50)).all()
         return {"logs": [{"id": e.id, "character_id": e.character_id, "action": e.action, "narration": e.narration, "timestamp": e.timestamp} for e in entries]}
+
+class BugReportRequest(BaseModel):
+    user_id: Optional[int] = None
+    text: str
+
+@app.post("/bugreports")
+def submit_bugreport(req: BugReportRequest):
+    from backend.database import BugReport
+    from backend.client import VLLMClient
+    import logging
+    logger = logging.getLogger(__name__)
+
+    with get_session() as session:
+        bug = BugReport(
+            user_id=req.user_id,
+            original_text=req.text,
+            created_at=datetime.utcnow().isoformat() + "Z"
+        )
+        session.add(bug)
+        session.commit()
+        session.refresh(bug)
+        
+        # Call VLLMClient to optimize the text
+        try:
+            client = VLLMClient()
+            prompt = f"You are an AI assistant. The user is reporting a bug in their web application. Rewrite their report into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to fix the bug.\n\nUser Bug Report:\n{req.text}\n\nOptimized Prompt for AI Agent:"
+            response = client.generate(prompt=prompt, max_tokens=300, temperature=0.7)
+            
+            optimized_text = ""
+            if isinstance(response, dict) and "choices" in response and len(response["choices"]) > 0:
+                choice = response["choices"][0]
+                if "text" in choice:
+                    optimized_text = choice["text"]
+                elif "message" in choice:
+                    optimized_text = choice["message"].get("content", "")
+            elif isinstance(response, dict) and "text" in response:
+                optimized_text = response["text"]
+            elif isinstance(response, str):
+                optimized_text = response
+            
+            if optimized_text:
+                bug.optimized_text = optimized_text.strip()
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to optimize bug report: {e}")
+            
+        return {"status": "success", "bug_id": bug.id}
+
+@app.get("/admin/bugreports")
+def get_bugreports(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import BugReport
+    with get_session() as session:
+        bugs = session.exec(select(BugReport).order_by(BugReport.id.desc())).all()
+        return {"bugreports": [
+            {
+                "id": b.id, 
+                "user_id": b.user_id, 
+                "original_text": b.original_text, 
+                "optimized_text": b.optimized_text,
+                "status": b.status,
+                "created_at": b.created_at
+            } for b in bugs
+        ]}
+
+@app.delete("/admin/bugreports/{bug_id}")
+def delete_bugreport(bug_id: int, admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import BugReport
+    with get_session() as session:
+        bug = session.get(BugReport, bug_id)
+        if not bug:
+            raise HTTPException(status_code=404, detail="Bug report not found")
+        session.delete(bug)
+        session.commit()
+        return {"status": "success"}

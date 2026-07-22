@@ -177,8 +177,8 @@ export const sendAction = async (
               if (parsed.chunk && onChunk) {
                 const speedSetting = localStorage.getItem('saos_narrator_speed') || 'Fast';
                 let delay = 0;
-                if (speedSetting === 'Normal') delay = 20;
-                if (speedSetting === 'Slow') delay = 60;
+                if (speedSetting === 'Normal') delay = 50;
+                if (speedSetting === 'Slow') delay = 120;
                 
                 if (delay > 0) {
                   await new Promise(r => setTimeout(r, delay));

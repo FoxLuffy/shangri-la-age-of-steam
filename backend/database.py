@@ -139,6 +139,18 @@ class Character(SQLModel, table=True):
     # Settings
     show_tutorials: bool = Field(default=True)
 
+class SystemSettings(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    registration_open: bool = Field(default=True)
+
+class BugReport(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="user_account.id")
+    original_text: str
+    optimized_text: Optional[str] = Field(default=None)
+    created_at: str
+    status: str = Field(default="open")
+
 class Property(SQLModel, table=True):
     __tablename__ = "property"
     id: Optional[int] = Field(default=None, primary_key=True)

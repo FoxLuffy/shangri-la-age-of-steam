@@ -43,10 +43,11 @@
 ## Phase 4: Synchronous Multiplayer Sessions & Accounts 👥
 *Evolving from an asynchronous ghost-town to a true co-op RPG experience.*
 - [x] **Account Management:** Implement user registration, passwords, and profile management to save character progress securely.
-- [ ] **Session Control Plane (Frontend):** Lobby management is handled directly in the frontend UI communicating with our primary backend. Players can choose to play Solo, Start a Co-op Campaign, Join a Public Session, or Join a Private Session with a password (max 4 players per session).
+- [x] **Session Control Plane (Frontend):** Lobby management is handled directly in the frontend UI communicating with our primary backend. Players can choose to play Solo, Start a Co-op Campaign, Join a Public Session, or Join a Private Session with a password (max 4 players per session).
 - [ ] **Active Players UI:** When players occupy the same location, they appear in a new "Active Players" list alongside NPCs, allowing you to see some of their stats (HP, Class, Steam).
 - [ ] **Turn-Based Multiplayer Combat:** Overhaul combat to support synchronous, turn-based encounters. Speed stats (and specific skills) will determine the initiative order, meaning players must wait their turn to act.
-- [x] **Administrator API & Panel:** A completely separate admin API/service to manage the platform. The administrator can reset passwords, delete players/characters, and inspect LLM prompts/narrative logs for abuse or malicious use.
+- [x] **Administrator API & Panel:** Master admin override login (bypassing registration). The panel allows the admin to reset passwords, delete players, toggle global registrations, and inspect narrative audit logs.
+- [x] **AI-Optimized Bug Reporting:** Operatives can submit bug reports globally. The backend uses vLLM to rewrite the user complaint into a technical, step-by-step prompt optimized specifically for an AI Coding Agent to execute the fix, visible in the Admin Panel.
 
 ## Phase 5: Community Modding Ecosystem 🛠️
 *Give the players the keys to the steamworks.*

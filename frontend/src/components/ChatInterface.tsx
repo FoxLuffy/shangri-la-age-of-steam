@@ -244,7 +244,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     const { turn_order, current_turn_index } = combatState;
     if (!turn_order || current_turn_index >= turn_order.length) return true;
     const currentActor = turn_order[current_turn_index];
-    return currentActor.type === 'player' && currentActor.id === player_;
+    return currentActor.type === 'player' && currentActor.id === characterId;
   }, [combatState, characterId]);
   
   const currentTurnActor = combatState?.turn_order?.[combatState?.current_turn_index]?.name || '';
@@ -640,13 +640,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isMinigameActive ? "Focus on the minigame..." : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
+                placeholder={isMinigameActive ? "Focus on the minigame..." : !isMyTurn ? `Waiting for ${currentTurnActor} to act...` : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
                 className="flex-1 bg-slate-900 border border-amber-800/50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-amber-100 placeholder-slate-500 shadow-inner disabled:opacity-50"
-                disabled={isLoading || isMinigameActive}
+                disabled={isLoading || isMinigameActive || !isMyTurn}
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim() || isMinigameActive}
+                disabled={isLoading || !input.trim() || isMinigameActive || !isMyTurn}
                 className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-bold px-6 py-3 rounded-lg text-sm transition-all shadow-lg flex items-center gap-2"
               >
                 <span>SEND</span>

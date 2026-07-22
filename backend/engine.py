@@ -133,11 +133,13 @@ class NarrativeEngine:
                     ghost_echoes.append(f"{char_name} recently did this here: {entry.action}")
 
         prompt_str = build_narrative_prompt(state, action, ghost_echoes=ghost_echoes)
+        
+        system_prompt = getattr(state, "global_system_prompt", None)
 
         full_raw_data = ""
         is_narrating = True
         buffer = ""
-        for chunk in self.vllm_client.generate_stream(prompt_str):
+        for chunk in self.vllm_client.generate_stream(prompt_str, system_prompt=system_prompt):
             text = ""
             if isinstance(chunk, dict):
                 if "choices" in chunk and len(chunk["choices"]) > 0:

@@ -54,7 +54,8 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
             "hp": getattr(npc, "hp", 100),
             "max_hp": getattr(npc, "max_hp", 100),
             "armor": getattr(npc, "armor", 0),
-            "status_effects": getattr(npc, "status_effects", []) or []
+            "status_effects": getattr(npc, "status_effects", []) or [],
+            "custom_system_prompt": getattr(npc, "custom_system_prompt", None)
         })
 
     current_loc = getattr(state, "current_location", None)

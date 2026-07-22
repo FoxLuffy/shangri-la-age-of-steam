@@ -52,5 +52,5 @@
 ## Phase 5: Community Modding Ecosystem 🛠️
 *Give the players the keys to the steamworks.*
 - [x] **JSON Module Support:** A system allowing players to upload custom JSON files defining new Locations, NPCs, Items, and Factions.
-- [ ] **Steam Workshop / Mod Browser:** An in-game hub to download and inject popular community modules directly into a local save state.
+- [x] **Steam Workshop / Mod Browser:** An in-game hub to download and inject popular community modules directly into a local save state.
 - [ ] **Custom AI System Prompts:** Advanced users can tweak the narrative prompt parameters of their custom NPCs to create entirely new genres within the engine.

@@ -45,6 +45,7 @@ class NPC(SQLModel, table=True):
     location_id: str = Field(default="1", index=True, foreign_key="location.id")
     faction_id: Optional[str] = Field(default=None, foreign_key="faction.id")
     location: Optional[Location] = Relationship()
+    custom_system_prompt: Optional[str] = Field(default=None)
 
     # Combat Stats
     hp: int = Field(default=100)
@@ -151,6 +152,7 @@ class Character(SQLModel, table=True):
 class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     registration_open: bool = Field(default=True)
+    global_system_prompt: Optional[str] = Field(default=None)
 
 class BugReport(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

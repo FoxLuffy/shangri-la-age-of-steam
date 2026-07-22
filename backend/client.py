@@ -27,6 +27,7 @@ class VLLMClient:
     def generate(
         self,
         prompt: str,
+        system_prompt: Optional[str] = None,
         max_tokens: int = 512,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -36,9 +37,14 @@ class VLLMClient:
         Generates text completion using the vLLM endpoint.
         """
         endpoint = f"{self.api_base}/chat/completions" if not self.api_base.endswith("/chat/completions") else self.api_base
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "top_p": top_p,
@@ -63,6 +69,7 @@ class VLLMClient:
     def generate_stream(
         self,
         prompt: str,
+        system_prompt: Optional[str] = None,
         max_tokens: int = 512,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -72,9 +79,14 @@ class VLLMClient:
         Generates text completion using the vLLM endpoint and yields chunks.
         """
         endpoint = f"{self.api_base}/chat/completions" if not self.api_base.endswith("/chat/completions") else self.api_base
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "top_p": top_p,

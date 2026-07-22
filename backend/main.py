@@ -1036,6 +1036,7 @@ def login(req: LoginRequest):
 # --- ADMINISTRATOR API ---
 class SettingsUpdate(BaseModel):
     registration_open: bool
+    global_system_prompt: Optional[str] = None
 
 def get_admin_user(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -1060,7 +1061,10 @@ def get_settings(admin: User = fastapi.Depends(get_admin_user)):
             session.add(settings)
             session.commit()
             session.refresh(settings)
-        return {"registration_open": settings.registration_open}
+        return {
+            "registration_open": settings.registration_open,
+            "global_system_prompt": settings.global_system_prompt
+        }
 
 @app.post("/admin/settings")
 def update_settings(req: SettingsUpdate, admin: User = fastapi.Depends(get_admin_user)):
@@ -1071,6 +1075,8 @@ def update_settings(req: SettingsUpdate, admin: User = fastapi.Depends(get_admin
             settings = SystemSettings()
             session.add(settings)
         settings.registration_open = req.registration_open
+        if req.global_system_prompt is not None:
+            settings.global_system_prompt = req.global_system_prompt
         session.commit()
         return {"status": "success"}
 
@@ -1079,6 +1085,27 @@ def get_users(admin: User = fastapi.Depends(get_admin_user)):
     with get_session() as session:
         users = session.exec(select(User)).all()
         return {"users": [{"id": u.id, "username": u.username, "is_admin": u.is_admin} for u in users]}
+
+class NPCUpdate(BaseModel):
+    custom_system_prompt: Optional[str] = None
+
+@app.get("/admin/npcs")
+def get_npcs(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import NPC as DBNPC
+    with get_session() as session:
+        npcs = session.exec(select(DBNPC)).all()
+        return {"npcs": [{"id": n.id, "name": n.name, "custom_system_prompt": n.custom_system_prompt} for n in npcs]}
+
+@app.put("/admin/npcs/{npc_id}")
+def update_npc(npc_id: str, req: NPCUpdate, admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import NPC as DBNPC
+    with get_session() as session:
+        npc = session.get(DBNPC, npc_id)
+        if not npc:
+            raise HTTPException(status_code=404, detail="NPC not found")
+        npc.custom_system_prompt = req.custom_system_prompt
+        session.commit()
+        return {"status": "success"}
 
 @app.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, admin: User = fastapi.Depends(get_admin_user)):

@@ -308,6 +308,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         current_location_id: currentLocationId,
         mood: selectedMood || undefined,
         is_exploration: isExploration,
+        context_type: isExploration ? 'Exploration' : 'Dialogue',
         client_id: clientId,
         character_id: characterId
       }, (chunk) => {
@@ -395,6 +396,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         action_text: travelText,
         current_location_id: newLocId,
         is_exploration: true,
+        context_type: 'Exploration',
         client_id: clientId
       }, (chunk) => {
         setMessages((prev) =>

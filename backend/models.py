@@ -78,6 +78,7 @@ class PlayerAction(BaseModel):
     current_location_id: str = "1"
     mood: Optional[str] = None
     is_exploration: bool = False
+    context_type: Optional[str] = None
     client_id: Optional[str] = None
     character_id: Optional[int] = None
 

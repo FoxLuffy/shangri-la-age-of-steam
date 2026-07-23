@@ -4,11 +4,13 @@ import {
   fetchWorldState, 
   resetWorldState, 
   importWorldState,
+  fetchGlossary,
   BACKEND_URL,
   WS_URL,
   type Location as LocationType, 
   type NPC as NPCType,
-  type GetStateResponse
+  type GetStateResponse,
+  type GlossaryData
 } from '../api';
 
 import AudioManager from './AudioManager';
@@ -49,6 +51,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [showHistory, setShowHistory] = useState(false);
   const [isMinigameActive, setIsMinigameActive] = useState(false);
   const [combatState, setCombatState] = useState<any>(null);
+  const [glossary, setGlossary] = useState<GlossaryData | null>(null);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -175,6 +178,15 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       }
     }
     loadState(hasHistory);
+
+    fetchGlossary().then(setGlossary).catch(err => console.error("Failed to fetch glossary", err));
+    
+    const handlePing = () => {
+      setIsEnvExpanded(true);
+      localStorage.setItem('saos_env_expanded', 'true');
+    };
+    window.addEventListener('saos_ping_exploration', handlePing);
+    return () => window.removeEventListener('saos_ping_exploration', handlePing);
   }, [characterId]);
 
   const loadState = async (hasHistory: boolean = false) => {
@@ -440,6 +452,46 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     { id: 'tense', label: 'Tense ⚡' }
   ];
 
+  const renderWithGlossary = (text: string, glossary: GlossaryData) => {
+    if (!text) return text;
+    
+    const terms = [
+      ...glossary.locations.map(l => ({ ...l, type: 'location' })),
+      ...glossary.npcs.map(n => ({ ...n, type: 'npc' })),
+      ...glossary.items.map(i => ({ ...i, type: 'item' }))
+    ];
+    
+    if (!terms.length) return text;
+    
+    const sortedTerms = terms.sort((a, b) => b.name.length - a.name.length);
+    const escapedTerms = sortedTerms.map(t => t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`\\b(${escapedTerms.join('|')})\\b`, 'gi');
+    
+    const parts = text.split(regex);
+    return parts.map((part, i) => {
+      const termMatch = sortedTerms.find(t => t.name.toLowerCase() === part.toLowerCase());
+      if (termMatch) {
+         let colorClass = "text-amber-300";
+         if (termMatch.type === "location") colorClass = "text-emerald-400";
+         else if (termMatch.type === "npc") colorClass = "text-sky-400";
+         
+         return (
+           <span 
+             key={i} 
+             className={`${colorClass} font-bold cursor-help underline decoration-dotted underline-offset-2 transition-colors hover:text-white`}
+             title={`${termMatch.type.toUpperCase()}: ${termMatch.description || 'No description available'}`}
+             onClick={() => {
+               window.dispatchEvent(new CustomEvent('saos_ping_exploration'));
+             }}
+           >
+             {part}
+           </span>
+         );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
       <AudioManager locationId={currentLocationId} mood={selectedMood} />
@@ -576,7 +628,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                       : 'bg-slate-900/90 border-slate-700/60 text-slate-200 rounded-tl-none'
                   } ${msg.mood ? `mood-${msg.mood}` : ''}`}
                 >
-                  {msg.content}
+                  {glossary ? renderWithGlossary(msg.content, glossary) : msg.content}
 
                   {msg.events && msg.events.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-amber-900/40 flex flex-wrap gap-2 text-xs">

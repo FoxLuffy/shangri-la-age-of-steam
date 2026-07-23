@@ -42,7 +42,7 @@ def test_flavor_prompt_complex_inputs():
         
     # Check for mood and exploration instructions
     assert "[Mood: tense]" in prompt
-    assert "Provide a detailed description of the surroundings" in prompt
+    assert "a detailed and atmospheric description of the new surroundings" in prompt
         
     # Check for system instructions
     assert "You are the Narrator" in prompt

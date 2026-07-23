@@ -530,6 +530,45 @@ class StateRepository:
             
             self.session.commit()
 
+    def apply_new_entities(self, new_entities: List[Dict[str, Any]]):
+        from backend.database import NPC as DBNPC, Location as DBLocation, Item
+        for entity in new_entities:
+            entity_type = entity.get("type", "").lower()
+            if entity_type == "npc":
+                npc_id = entity.get("id") or entity.get("name", "Unknown NPC").lower().replace(" ", "_")
+                if not self.session.get(DBNPC, npc_id):
+                    npc = DBNPC(
+                        id=npc_id,
+                        name=entity.get("name", "Unknown NPC"),
+                        traits=entity.get("traits", []),
+                        disposition=0.0,
+                        location_id="1" # default, could be updated if we pass current location
+                    )
+                    self.session.add(npc)
+            elif entity_type == "location":
+                loc_id = entity.get("id") or entity.get("name", "Unknown Location").lower().replace(" ", "_")
+                if not self.session.get(DBLocation, loc_id):
+                    loc = DBLocation(
+                        id=loc_id,
+                        name=entity.get("name", "Unknown Location"),
+                        description=entity.get("description", "")
+                    )
+                    self.session.add(loc)
+            elif entity_type == "item":
+                item_name = entity.get("name")
+                if item_name:
+                    from sqlmodel import select
+                    existing_item = self.session.exec(select(Item).where(Item.name == item_name)).first()
+                    if not existing_item:
+                        category = entity.get("category", "Consumables")
+                        item = Item(
+                            name=item_name,
+                            description=entity.get("description", ""),
+                            category=category
+                        )
+                        self.session.add(item)
+        self.session.commit()
+
 if __name__ == "__main__":
     with get_session() as session:
         repo = StateRepository(session)

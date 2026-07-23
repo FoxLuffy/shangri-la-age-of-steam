@@ -289,6 +289,9 @@ class NarrativeEngine:
             if "empire_updates" in state_updates:
                 repository.apply_empire_update(state_updates["empire_updates"], action.character_id or 1)
 
+            if "new_entities" in state_updates and isinstance(state_updates["new_entities"], list):
+                repository.apply_new_entities(state_updates["new_entities"])
+
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]
                 if minigame_type in ["hack", "lockpick"]:

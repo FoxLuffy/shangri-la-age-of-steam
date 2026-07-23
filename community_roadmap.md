@@ -42,7 +42,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** Upgrade the minigame to use numbers/glyphs. Higher skills = more hints. Like Wordle/Mastermind, show previous guesses with color-coded feedback (e.g., 2 correct, 1 wrong place).
 * **Action Plan:** Overhaul the `Minigame` React component and backend logic to support a Mastermind-style rule set with skill-based difficulty scaling.
 
-### 4. Dynamic Database Ingestion & Global Lore
+### [x] 4. Dynamic Database Ingestion & Global Lore
 * **Description:** Any new NPC, location, or item hallucinated/created by the LLM during a session should be permanently saved to the global SQLite database so other players can interact with them.
 * **Action Plan:** Expand the VLLM output schema to include a `new_entities` array, which the backend will parse and `INSERT` into the global `NPC`, `Location`, and `Item` tables.
 

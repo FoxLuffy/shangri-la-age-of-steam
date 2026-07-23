@@ -18,7 +18,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** Spending money only deducts 1 coin regardless of the purchase. Gains/losses from narrative need to accurately parse amounts and show UI chips. Tool durability/breakage is not syncing.
 * **Action Plan:** Update the VLLM prompt to strictly return numerical deltas for wealth. Add a new JSON field to track tool durability, and render changes as UI chips beneath the chat log.
 
-### 4. Broken Minigame Triggers
+### [x] 4. Broken Minigame Triggers
 * **Description:** The minigame does not always pop open when the narrative suggests it.
 * **Action Plan:** Ensure the narrative engine correctly emits the `trigger_minigame` event to the WebSocket whenever hacking or lockpicking is required.
 

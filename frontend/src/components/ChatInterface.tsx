@@ -93,6 +93,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             timestamp: now
           };
           setMessages(prev => [...prev, newMsg]);
+        } else if (msg.type === 'trigger_minigame') {
+          if (msg.character_id === characterId && onOpenMinigame) {
+            onOpenMinigame();
+          }
         } else if (msg.type === 'narrative_event' && msg.action && msg.action.client_id !== clientId) {
           const actionText = msg.action.action_text || 'Another player acted.';
           const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

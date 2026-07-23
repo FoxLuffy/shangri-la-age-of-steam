@@ -94,6 +94,27 @@ class NarrativeEngine:
 
     def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:
+            from sqlmodel import select
+            from backend.database import Character, WorldState as DBWorldState
+            
+            if action.current_location_id:
+                loc_changed = False
+                if action.character_id:
+                    char = session.get(Character, action.character_id)
+                    if char and char.location_id != action.current_location_id:
+                        char.location_id = action.current_location_id
+                        session.add(char)
+                        loc_changed = True
+                        
+                db_state = session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
+                if db_state and db_state.current_location_id != action.current_location_id:
+                    db_state.current_location_id = action.current_location_id
+                    session.add(db_state)
+                    loc_changed = True
+                    
+                if loc_changed:
+                    session.commit()
+
             repository = StateRepository(session)
             state = repository.get_latest_state(action.character_id)
         elif self.initial_state:

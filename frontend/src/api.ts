@@ -32,6 +32,7 @@ export interface PlayerActionPayload {
   current_location_id: string;
   mood?: string;
   is_exploration?: boolean;
+  context_type?: string;
   client_id?: string;
   character_id?: number;
 }

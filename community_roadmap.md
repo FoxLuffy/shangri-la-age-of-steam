@@ -34,7 +34,7 @@ These bugs severely impact gameplay and cause application crashes.
 
 ## 🚀 Phase 2: Feature Development
 
-### 1. Dynamic LLM Verbosity
+### [x] 1. Dynamic LLM Verbosity
 * **Description:** The LLM needs to adjust its output length dynamically. Long descriptions for new areas, short and punchy outputs for dialogue.
 * **Action Plan:** Inject a `context_type` (e.g., `Exploration` vs `Dialogue`) into the VLLM prompt so it knows the desired brevity.
 

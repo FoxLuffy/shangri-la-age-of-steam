@@ -93,8 +93,15 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
     if hasattr(action, 'mood') and action.mood:
         prompt_str += f"\n\n[Mood: {action.mood}]"
 
-    if hasattr(action, 'is_exploration') and action.is_exploration:
-        prompt_str += "\n\nProvide a detailed description of the surroundings."
+    if hasattr(action, 'context_type') and action.context_type:
+        if action.context_type.lower() == 'exploration':
+            prompt_str += "\n\n[Context: Exploration] Provide a detailed and atmospheric description of the new surroundings. Feel free to be verbose and elaborate on the scenery."
+        elif action.context_type.lower() == 'dialogue':
+            prompt_str += "\n\n[Context: Dialogue] Keep the narration short and punchy. Focus on the immediate interaction and character responses without lengthy environmental descriptions."
+        else:
+            prompt_str += f"\n\n[Context: {action.context_type}] Adjust your verbosity and focus accordingly."
+    elif hasattr(action, 'is_exploration') and action.is_exploration:
+        prompt_str += "\n\n[Context: Exploration] Provide a detailed and atmospheric description of the new surroundings. Feel free to be verbose and elaborate on the scenery."
 
     return prompt_str
 

@@ -22,7 +22,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** The minigame does not always pop open when the narrative suggests it.
 * **Action Plan:** Ensure the narrative engine correctly emits the `trigger_minigame` event to the WebSocket whenever hacking or lockpicking is required.
 
-### 5. Repetitive Narration (Context Window)
+### [x] 5. Repetitive Narration (Context Window)
 * **Description:** The narrator stubbornly describes the location every single turn instead of focusing on the immediate action.
 * **Action Plan:** Adjust the `engine.py` system prompts to instruct the LLM to omit environmental descriptions on subsequent turns unless the environment has meaningfully changed.
 

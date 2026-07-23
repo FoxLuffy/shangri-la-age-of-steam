@@ -1223,9 +1223,9 @@ def export_roadmap(admin: User = fastapi.Depends(get_admin_user)):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"VLLM processing failed: {str(e)}")
 
-@app.get("/local/reports/fetch_and_clear")
-def local_fetch_and_clear():
-    # Intended to be called by local AI tools/scripts only
+@app.get("/admin/reports/fetch_and_clear")
+def fetch_and_clear(admin: User = fastapi.Depends(get_admin_user)):
+    # Intended to be called by local AI tools/scripts or admin panel
     from backend.database import BugReport
     with get_session() as session:
         bugs = session.exec(select(BugReport).order_by(BugReport.id.asc())).all()

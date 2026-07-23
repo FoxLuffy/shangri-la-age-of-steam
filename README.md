@@ -101,6 +101,13 @@ This project includes a dedicated **Administrator Panel** to manage the server. 
 2. During account registration in the frontend UI, enter that exact secret into the "Admin Override Code" field.
 3. Once logged in, an "Admin Panel" button will appear in the top-right corner of the interface.
 
+## AI Integration & Roadmapping
+
+The project supports centralized community roadmapping. When users submit Bug Reports or Feature Requests in the app, they are stored locally in the database.
+
+- **Admin Export:** Within the Admin Panel, an "Export AI Roadmap" button triggers the `/admin/reports/export_roadmap` endpoint, which uses vLLM to read all reports and dynamically compile a prioritized markdown roadmap.
+- **AI Tooling (`fetch_input` Skill):** The backend exposes `GET /admin/reports/fetch_and_clear` to allow AI agents (like Antigravity) to fetch and wipe all reports. The built-in `fetch_input` skill instructs the AI to log in, consume this data, and suggest tasks for implementation.
+
 ## CI/CD (GitHub Actions)
 The following workflow provides a manual trigger to build and publish the artifacts.
 

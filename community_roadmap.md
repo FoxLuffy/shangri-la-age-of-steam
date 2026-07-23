@@ -26,7 +26,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** The narrator stubbornly describes the location every single turn instead of focusing on the immediate action.
 * **Action Plan:** Adjust the `engine.py` system prompts to instruct the LLM to omit environmental descriptions on subsequent turns unless the environment has meaningfully changed.
 
-### 6. Zombie NPCs & Stale States
+### [x] 6. Zombie NPCs & Stale States
 * **Description:** Active NPCs don't update their mood/opinion visually, and dead NPCs remain in the side pane.
 * **Action Plan:** Implement WebSocket broadcasts for NPC state changes (death, disposition) so the React frontend instantly updates or removes them from the side-pane.
 

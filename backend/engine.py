@@ -231,9 +231,37 @@ class NarrativeEngine:
                 repository.update_location(loc_id, loc_data)
             
             if "active_npcs" in state_updates and isinstance(state_updates["active_npcs"], list):
+                from backend.main import manager
+                import json
                 for npc_info in state_updates["active_npcs"]:
                     if isinstance(npc_info, dict):
-                        repository.create_or_update_npc(npc_info, loc_id)
+                        npc = repository.create_or_update_npc(npc_info, loc_id)
+                        
+                        is_dead = False
+                        if npc.traits:
+                            is_dead = any(t.lower() == "dead" for t in npc.traits)
+                            
+                        if is_dead:
+                            if isinstance(state.active_npcs_ids, list) and npc.id in state.active_npcs_ids:
+                                state.active_npcs_ids.remove(npc.id)
+                        else:
+                            if isinstance(state.active_npcs_ids, list) and npc.id not in state.active_npcs_ids:
+                                state.active_npcs_ids.append(npc.id)
+                                
+                        try:
+                            npc_dict = {
+                                "id": npc.id,
+                                "name": npc.name,
+                                "traits": npc.traits or [],
+                                "disposition": npc.disposition,
+                                "hp": 0 if is_dead else 100
+                            }
+                            events.append({
+                                "type": "npc_state_change",
+                                "npc": npc_dict
+                            })
+                        except Exception as e:
+                            logger.error(f"Failed to append NPC state change event: {e}")
                         
             if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
                 for inv_update in state_updates["inventory_updates"]:

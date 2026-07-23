@@ -1143,7 +1143,6 @@ class BugReportRequest(BaseModel):
 @app.post("/bugreports")
 def submit_bugreport(req: BugReportRequest):
     from backend.database import BugReport
-    from backend.client import VLLMClient
     import logging
     logger = logging.getLogger(__name__)
 
@@ -1157,33 +1156,6 @@ def submit_bugreport(req: BugReportRequest):
         session.add(bug)
         session.commit()
         session.refresh(bug)
-        
-        # Call VLLMClient to optimize the text
-        try:
-            client = VLLMClient()
-            if req.type == "feature":
-                prompt = f"You are an AI assistant. The user is requesting a new feature for their web application. Rewrite their request into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to implement the feature.\n\nUser Feature Request:\n{req.text}\n\nOptimized Prompt for AI Agent:"
-            else:
-                prompt = f"You are an AI assistant. The user is reporting a bug in their web application. Rewrite their report into a highly technical, step-by-step instruction prompt optimized for an AI Coding Agent to fix the bug.\n\nUser Bug Report:\n{req.text}\n\nOptimized Prompt for AI Agent:"
-            response = client.generate(prompt=prompt, max_tokens=300, temperature=0.7)
-            
-            optimized_text = ""
-            if isinstance(response, dict) and "choices" in response and len(response["choices"]) > 0:
-                choice = response["choices"][0]
-                if "text" in choice:
-                    optimized_text = choice["text"]
-                elif "message" in choice:
-                    optimized_text = choice["message"].get("content", "")
-            elif isinstance(response, dict) and "text" in response:
-                optimized_text = response["text"]
-            elif isinstance(response, str):
-                optimized_text = response
-            
-            if optimized_text:
-                bug.optimized_text = optimized_text.strip()
-                session.commit()
-        except Exception as e:
-            logger.error(f"Failed to optimize bug report: {e}")
             
         return {"status": "success", "bug_id": bug.id}
 
@@ -1214,3 +1186,57 @@ def delete_bugreport(bug_id: int, admin: User = fastapi.Depends(get_admin_user))
         session.delete(bug)
         session.commit()
         return {"status": "success"}
+
+@app.post("/admin/reports/export_roadmap")
+def export_roadmap(admin: User = fastapi.Depends(get_admin_user)):
+    from backend.database import BugReport
+    from backend.client import VLLMClient
+    
+    with get_session() as session:
+        bugs = session.exec(select(BugReport).order_by(BugReport.id.desc())).all()
+        
+        if not bugs:
+            return {"roadmap": "No reports found to generate roadmap."}
+
+        prompt = "You are a product manager and lead engineer. Below are the community reports (bugs and feature requests). Please analyze all of them, order them by logical priority (critical bugs first, then important features, etc.), and create a clear, step-by-step technical roadmap for development.\n\n"
+        for b in bugs:
+            prompt += f"[{b.type.upper()}] Report {b.id}:\n{b.original_text}\n\n"
+            
+        prompt += "Roadmap:\n"
+        
+        try:
+            client = VLLMClient()
+            response = client.generate(prompt=prompt, max_tokens=1000, temperature=0.7)
+            roadmap_text = ""
+            if isinstance(response, dict) and "choices" in response and len(response["choices"]) > 0:
+                choice = response["choices"][0]
+                if "text" in choice:
+                    roadmap_text = choice["text"]
+                elif "message" in choice:
+                    roadmap_text = choice["message"].get("content", "")
+            elif isinstance(response, dict) and "text" in response:
+                roadmap_text = response["text"]
+            elif isinstance(response, str):
+                roadmap_text = response
+                
+            return {"roadmap": roadmap_text.strip()}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"VLLM processing failed: {str(e)}")
+
+@app.get("/local/reports/fetch_and_clear")
+def local_fetch_and_clear():
+    # Intended to be called by local AI tools/scripts only
+    from backend.database import BugReport
+    with get_session() as session:
+        bugs = session.exec(select(BugReport).order_by(BugReport.id.asc())).all()
+        data = []
+        for b in bugs:
+            data.append({
+                "id": b.id, 
+                "type": b.type, 
+                "text": b.original_text, 
+                "created_at": b.created_at
+            })
+            session.delete(b)
+        session.commit()
+        return {"reports": data}

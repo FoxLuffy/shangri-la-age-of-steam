@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { createCharacter, generateGear, fetchSessions, Character } from '../api';
+import { createCharacter, generateGear, fetchSessions } from '../api';
+import type { Character } from '../api';
 
 interface Preset {
   id: string;
@@ -93,7 +94,6 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
                   <div key={s.id} className="border border-amber-900/50 p-4 hover:border-amber-500 cursor-pointer bg-slate-900" onClick={() => onComplete(s.id)}>
                     <div className="font-bold text-amber-400 text-xl">{s.name}</div>
                     <div className="text-xs text-amber-200/50 mt-1">Class: {s.character_class}</div>
-                    <div className="text-xs text-amber-200/50">Location: {s.location_id}</div>
                   </div>
                 ))}
                 <button 

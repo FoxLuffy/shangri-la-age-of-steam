@@ -12,8 +12,8 @@ When the user requests you to fetch reports or suggests running the "fetch input
 1. **Write a Retrieval Script**
    - Use your `write_to_file` tool to create a temporary Python script (e.g., `fetch.py` in the root folder).
    - The script should:
-     1. Post to `http://127.0.0.1:8003/token` with the payload `username=admin&password=<SAOS_ADMIN_SECRET>` (use the environment variable if present, or ask the user for it if the server is running locally without it).
-     2. With the Bearer token, make a `GET` request to `http://127.0.0.1:8003/admin/reports/fetch_and_clear`.
+     1. Post to `http://192.168.1.45:8003/token` (or the appropriate backend URL if changed) with the payload `username=admin&password=<SAOS_ADMIN_SECRET>` (use the environment variable if present, or ask the user for it if the server is running without it).
+     2. With the Bearer token, make a `GET` request to `http://192.168.1.45:8003/admin/reports/fetch_and_clear`.
      3. Print out the JSON array of reports.
 
 2. **Execute and Parse**

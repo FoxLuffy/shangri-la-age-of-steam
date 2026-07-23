@@ -318,6 +318,10 @@ async def chat(action: PlayerAction):
                             "character_id": action.character_id
                         })), loop)
 
+                    for event in item.get("events", []):
+                        if isinstance(event, dict) and event.get("type") == "npc_state_change":
+                            asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps(event)), loop)
+
                     yield f"data: {json.dumps({'result': item})}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

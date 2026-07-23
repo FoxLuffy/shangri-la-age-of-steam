@@ -121,6 +121,18 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             }
           ]);
           loadState(); // Refresh world state
+        } else if (msg.type === 'npc_state_change') {
+          setActiveNpcs((prev: NPCType[]) => {
+            const isDead = msg.npc.hp <= 0 || (msg.npc.traits && msg.npc.traits.some((t: string) => t.toLowerCase() === 'dead'));
+            if (isDead) {
+              return prev.filter((n: NPCType) => n.id !== msg.npc.id);
+            }
+            const exists = prev.find((n: NPCType) => n.id === msg.npc.id);
+            if (exists) {
+              return prev.map((n: NPCType) => n.id === msg.npc.id ? msg.npc : n);
+            }
+            return [...prev, msg.npc];
+          });
         }
       } catch (err) {
         console.error('WS parse error', err);

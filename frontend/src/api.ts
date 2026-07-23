@@ -105,6 +105,11 @@ export const fetchCharacter = async (characterId: number): Promise<Character> =>
   return data;
 };
 
+export const fetchSessions = async (userId: number): Promise<Character[]> => {
+  const { data } = await api.get(`/sessions/${userId}`);
+  return data;
+};
+
 export const createCharacter = async (
   name: string,
   preset: string,

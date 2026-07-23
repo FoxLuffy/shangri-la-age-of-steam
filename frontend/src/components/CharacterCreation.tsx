@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { createCharacter, generateGear } from '../api';
+import { useState, useEffect } from 'react';
+import { createCharacter, generateGear, fetchSessions, Character } from '../api';
 
 interface Preset {
   id: string;
@@ -25,6 +25,28 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
   const [gearList, setGearList] = useState<any[]>([]);
   const [gearAttempts, setGearAttempts] = useState(0);
   const [generatingGear, setGeneratingGear] = useState(false);
+  
+  const [sessions, setSessions] = useState<Character[]>([]);
+  const [fetchingSessions, setFetchingSessions] = useState(false);
+  const [showCreationForm, setShowCreationForm] = useState(false);
+
+  useEffect(() => {
+    if (userId) {
+      setFetchingSessions(true);
+      fetchSessions(userId).then(chars => {
+        setSessions(chars);
+        if (chars.length === 0) {
+          setShowCreationForm(true);
+        }
+      }).catch(err => {
+        console.error(err);
+      }).finally(() => {
+        setFetchingSessions(false);
+      });
+    } else {
+      setShowCreationForm(true);
+    }
+  }, [userId]);
 
   const handleGenerateGear = async () => {
     if (!gearPrompt.trim() || gearAttempts >= 3) return;
@@ -58,11 +80,38 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full text-amber-100 bg-slate-900 font-mono">
       <div className="border border-amber-900/50 bg-slate-950 p-8 shadow-[0_0_15px_rgba(217,119,6,0.3)] w-full max-w-md max-h-screen overflow-y-auto">
-        <h1 className="text-3xl font-bold mb-6 text-amber-500 border-b border-amber-900/50 pb-2 text-center uppercase tracking-widest">
-          Manifest
-        </h1>
-        
-        <div className="space-y-6">
+        {!showCreationForm ? (
+          <div>
+            <h1 className="text-3xl font-bold mb-6 text-amber-500 border-b border-amber-900/50 pb-2 text-center uppercase tracking-widest">
+              Select Session
+            </h1>
+            {fetchingSessions ? (
+              <div className="text-center text-amber-500 py-4">Fetching previous sessions...</div>
+            ) : (
+              <div className="space-y-4">
+                {sessions.map(s => (
+                  <div key={s.id} className="border border-amber-900/50 p-4 hover:border-amber-500 cursor-pointer bg-slate-900" onClick={() => onComplete(s.id)}>
+                    <div className="font-bold text-amber-400 text-xl">{s.name}</div>
+                    <div className="text-xs text-amber-200/50 mt-1">Class: {s.character_class}</div>
+                    <div className="text-xs text-amber-200/50">Location: {s.location_id}</div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => setShowCreationForm(true)}
+                  className="w-full bg-amber-900/30 border border-amber-700 text-amber-500 p-3 uppercase hover:bg-amber-800/40 transition-colors mt-4"
+                >
+                  Create New Character
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold mb-6 text-amber-500 border-b border-amber-900/50 pb-2 text-center uppercase tracking-widest">
+              Manifest
+            </h1>
+            
+            <div className="space-y-6">
           <div>
             <label className="block text-sm text-amber-600/70 uppercase mb-2">Name</label>
             <input 
@@ -156,7 +205,17 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
           >
             {loading ? 'Embarking...' : 'Begin Journey'}
           </button>
+          {sessions.length > 0 && (
+            <button 
+              onClick={() => setShowCreationForm(false)}
+              className="w-full mt-2 text-sm text-amber-600/70 hover:text-amber-500 uppercase transition-colors"
+            >
+              Cancel
+            </button>
+          )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

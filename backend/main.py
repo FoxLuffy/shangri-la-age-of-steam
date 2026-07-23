@@ -195,6 +195,19 @@ dummy_state = WorldState(
 async def health_check():
     return {"status": "ok", "vllm_api": VLLM_API_BASE}
 
+@app.get("/glossary")
+async def get_glossary():
+    from backend.database import Item as DBItem
+    with get_session() as session:
+        locations = session.exec(select(DBLocation)).all()
+        npcs = session.exec(select(DBNPC)).all()
+        items = session.exec(select(DBItem)).all()
+        return {
+            "locations": [{"id": l.id, "name": l.name, "description": l.description} for l in locations],
+            "npcs": [{"id": n.id, "name": n.name, "description": n.current_dialogue} for n in npcs],
+            "items": [{"id": i.id, "name": i.name, "description": i.description} for i in items],
+        }
+
 @app.get("/state")
 async def get_world_state(character_id: Optional[int] = None):
     with get_session() as session:

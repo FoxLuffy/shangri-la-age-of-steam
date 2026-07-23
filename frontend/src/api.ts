@@ -75,6 +75,18 @@ export interface GetStateResponse {
   active_players?: any[];
 }
 
+export interface GlossaryItem {
+  id: string | number;
+  name: string;
+  description?: string;
+}
+
+export interface GlossaryData {
+  locations: GlossaryItem[];
+  npcs: GlossaryItem[];
+  items: GlossaryItem[];
+}
+
 export interface Character {
   id: number;
   name: string;
@@ -140,6 +152,11 @@ export const toggleTutorials = async (characterId: number, showTutorials: boolea
 
 export const fetchHealth = async () => {
   const { data } = await api.get('/health');
+  return data;
+};
+
+export const fetchGlossary = async (): Promise<GlossaryData> => {
+  const { data } = await api.get('/glossary');
   return data;
 };
 

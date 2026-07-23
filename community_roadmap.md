@@ -46,7 +46,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** Any new NPC, location, or item hallucinated/created by the LLM during a session should be permanently saved to the global SQLite database so other players can interact with them.
 * **Action Plan:** Expand the VLLM output schema to include a `new_entities` array, which the backend will parse and `INSERT` into the global `NPC`, `Location`, and `Item` tables.
 
-### 5. Interactive Glossary & Highlighting
+### [x] 5. Interactive Glossary & Highlighting
 * **Description:** A dedicated Glossary UI. Whenever known items/NPCs/locations are mentioned in chat, they should be highlighted. New discoveries ping the exploration pane.
 * **Action Plan:** Add a Markdown parser to the `ChatInterface` that cross-references the global DB and wraps known entities in interactive `<span>` tags.
 

@@ -17,7 +17,7 @@ When the user asks you to implement the next roadmap item, follow this exact seq
    - Create a new branch: `git checkout -b feature/auto-<feature-name>`
 
 2. **Analyze Roadmaps:**
-   - Read `ROADMAP_FEATURES.md`, `ROADMAP_STORY.md`, and `development_roadmap.md` using the `view_file` tool.
+   - Read `community_roadmap.md` using the `view_file` tool.
    - Choose a suitable, **substantial** upgrade (or a combination of multiple related items). Ensure it has not already been completed.
 
 3. **Test-Driven Design (TDD):**

@@ -14,7 +14,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** Fast traveling to a new location immediately snaps the player back to "The Rusty Anchor" after the narration.
 * **Action Plan:** Debug the `current_location_id` state synchronization between the frontend map clicks and backend narrative engine processing.
 
-### 3. Economy & Tool Durability Syncing
+### [x] 3. Economy & Tool Durability Syncing
 * **Description:** Spending money only deducts 1 coin regardless of the purchase. Gains/losses from narrative need to accurately parse amounts and show UI chips. Tool durability/breakage is not syncing.
 * **Action Plan:** Update the VLLM prompt to strictly return numerical deltas for wealth. Add a new JSON field to track tool durability, and render changes as UI chips beneath the chat log.
 

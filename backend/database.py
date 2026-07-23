@@ -208,6 +208,7 @@ class Inventory(SQLModel, table=True):
     character_id: int = Field(foreign_key="character.id")
     item_id: int = Field(foreign_key="item.id")
     quantity: int = Field(default=0)
+    durability: Optional[int] = Field(default=100)
 
 class Quest(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

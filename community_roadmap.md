@@ -10,7 +10,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** Opening the market throws a `TypeError: Cannot read properties of undefined (reading 'toFixed')` causing a full frontend crash.
 * **Action Plan:** Add null-checks or default values for resource prices in the Market UI component before attempting to format them.
 
-### 2. Fast Travel Regression
+### [x] 2. Fast Travel Regression
 * **Description:** Fast traveling to a new location immediately snaps the player back to "The Rusty Anchor" after the narration.
 * **Action Plan:** Debug the `current_location_id` state synchronization between the frontend map clicks and backend narrative engine processing.
 

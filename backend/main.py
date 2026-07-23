@@ -253,21 +253,46 @@ async def play_minigame(payload: MinigamePlayPayload):
             state["hint_revealed"] = True
             state["message"] = state.get("hint", "No hint available.")
         elif mg.type == "hack":
-            # Simple mastermind/hacking game logic
-            if payload.action == "input":
+            # Mastermind/hacking game logic
+            if payload.action == "clear_input":
+                state["current_input"] = []
+            elif payload.action == "input":
                 seq_val = payload.data.get("value")
                 state["current_input"].append(seq_val)
                 
-                # Check if matches
+                # Check if we have a full guess
                 target = state["sequence"]
                 curr = state["current_input"]
                 
                 if len(curr) == len(target):
                     if curr == target:
+                        state["guesses"].append({"guess": curr, "correct_pos": len(target), "correct_char": 0})
                         mg.solved = True
                         state["message"] = "Bypass successful. Access granted."
                     else:
                         state["attempts_left"] -= 1
+                        
+                        # Calculate mastermind feedback
+                        correct_pos = sum(1 for c, t in zip(curr, target) if c == t)
+                        # calculate correct char wrong pos
+                        target_counts = {}
+                        for t in target:
+                            target_counts[t] = target_counts.get(t, 0) + 1
+                        for c, t in zip(curr, target):
+                            if c == t:
+                                target_counts[c] -= 1
+                        
+                        correct_char = 0
+                        for c, t in zip(curr, target):
+                            if c != t and target_counts.get(c, 0) > 0:
+                                correct_char += 1
+                                target_counts[c] -= 1
+
+                        state["guesses"].append({
+                            "guess": curr,
+                            "correct_pos": correct_pos,
+                            "correct_char": correct_char
+                        })
                         state["current_input"] = []
                         if state["attempts_left"] <= 0:
                             mg.solved = True

@@ -38,7 +38,7 @@ These bugs severely impact gameplay and cause application crashes.
 * **Description:** The LLM needs to adjust its output length dynamically. Long descriptions for new areas, short and punchy outputs for dialogue.
 * **Action Plan:** Inject a `context_type` (e.g., `Exploration` vs `Dialogue`) into the VLLM prompt so it knows the desired brevity.
 
-### 3. Mastermind Minigame Overhaul
+### [x] 3. Mastermind Minigame Overhaul
 * **Description:** Upgrade the minigame to use numbers/glyphs. Higher skills = more hints. Like Wordle/Mastermind, show previous guesses with color-coded feedback (e.g., 2 correct, 1 wrong place).
 * **Action Plan:** Overhaul the `Minigame` React component and backend logic to support a Mastermind-style rule set with skill-based difficulty scaling.
 

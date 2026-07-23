@@ -29,3 +29,45 @@ def test_gear_lock_minigame():
         assert res2.status_code == 200
         data2 = res2.json()
         assert data2["solved"] is True
+
+def test_hack_mastermind_minigame():
+    from backend.database import Character, Minigame
+    with Session(db_engine) as session:
+        char = Character(name="Hacker")
+        session.add(char)
+        session.commit()
+        
+        client = TestClient(app)
+        
+        # Create a mock minigame
+        state = {
+            "sequence": ["A", "B", "C"],
+            "guesses": [],
+            "current_input": [],
+            "attempts_left": 3,
+            "message": "Terminal locked.",
+            "hint_revealed": False
+        }
+        mg = Minigame(character_id=char.id, type="hack", state=state, solved=False)
+        session.add(mg)
+        session.commit()
+        
+        # Test incorrect guess
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "C"}})
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "B"}})
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "D"}})
+        data = res.json()["state"]
+        
+        # Should have 1 guess, 1 correct pos (B), 1 correct char (C)
+        assert len(data["guesses"]) == 1
+        assert data["guesses"][0]["correct_pos"] == 1
+        assert data["guesses"][0]["correct_char"] == 1
+        assert data["attempts_left"] == 2
+        
+        # Test correct guess
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "A"}})
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "B"}})
+        res = client.post(f"/minigame/play", json={"minigame_id": mg.id, "action": "input", "data": {"value": "C"}})
+        
+        data2 = res.json()
+        assert data2["solved"] is True

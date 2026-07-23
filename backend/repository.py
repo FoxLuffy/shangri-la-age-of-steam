@@ -355,14 +355,15 @@ class StateRepository:
         import random
         if minigame_type == "hack":
             # Higher intellect gives fewer sequence nodes (easier) or more attempts
-            seq_length = max(2, 5 - (intellect // 3))
-            attempts = max(3, 2 + (intellect // 2))
-            letters = ["A", "B", "C", "D", "E"]
+            seq_length = max(3, 6 - (intellect // 2))
+            attempts = max(4, 3 + (intellect // 2))
+            letters = ["A", "B", "C", "D", "E", "F"]
             sequence = [random.choice(letters) for _ in range(seq_length)]
             
             hint = f"Hint Gear: The sequence has {seq_length} nodes. It begins with '{sequence[0]}'." if intellect >= 4 else "Hint Gear jammed. Intellect too low."
             state = {
                 "sequence": sequence,
+                "guesses": [],
                 "current_input": [],
                 "attempts_left": attempts,
                 "message": f"Terminal locked. Enter {seq_length}-node bypass sequence.",

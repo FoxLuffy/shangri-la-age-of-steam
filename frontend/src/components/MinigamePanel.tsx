@@ -31,29 +31,64 @@ export default function MinigamePanel({ minigame, character, onComplete }: { min
 
   const renderHackGame = () => {
     return (
-      <div className="flex flex-col gap-4 items-center">
+      <div className="flex flex-col gap-4 items-center w-full">
         <div className="text-sm font-mono text-cyan-400 border border-cyan-800 bg-cyan-950/50 p-2 text-center w-full">
           {state.message}
         </div>
+
+        {/* Guesses history */}
+        <div className="flex flex-col gap-1 w-full max-h-40 overflow-y-auto pr-2">
+          {state.guesses?.map((g: any, i: number) => (
+            <div key={i} className="flex justify-between items-center bg-slate-800/50 p-1 border border-slate-700">
+              <div className="flex gap-1 font-mono text-cyan-200">
+                {g.guess.map((char: string, idx: number) => (
+                  <span key={idx} className="w-6 h-6 flex items-center justify-center bg-slate-900 border border-slate-600">{char}</span>
+                ))}
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className="text-emerald-400" title="Correct Position">Exact: {g.correct_pos}</span>
+                <span className="text-amber-400" title="Correct Character">Present: {g.correct_char}</span>
+              </div>
+            </div>
+          ))}
+        </div>
         
-        <div className="flex gap-2">
-          {['A', 'B', 'C', 'D', 'E'].map((char) => (
+        <div className="flex gap-2 mt-2">
+          {['A', 'B', 'C', 'D', 'E', 'F'].map((char) => (
             <button
               key={char}
-              disabled={loading}
+              disabled={loading || (state.current_input && state.sequence && state.current_input.length >= state.sequence.length)}
               onClick={() => handlePlay('input', { value: char })}
-              className="w-12 h-12 flex items-center justify-center border border-slate-600 bg-slate-800 hover:bg-slate-700 text-amber-500 font-mono text-xl"
+              className="w-10 h-10 flex items-center justify-center border border-slate-600 bg-slate-800 hover:bg-slate-700 text-amber-500 font-mono text-xl"
             >
               {char}
             </button>
           ))}
         </div>
         
-        <div className="text-xs text-slate-400 font-mono">
-          Current Input: {state.current_input?.join(' ') || 'none'}
+        <div className="flex justify-between w-full mt-2">
+          <div className="text-xs text-slate-400 font-mono flex items-center gap-1">
+            Input: 
+            <div className="flex gap-1">
+              {Array.from({ length: state.sequence?.length || 4 }).map((_, i) => (
+                <span key={i} className="w-6 h-6 flex items-center justify-center bg-slate-900 border border-slate-700 text-cyan-300">
+                  {state.current_input?.[i] || ''}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="text-xs text-rose-400 font-mono flex items-center">
+            Attempts: {state.attempts_left}
+          </div>
         </div>
-        <div className="text-xs text-rose-400 font-mono">
-          Attempts Left: {state.attempts_left}
+        <div className="w-full flex justify-end">
+             <button
+                disabled={loading || !state.current_input || state.current_input.length === 0}
+                onClick={() => handlePlay('clear_input')}
+                className="text-xs font-mono text-slate-400 hover:text-slate-200 uppercase tracking-widest px-2 py-1 bg-slate-800 border border-slate-700"
+              >
+                Clear Input
+              </button>
         </div>
       </div>
     );

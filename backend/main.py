@@ -310,6 +310,14 @@ async def chat(action: PlayerAction):
                         "data": item,
                         "action": action.model_dump()
                     })), loop)
+                    
+                    if item.get("state_updates", {}).get("minigame_trigger"):
+                        asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps({
+                            "type": "trigger_minigame",
+                            "minigame_type": item["state_updates"]["minigame_trigger"],
+                            "character_id": action.character_id
+                        })), loop)
+
                     yield f"data: {json.dumps({'result': item})}\n\n"
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

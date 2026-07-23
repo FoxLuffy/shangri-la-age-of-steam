@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { getMarket, tradeMarket } from '../api';
 
 interface MarketItem {
-  name: string;
-  price: number;
+  name?: string;
+  price?: number;
+  resource_name?: string;
+  current_price?: number;
 }
 
 interface MarketUIProps {
@@ -46,7 +48,7 @@ export default function MarketUI({ character, onClose, onUpdateCharacter }: Mark
       const res = await tradeMarket(character.id, resourceName, 1, action);
       onUpdateCharacter({ ...character, brass_coins: res.brass_coins });
       // Update the local market prices manually for instant feedback before websocket syncs
-      setMarketItems(prev => prev.map(m => m.name === resourceName ? { ...m, price: res.new_price } : m));
+      setMarketItems(prev => prev.map(m => (m.name || m.resource_name) === resourceName ? { ...m, current_price: res.new_price, price: res.new_price } : m));
     } catch (e: any) {
       alert(e.response?.data?.detail || "Trade failed");
     } finally {
@@ -83,25 +85,28 @@ export default function MarketUI({ character, onClose, onUpdateCharacter }: Mark
           </div>
 
           <div className="space-y-3">
-            {marketItems.map((item) => (
-              <div key={item.name} className="flex items-center justify-between p-3 border border-amber-900/40 bg-slate-800/50">
-                <div className="font-bold text-amber-200">{item.name}</div>
+            {marketItems.map((item) => {
+              const itemName = item.name || item.resource_name || 'Unknown';
+              const itemPrice = item.price ?? item.current_price ?? 0;
+              return (
+              <div key={itemName} className="flex items-center justify-between p-3 border border-amber-900/40 bg-slate-800/50">
+                <div className="font-bold text-amber-200">{itemName}</div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <div className="text-lg font-bold text-amber-400">{item.price.toFixed(2)}</div>
+                    <div className="text-lg font-bold text-amber-400">{itemPrice.toFixed(2)}</div>
                     <div className="text-[10px] text-amber-600 uppercase">per unit</div>
                   </div>
                   <div className="flex gap-2">
                     <button 
-                      disabled={loading || (character?.brass_coins || 0) < item.price}
-                      onClick={() => handleTrade(item.name, 'buy')}
+                      disabled={loading || (character?.brass_coins || 0) < itemPrice}
+                      onClick={() => handleTrade(itemName, 'buy')}
                       className="px-4 py-2 bg-emerald-900/30 border border-emerald-700/50 text-emerald-400 hover:bg-emerald-800/50 disabled:opacity-50 text-xs font-bold uppercase transition-colors"
                     >
                       Buy 1
                     </button>
                     <button 
                       disabled={loading}
-                      onClick={() => handleTrade(item.name, 'sell')}
+                      onClick={() => handleTrade(itemName, 'sell')}
                       className="px-4 py-2 bg-rose-900/30 border border-rose-700/50 text-rose-400 hover:bg-rose-800/50 disabled:opacity-50 text-xs font-bold uppercase transition-colors"
                     >
                       Sell 1
@@ -109,7 +114,7 @@ export default function MarketUI({ character, onClose, onUpdateCharacter }: Mark
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
             
             {marketItems.length === 0 && (
               <div className="text-center p-8 text-amber-600/50">

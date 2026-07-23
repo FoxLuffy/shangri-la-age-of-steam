@@ -98,6 +98,12 @@ IMPORTANT: If you trigger a minigame (e.g. hack, lockpick), DO NOT narrate the o
       "description": "Brief description of the item"
     }
   ],
+  "tool_durability_updates": [
+    {
+      "tool_name": "Name of the tool",
+      "durability_change": -10
+    }
+  ],
   "quest_updates": [
     {
       "action": "add" or "update" or "complete" or "fail",
@@ -145,3 +151,5 @@ IMPORTANT: If you trigger a minigame (e.g. hack, lockpick), DO NOT narrate the o
 ### CRITICAL RULES:
 1. ONLY return the JSON. No other text.
 2. If the player is in combat, deduct their Steam when they use abilities, and reduce HP if they take hits. If combat ends, set `is_combat_active` to false.
+3. Wealth changes must be strictly numerical deltas in `empire_updates.brass_coins_change` (e.g. -50 for spending 50 coins, +100 for earning 100 coins). Do NOT output total coins, only the difference.
+4. For tools breaking or being used, deduct durability in `tool_durability_updates`.

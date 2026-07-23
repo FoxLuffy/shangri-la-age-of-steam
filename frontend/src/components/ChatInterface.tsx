@@ -571,6 +571,21 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                     </div>
                   )}
 
+                  {msg.sender === 'narrator' && msg.stateUpdates && (
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {msg.stateUpdates.empire_updates?.brass_coins_change !== undefined && msg.stateUpdates.empire_updates.brass_coins_change !== 0 && (
+                        <span className={`px-2 py-0.5 rounded border ${msg.stateUpdates.empire_updates.brass_coins_change > 0 ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border-rose-700/50'}`}>
+                          🪙 {msg.stateUpdates.empire_updates.brass_coins_change > 0 ? '+' : ''}{msg.stateUpdates.empire_updates.brass_coins_change} Coins
+                        </span>
+                      )}
+                      {msg.stateUpdates.tool_durability_updates && msg.stateUpdates.tool_durability_updates.map((td: any, idx: number) => (
+                        <span key={`td-${idx}`} className={`px-2 py-0.5 rounded border ${td.durability_change > 0 ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border-rose-700/50'}`}>
+                          🔧 {td.tool_name}: {td.durability_change > 0 ? '+' : ''}{td.durability_change} Durability
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {msg.sender === 'narrator' && msg.stateUpdates?.combat_updates?.is_combat_active && onOpenCombat && (
                     <div className="mt-3 pt-2 border-t border-amber-900/40 flex justify-end">
                       <button 

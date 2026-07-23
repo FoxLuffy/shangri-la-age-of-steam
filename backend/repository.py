@@ -72,7 +72,8 @@ class StateRepository:
                     inventory_list.append({
                         "name": item.name,
                         "description": item.description,
-                        "quantity": inv.quantity
+                        "quantity": inv.quantity,
+                        "durability": inv.durability
                     })
             
             q_states = self.session.exec(select(QuestState).where(QuestState.character_id == char.id)).all()
@@ -274,6 +275,28 @@ class StateRepository:
                     self.session.add(inv)
                     
         self.session.commit()
+
+    def apply_tool_durability_update(self, update: Dict[str, Any]):
+        from backend.database import Inventory, Item
+        char_id = 1
+        tool_name = update.get("tool_name")
+        change = update.get("durability_change", 0)
+        
+        if not tool_name or change == 0:
+            return
+            
+        item = self.session.exec(select(Item).where(Item.name == tool_name)).first()
+        if not item:
+            return
+            
+        inv = self.session.exec(select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)).first()
+        if inv:
+            inv.durability = (inv.durability or 100) + change
+            if inv.durability <= 0:
+                self.session.delete(inv)
+            else:
+                self.session.add(inv)
+            self.session.commit()
 
     def apply_quest_update(self, update: Dict[str, Any]):
         from backend.database import Quest, QuestState, QuestStateEnum

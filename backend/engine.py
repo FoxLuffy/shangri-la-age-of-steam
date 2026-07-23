@@ -239,6 +239,11 @@ class NarrativeEngine:
                 for inv_update in state_updates["inventory_updates"]:
                     if isinstance(inv_update, dict):
                         repository.apply_inventory_update(inv_update)
+
+            if "tool_durability_updates" in state_updates and isinstance(state_updates["tool_durability_updates"], list):
+                for td_update in state_updates["tool_durability_updates"]:
+                    if isinstance(td_update, dict):
+                        repository.apply_tool_durability_update(td_update)
                         
             if "quest_updates" in state_updates and isinstance(state_updates["quest_updates"], list):
                 for quest_update in state_updates["quest_updates"]:

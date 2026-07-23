@@ -243,6 +243,12 @@ async def get_world_state(character_id: Optional[int] = None):
             "active_players": active_players
         }
 
+@app.get("/sessions/{user_id}")
+async def get_user_sessions(user_id: int):
+    with get_session() as session:
+        repo = StateRepository(session)
+        return repo.get_sessions(user_id)
+
 class MinigamePlayPayload(BaseModel):
     minigame_id: int
     action: str

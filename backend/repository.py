@@ -7,6 +7,9 @@ from backend.database_init import seed_data
 class StateRepository:
     def __init__(self, session: SQLModelSession):
         self.session = session
+    def get_sessions(self, user_id: int):
+        from backend.database import Character
+        return self.session.exec(select(Character).where(Character.user_id == user_id)).all()
 
     def get_latest_state(self, character_id: Optional[int] = 1) -> WorldState:
         from backend.database import SystemSettings

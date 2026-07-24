@@ -20,6 +20,15 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
   - **Traits:** {{ npc.traits | join(', ') }}
   - **Disposition:** {{ npc.disposition | round(2) }}
   - **Memories:** {{ npc.memories }}
+{% if npc.faction_id == 'Iron Syndicate' %}
+  - **Faction:** Iron Syndicate. Speak using clipped, technical jargon (e.g. "pressure tolerances", "yield ratios") and greetings like tool salutes.
+{% elif npc.faction_id == 'Alchemists Guild' %}
+  - **Faction:** Alchemists Guild. Speak using measured, academic prose with Latin-adjacent terminology and greetings like vial-clinks.
+{% elif npc.faction_id == 'Undercity Smugglers' %}
+  - **Faction:** Undercity Smugglers. Speak using slang, contractions, coded hand signs, and underworld cant.
+{% elif npc.faction_id %}
+  - **Faction:** {{ npc.faction_id }}
+{% endif %}
 {% if npc.custom_system_prompt %}
   - **Custom Rules:** {{ npc.custom_system_prompt }}
 {% endif %}

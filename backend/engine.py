@@ -374,12 +374,23 @@ async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
     """
     logger.info(f"Interaction resolving for {npc1.name} and {npc2.name} at {location.name}.")
 
+    faction1 = getattr(npc1, "faction_id", None)
+    faction2 = getattr(npc2, "faction_id", None)
+
+    rivalry_context = ""
+    if faction1 and faction2 and faction1 != faction2:
+        if (faction1 == "Iron Syndicate" and faction2 == "Alchemists Guild") or (faction1 == "Alchemists Guild" and faction2 == "Iron Syndicate"):
+            rivalry_context = "There is deep tension and suspicion between the Iron Syndicate and the Alchemists Guild. They should act guarded and perhaps negotiate cautiously or exchange veiled insults."
+        else:
+            rivalry_context = f"They belong to rival factions ({faction1} and {faction2}), leading to potential suspicion or tense negotiation patterns."
+
     prompt = (
         f"You are the world engine for Shangri-la: Age of Steam. "
         f"Two NPCs are interacting at {location.name}: {location.description}.\n"
-        f"NPC 1: {npc1.name}, Traits: {npc1.traits}\n"
-        f"NPC 2: {npc2.name}, Traits: {npc2.traits}\n"
-        f"Write a short, engaging 2-3 line dialogue between them reflecting their traits and the location."
+        f"NPC 1: {npc1.name}, Traits: {npc1.traits}, Faction: {faction1 or 'None'}\n"
+        f"NPC 2: {npc2.name}, Traits: {npc2.traits}, Faction: {faction2 or 'None'}\n"
+        f"{rivalry_context}\n"
+        f"Write a short, engaging 2-3 line dialogue between them reflecting their traits, factions, and the location."
     )
 
     client = VLLMClient()

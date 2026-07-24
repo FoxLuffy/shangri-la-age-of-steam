@@ -11,6 +11,14 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 ### CURRENT CONTEXT:
 **Location:** {{ location.name }}
 **Description:** {{ location.description }}
+**Condition:** {{ location.condition }}/100 
+{% if location.condition < 30 %}
+*(The location is in a state of disrepair. Flavor your descriptions with crumbling walls, flickering gas lamps, rust, and decay.)*
+{% elif location.condition > 70 %}
+*(The location is thriving and well-maintained. Flavor your descriptions with polished brass facades, bustling activity, and pristine machinery.)*
+{% else %}
+*(The location is in an average state. Flavor your descriptions with a mix of typical wear-and-tear and functional maintenance.)*
+{% endif %}
 
 **Active NPCs:**
 {% for npc in npc_contexts %}

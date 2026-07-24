@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import type { GlossaryData } from '../api';
+import { audioManager } from '../utils/AudioManager';
 
 interface Message {
   id: string;
@@ -36,10 +37,26 @@ export default function NarrativeStream({
     }
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      let extractedMood = lastMsg.mood;
+      const moodMatch = lastMsg.content.match(/\[mood:(.*?)\]/i);
+      if (moodMatch) {
+        extractedMood = moodMatch[1].trim();
+      }
+      
+      if (extractedMood) {
+        audioManager.transitionScore(extractedMood);
+      }
+    }
+  }, [messages]);
+
   const renderWithGlossary = (text: string, glossary: GlossaryData) => {
     if (!text) return text;
     
     const terms = [
+
       ...glossary.locations.map(l => ({ ...l, type: 'location' })),
       ...glossary.npcs.map(n => ({ ...n, type: 'npc' })),
       ...glossary.items.map(i => ({ ...i, type: 'item' }))

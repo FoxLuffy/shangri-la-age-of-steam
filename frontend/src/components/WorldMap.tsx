@@ -280,11 +280,24 @@ export default function WorldMap({ locations, currentLocationId, onLocationSelec
           />
           
           {/* Overlay info */}
-          {hoveredNodeId && !isTraveling && hoveredNodeId !== currentLocationId && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/90 border border-amber-600/50 px-6 py-3 rounded-full text-amber-200 text-sm shadow-xl pointer-events-none animate-pulse">
-              Click to travel to {nodes.find(n => n.id === hoveredNodeId)?.name}
-            </div>
-          )}
+          {hoveredNodeId && !isTraveling && hoveredNodeId !== currentLocationId && (() => {
+            const hoveredLocation = locations.find(l => l.id === hoveredNodeId);
+            return (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/95 border border-amber-600/50 p-4 rounded-lg text-amber-200 shadow-xl pointer-events-none max-w-lg w-full">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold font-mono text-lg">{hoveredLocation?.name}</span>
+                  <span className="text-xs uppercase bg-amber-900/50 px-2 py-1 rounded animate-pulse">Click to Travel</span>
+                </div>
+                {hoveredLocation?.lore_text ? (
+                  <p className="text-sm italic text-amber-100/80 leading-relaxed border-t border-amber-900/50 pt-2 mt-2">
+                    {hoveredLocation.lore_text}
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-400/50 italic">Location data unavailable.</p>
+                )}
+              </div>
+            );
+          })()}
           {isTraveling && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-sky-900/90 border border-sky-500/50 px-6 py-2 rounded text-sky-200 text-sm shadow-xl pointer-events-none">
               Traveling to destination...

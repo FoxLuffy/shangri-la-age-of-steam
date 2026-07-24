@@ -33,6 +33,14 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 (Weave these subtle traces of other players into your narration if it feels naturally atmospheric.)
 {% endif %}
 
+{% if recent_events %}
+**Current World Gossip / Recent Rumors:**
+{% for event in recent_events %}
+- {{ event }}
+{% endfor %}
+(Instruct the NPCs to naturally weave these recent world events into their dialogue if it fits their faction and personality, e.g. complaining about a Copper shortage, or gossiping about a faction war.)
+{% endif %}
+
 **Player Stats & Wealth:**
 {% if player_stats %}
 - HP: {{ player_stats.hp }}/{{ player_stats.max_hp }}

@@ -47,7 +47,7 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 {% for event in recent_events %}
 - {{ event }}
 {% endfor %}
-(Instruct the NPCs to naturally weave these recent world events into their dialogue if it fits their faction and personality, e.g. complaining about a Copper shortage, or gossiping about a faction war.)
+(Instruct the NPCs to naturally weave these recent world events into their dialogue if it fits their faction and personality, e.g. complaining about a Copper shortage, or gossiping about a faction war. If the player asks for work, or if an NPC is distressed about a Recent Rumor/World Event, the NPC should dynamically generate and offer a relevant quest. Include a `quest_updates` block in the StateUpdates to assign the new quest to the player.)
 {% endif %}
 
 **Player Stats & Wealth:**

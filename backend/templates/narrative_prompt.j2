@@ -20,6 +20,11 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 *(The location is in an average state. Flavor your descriptions with a mix of typical wear-and-tear and functional maintenance.)*
 {% endif %}
 
+**Time of Day:** {{ time_period }}
+**Weather:** {{ weather }}
+**Season:** {{ season }}
+(Incorporate the time of day, weather, and season into your sensory descriptions. For example, if it is Night and Raining, describe the cold rain on cobblestones and the dim gas lamps. If it is the Brass Festival, mention distant celebratory sounds or brass decorations.)
+
 **Active NPCs:**
 {% for npc in npc_contexts %}
 - **Name:** {{ npc.name }} (ID: {{ npc.id if npc.id else 'unknown' }})

@@ -409,8 +409,17 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   const steamOpacity = currentLocationId === '1' ? 0.4 : currentLocationId === '2' ? 0.1 : 0.2;
 
+  const timePeriod = worldStateData?.state?.time_period || 'Day';
+  const weather = worldStateData?.state?.weather || 'Clear';
+  let envClass = '';
+  if (timePeriod === 'Night' || weather === 'Thunderstorm') {
+    envClass = 'theme-cool';
+  } else if (timePeriod === 'Day' || timePeriod === 'Dawn' || timePeriod === 'Dusk') {
+    envClass = 'theme-warm';
+  }
+
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
+    <div className={`flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative transition-colors duration-1000 ${envClass}`}>
       <div 
         className="pointer-events-none absolute inset-0 steam-overlay z-50 transition-opacity duration-1000"
         style={{ opacity: steamOpacity }}

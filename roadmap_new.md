@@ -48,9 +48,9 @@
 
 **Goal:** Make the world feel temporally alive — a day/night cycle and weather system that affect gameplay, narrative, and visuals.
 
-- [ ] **World Clock & Day/Night Cycle**: Add a `world_time` field to `WorldState` that advances with each simulation tick. Define 4 time periods (Dawn, Day, Dusk, Night). The narrative prompt receives the current period and adjusts descriptions — lamplighters igniting gas lamps at dusk, night markets opening, Syndicate patrols doubling after dark. The frontend UI shifts color temperature (warm amber → cool blue) based on time period.
-- [ ] **Dynamic Weather Engine**: Each simulation tick rolls weather for each location: Clear, Overcast, Fog, Rain, Thunderstorm, Aether Storm. Weather affects: market prices (storms disrupt supply lines → price spikes), combat modifiers (fog reduces ranged accuracy, rain extinguishes fire), NPC behavior (NPCs seek shelter, smugglers prefer fog), and narrative descriptions.
-- [ ] **Seasonal Events**: Define a 4-season calendar with annual events — The Brass Festival (crafting XP bonus), The Fog Season (increased random encounters), The Founder's Day (faction recruitment drives), The Long Dark (resource scarcity + exclusive quest availability).
+- [x] **World Clock & Day/Night Cycle**: Add a `world_time` field to `WorldState` that advances with each simulation tick. Define 4 time periods (Dawn, Day, Dusk, Night). The narrative prompt receives the current period and adjusts descriptions — lamplighters igniting gas lamps at dusk, night markets opening, Syndicate patrols doubling after dark. The frontend UI shifts color temperature (warm amber → cool blue) based on time period.
+- [x] **Dynamic Weather Engine**: Each simulation tick rolls weather for each location: Clear, Overcast, Fog, Rain, Thunderstorm, Aether Storm. Weather affects: market prices (storms disrupt supply lines → price spikes), combat modifiers (fog reduces ranged accuracy, rain extinguishes fire), NPC behavior (NPCs seek shelter, smugglers prefer fog), and narrative descriptions.
+- [x] **Seasonal Events**: Define a 4-season calendar with annual events — The Brass Festival (crafting XP bonus), The Fog Season (increased random encounters), The Founder's Day (faction recruitment drives), The Long Dark (resource scarcity + exclusive quest availability).
 
 ---
 

@@ -198,6 +198,10 @@ class StateRepository:
             else None,
             properties=properties_list,
             brass_coins=char.brass_coins if char else 0,
+            world_time=db_state.world_time if db_state and hasattr(db_state, 'world_time') else 0,
+            time_period=db_state.time_period if db_state and hasattr(db_state, 'time_period') else "Day",
+            weather=db_state.weather if db_state and hasattr(db_state, 'weather') else "Clear",
+            season=db_state.season if db_state and hasattr(db_state, 'season') else "Brass Festival",
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -206,6 +210,10 @@ class StateRepository:
             active_npcs_ids=state.active_npcs_ids if isinstance(state.active_npcs_ids, list) else [],
             global_event=state.global_event,
             world_memories=state.world_memories if isinstance(state.world_memories, list) else [],
+            world_time=state.world_time,
+            time_period=state.time_period,
+            weather=state.weather,
+            season=state.season,
         )
         self.session.add(db_state)
         self.session.commit()

@@ -31,6 +31,7 @@ class MinigamePlayPayload(BaseModel):
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
+    origin: str = ""
     backstory: str = ""
     gear_prompt: str = ""
     show_tutorials: bool = True

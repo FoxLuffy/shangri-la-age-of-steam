@@ -645,6 +645,7 @@ async def generate_npc_endpoint(flavor: str = "industrial"):
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
+    origin: str = ""
     backstory: str = ""
     gear_prompt: str = ""
     show_tutorials: bool = True
@@ -674,6 +675,43 @@ PRESETS = {
         "background": "A mysterious wanderer with no past.",
         "stats": {"strength": 5, "intellect": 5, "charm": 5},
     },
+}
+ORIGINS = {
+    "Foundry Orphan": {
+        "items": [
+            {"name": "Soot-Stained Rag", "description": "A dirty rag from the foundry.", "quantity": 1, "category": "Equipment"},
+            {"name": "Scrap Metal", "description": "A piece of scrap metal.", "quantity": 3, "category": "Crafting_Materials"}
+        ],
+        "npc_disposition": {"npc_name": "Foreman Ironfist", "bump": 0.3}
+    },
+    "Aristocratic Heir": {
+        "items": [
+            {"name": "Signet Ring", "description": "A ring of your noble house.", "quantity": 1, "category": "Equipment"},
+            {"name": "Fine Wine", "description": "A bottle of aged wine.", "quantity": 1, "category": "Consumables"}
+        ],
+        "npc_disposition": {"npc_name": "Lord Sterling", "bump": 0.3}
+    },
+    "Guild Apprentice": {
+        "items": [
+            {"name": "Apprentice Badge", "description": "Proof of guild membership.", "quantity": 1, "category": "Equipment"},
+            {"name": "Basic Tools", "description": "A small set of crafting tools.", "quantity": 1, "category": "Crafting_Materials"}
+        ],
+        "npc_disposition": {"npc_name": "Master Craftsman", "bump": 0.3}
+    },
+    "Smuggler's Ward": {
+        "items": [
+            {"name": "Lockpick Set", "description": "Useful for opening doors.", "quantity": 1, "category": "Equipment"},
+            {"name": "Smuggler's Map", "description": "Shows hidden routes.", "quantity": 1, "category": "Consumables"}
+        ],
+        "npc_disposition": {"npc_name": "Sly The Fox", "bump": 0.3}
+    },
+    "Automata Tinkerer": {
+        "items": [
+            {"name": "Spare Gear", "description": "A spare gear.", "quantity": 5, "category": "Steam_Tech_Components"},
+            {"name": "Wrench", "description": "A trusty wrench.", "quantity": 1, "category": "Equipment"}
+        ],
+        "npc_disposition": {"npc_name": "Tinkerer Tom", "bump": 0.3}
+    }
 }
 
 
@@ -743,7 +781,8 @@ async def get_character(character_id: int):
 @app.post("/characters")
 async def create_character(req: CharacterCreateRequest):
     """Create a new character from a preset and their finalized gear."""
-    from backend.database import Character, Inventory, Item, ItemCategory
+    from backend.database import NPC, Character, Inventory, Item, ItemCategory
+    from sqlmodel import select
 
     preset_data = PRESETS.get(req.preset, PRESETS["Wanderer"])
     with get_session() as session:
@@ -781,6 +820,38 @@ async def create_character(req: CharacterCreateRequest):
                 session.add(inv)
             session.commit()
             session.refresh(char)
+
+        if req.origin and req.origin in ORIGINS:
+            origin_data = ORIGINS[req.origin]
+            for item_data in origin_data["items"]:
+                cat_str = item_data.get("category", "Equipment")
+                try:
+                    category = ItemCategory(cat_str)
+                except ValueError:
+                    category = ItemCategory.equipment
+
+                item = Item(
+                    name=item_data.get("name", "Unknown Item"),
+                    description=item_data.get("description", ""),
+                    category=category,
+                )
+                session.add(item)
+                session.commit()
+                session.refresh(item)
+
+                inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
+                session.add(inv)
+            session.commit()
+            session.refresh(char)
+
+            npc_info = origin_data["npc_disposition"]
+            npc = session.exec(select(NPC).where(NPC.name == npc_info["npc_name"])).first()
+            if not npc:
+                npc = NPC(id=npc_info["npc_name"].lower().replace(" ", "_"), name=npc_info["npc_name"], disposition=npc_info["bump"], location_id="1")
+            else:
+                npc.disposition += npc_info["bump"]
+            session.add(npc)
+            session.commit()
 
         # Generate a long overarching quest based on their backstory
         import json

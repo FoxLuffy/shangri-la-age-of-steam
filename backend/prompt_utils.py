@@ -50,19 +50,26 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         else:
             memories_str = str(memories_raw) if memories_raw else "None"
 
+        disp = getattr(npc, "disposition", 0.0)
+        custom_prompt = getattr(npc, "custom_system_prompt", None) or ""
+        if disp >= 0.9:
+            custom_prompt = (custom_prompt + " Act like a loyal ally, be extremely helpful, and share secrets.").strip()
+        elif disp <= -0.6:
+            custom_prompt = (custom_prompt + " Actively work against the player, raise prices, and refuse service.").strip()
+
         npc_contexts.append(
             {
                 "id": getattr(npc, "id", None),
                 "name": getattr(npc, "name", "Unknown NPC"),
                 "traits": getattr(npc, "traits", []) or [],
-                "disposition": getattr(npc, "disposition", 0.0),
+                "disposition": disp,
                 "memories": memories_str,
                 "faction_id": getattr(npc, "faction_id", None),
                 "hp": getattr(npc, "hp", 100),
                 "max_hp": getattr(npc, "max_hp", 100),
                 "armor": getattr(npc, "armor", 0),
                 "status_effects": getattr(npc, "status_effects", []) or [],
-                "custom_system_prompt": getattr(npc, "custom_system_prompt", None),
+                "custom_system_prompt": custom_prompt if custom_prompt else None,
             }
         )
 

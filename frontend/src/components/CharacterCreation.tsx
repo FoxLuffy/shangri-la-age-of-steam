@@ -15,9 +15,18 @@ const PRESETS: Preset[] = [
   { id: 'Alchemist', name: 'Alchemist', desc: 'High intellect. Masters steam and chemicals.' },
 ];
 
+const ORIGINS: Preset[] = [
+  { id: 'Foundry Orphan', name: 'Foundry Orphan', desc: 'Grants Soot-Stained Rag, Scrap Metal, and favor with Foreman Ironfist.' },
+  { id: 'Aristocratic Heir', name: 'Aristocratic Heir', desc: 'Grants Signet Ring, Fine Wine, and favor with Lord Sterling.' },
+  { id: 'Guild Apprentice', name: 'Guild Apprentice', desc: 'Grants Apprentice Badge, Basic Tools, and favor with Master Craftsman.' },
+  { id: 'Smuggler\'s Ward', name: 'Smuggler\'s Ward', desc: 'Grants Lockpick Set, Smuggler\'s Map, and favor with Sly The Fox.' },
+  { id: 'Automata Tinkerer', name: 'Automata Tinkerer', desc: 'Grants Spare Gear, Wrench, and favor with Tinkerer Tom.' },
+];
+
 export default function CharacterCreation({ onComplete, userId }: { onComplete: (charId: number) => void, userId?: number | null }) {
   const [name, setName] = useState('');
   const [preset, setPreset] = useState('Wanderer');
+  const [origin, setOrigin] = useState('Foundry Orphan');
   const [backstory, setBackstory] = useState('');
   const [gearPrompt, setGearPrompt] = useState('');
   const [showTutorials, setShowTutorials] = useState(true);
@@ -68,7 +77,7 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset, backstory, gearPrompt, showTutorials, gearList, userId);
+      const char = await createCharacter(name, preset, origin, backstory, gearPrompt, showTutorials, gearList, userId);
       onComplete(char.id);
     } catch (e) {
       console.error(e);
@@ -134,6 +143,22 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
                 >
                   <div className="font-bold text-amber-400">{p.name}</div>
                   <div className="text-xs text-amber-200/50">{p.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-amber-600/70 uppercase mb-2">Origin Background</label>
+            <div className="space-y-2">
+              {ORIGINS.map(o => (
+                <div 
+                  key={o.id}
+                  onClick={() => setOrigin(o.id)}
+                  className={`p-3 border cursor-pointer transition-colors ${origin === o.id ? 'border-amber-500 bg-amber-900/20' : 'border-amber-900/30 hover:border-amber-700'}`}
+                >
+                  <div className="font-bold text-amber-400">{o.name}</div>
+                  <div className="text-xs text-amber-200/50">{o.desc}</div>
                 </div>
               ))}
             </div>

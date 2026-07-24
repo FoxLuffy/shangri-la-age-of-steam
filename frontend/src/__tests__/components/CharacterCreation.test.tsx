@@ -73,7 +73,7 @@ describe('CharacterCreation', () => {
     
     await waitFor(() => {
       expect(createCharacter).toHaveBeenCalledWith(
-        'Gearsworth', 'Wanderer', '', '', true, [], undefined
+        'Gearsworth', 'Wanderer', 'Foundry Orphan', '', '', true, [], undefined
       )
       expect(mockOnComplete).toHaveBeenCalledWith(42)
     })

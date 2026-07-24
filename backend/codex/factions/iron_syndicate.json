@@ -1,0 +1,17 @@
+{
+  "name": "Iron Syndicate",
+  "category": "Faction",
+  "origin": "Forged in the fires of the First Industrial War, the Iron Syndicate was born when the major rail barons and weapon manufacturers consolidated their power to supply both sides of the conflict. They emerged as the ultimate victors, holding the reins of industry and steam-driven progress.",
+  "internal_hierarchies": "A strict meritocracy governed by the Board of Directors at the top, followed by Regional Overlords, Factory Foremen, and the countless gears in the machine—the indentured laborers.",
+  "signature_technologies": ["Dreadnought Automata", "Hyper-pressurized Steam Cannons", "Aether-infused Locomotives"],
+  "leader_profile": {
+    "name": "Director-General Cornelius Vance",
+    "description": "A man more machine than flesh, Vance's right arm and half his face have been replaced with gleaming brass and ticking clockwork. He is ruthless, calculating, and sees human lives merely as expendable resources on a balance sheet."
+  },
+  "historical_events": [
+    "The Great Consolidation (1842): The hostile takeover of all independent foundries in the capital.",
+    "The Clockwork Uprising (1855): A worker rebellion brutally crushed by the Syndicate's newly unveiled Dreadnought Automata.",
+    "The Signing of the Aether Accords (1870): A treaty granting the Syndicate exclusive rights to mine Aether-coal in the Northern Wastes."
+  ],
+  "current_agenda": "To monopolize the nascent aether-tech industry and automate their entire workforce, rendering human labor obsolete while maximizing profit."
+}

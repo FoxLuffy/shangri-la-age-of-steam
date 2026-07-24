@@ -52,6 +52,7 @@ export interface Location {
   id: string;
   name: string;
   description: string;
+  lore_text?: string;
   npcs: string[];
 }
 
@@ -314,5 +315,18 @@ export const useMarketQuery = () => {
     queryKey: ['market'],
     queryFn: getMarket,
     staleTime: 30000,
+  });
+};
+
+export const fetchCodex = async () => {
+  const { data } = await api.get('/codex');
+  return data;
+};
+
+export const useCodexQuery = () => {
+  return useQuery({
+    queryKey: ['codex'],
+    queryFn: fetchCodex,
+    staleTime: Infinity,
   });
 };

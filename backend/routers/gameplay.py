@@ -440,3 +440,27 @@ async def fly_airship(airship_id: int, altitude: int, distance: float):
         session.commit()
         session.refresh(ship)
         return ship
+
+@router.get("/codex")
+async def get_codex():
+    import os
+    import json
+    
+    codex_path = os.path.join(os.path.dirname(__file__), "..", "codex")
+    codex_data = {}
+    
+    if os.path.exists(codex_path):
+        for category in os.listdir(codex_path):
+            category_path = os.path.join(codex_path, category)
+            if os.path.isdir(category_path):
+                codex_data[category] = []
+                for filename in os.listdir(category_path):
+                    if filename.endswith(".json"):
+                        file_path = os.path.join(category_path, filename)
+                        try:
+                            with open(file_path, "r", encoding="utf-8") as f:
+                                codex_data[category].append(json.load(f))
+                        except Exception as e:
+                            print(f"Error loading codex file {file_path}: {e}")
+    return codex_data
+

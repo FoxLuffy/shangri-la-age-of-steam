@@ -540,6 +540,18 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
               <p className="text-xs text-slate-300 leading-relaxed">
                 {currentLocation ? currentLocation.description : 'Select a location to explore.'}
               </p>
+              {currentLocation?.lore_text && (
+                <div className="mt-3 pt-3 border-t border-amber-900/30">
+                  <details className="text-xs text-amber-200/80 group">
+                    <summary className="cursor-pointer font-bold text-amber-500 hover:text-amber-400 transition-colors list-none flex items-center gap-1">
+                      <span>📖</span> Read Area Lore
+                    </summary>
+                    <p className="mt-2 italic leading-relaxed pl-1 border-l-2 border-amber-800/50">
+                      {currentLocation.lore_text}
+                    </p>
+                  </details>
+                </div>
+              )}
             </div>
 
             {activeNpcs.length > 0 && (

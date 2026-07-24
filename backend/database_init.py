@@ -106,6 +106,10 @@ def migrate_db():
             conn.execute(text("ALTER TABLE playeraction ADD COLUMN is_exploration BOOLEAN DEFAULT 0;"))
         except Exception:
             pass
+        try:
+            conn.execute(text("ALTER TABLE location ADD COLUMN lore_text VARCHAR;"))
+        except Exception:
+            pass
 
 
 def seed_data():
@@ -142,26 +146,31 @@ def seed_data():
                 id="1",
                 name="The Rusty Anchor Tavern",
                 description="A dim, steam-filled tavern in the low docks district. Thick smog drifts through copper pipes overhead, and sailors speak in hushed tones about the iron syndicate.",
+                lore_text="Built atop the ruins of an old naval garrison, the Rusty Anchor has served as a neutral ground for dockworkers and minor criminals for over four decades. The thick oak beams still bear the scorch marks from the Great Subsidence."
             )
             loc2 = Location(
                 id="2",
                 name="Clockwork Plaza",
                 description="A sprawling plaza centered around a massive brass clock tower. Cogwheels turn rhythmically as steam vents discharge with loud huffs. Vendors sell mechanical trinkets.",
+                lore_text="Once the vibrant heart of the pre-industrial city, it was leveled and rebuilt by the Iron Syndicate to showcase their supremacy. The brass clock tower doesn't just tell time; its gears regulate the steam pressure for the entire district."
             )
             loc3 = Location(
                 id="3",
                 name="The Grand Foundry",
                 description="A cavernous industrial warehouse where giant pistons crush glowing iron ore, emitting intense heat and blinding sparks. Automata patrol the walkways.",
+                lore_text="The beating, fiery heart of the Syndicate's war machine. Originally an independent collective of blacksmiths, it was aggressively annexed in 1842. Now, workers toil in 16-hour shifts under the watchful optics of Dreadnought Automata."
             )
             loc4 = Location(
                 id="4",
                 name="The Aetherium Observatory",
                 description="High above the smog, this glass-domed structure houses massive brass telescopes aimed at the glowing aether rifts in the sky.",
+                lore_text="Funded in secret by the Alchemists Guild, the Observatory charts the unpredictable flows of Aether-storms. Its massive lenses are ground from rare quartz crystals, capable of seeing wavelengths of light invisible to the naked eye."
             )
             loc5 = Location(
                 id="5",
                 name="Undercity Slums",
                 description="A labyrinth of cramped, rusted metal shanties beneath the main city grid. It reeks of sulfur and desperation, a haven for smugglers and rogue alchemists.",
+                lore_text="Created when the lower levels of the city collapsed under the weight of rampant industrialization. It is a sunless world where outcasts have carved out a precarious existence, powered by scavenged tech and illicit aether-lines."
             )
             session.add_all([loc1, loc2, loc3, loc4, loc5])
 

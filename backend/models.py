@@ -15,6 +15,7 @@ class Location(BaseModel):
     id: str
     name: str
     description: str
+    lore_text: Optional[str] = None
     npcs: Union[List[str], str] = []
 
 
@@ -120,6 +121,7 @@ class DBLocation(SQLModel, base=Base):
     id: str = SQLModelField(primary_key=True)
     name: str
     description: str
+    lore_text: Optional[str] = SQLModelField(default=None)
     npcs: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
 
 

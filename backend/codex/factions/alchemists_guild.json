@@ -1,0 +1,17 @@
+{
+  "name": "Alchemists Guild",
+  "category": "Faction",
+  "origin": "Originating from ancient orders of hermetic scholars, the Alchemists Guild modernized when they discovered how to synthesize and distill Aether into potent, volatile concoctions. They are the true masters of chemical engineering and mystical sciences.",
+  "internal_hierarchies": "Led by the Grand Magister, beneath whom sit the Master Distillers, Journeyman Mixologists, and the lowly Catalyst Apprentices who often bear the brunt of experimental mishaps.",
+  "signature_technologies": ["Aetheric Elixirs", "Corrosive Gas Vials", "Phosphorescent Vita-Lamps"],
+  "leader_profile": {
+    "name": "Grand Magister Elara Vance",
+    "description": "Estranged sister to Cornelius Vance, Elara abandoned the cold logic of machinery for the chaotic beauty of chemistry. Her skin is pale, veins glowing faintly blue from chronic Aether exposure, and her mind operates on a frequency few can comprehend."
+  },
+  "historical_events": [
+    "The Sapphire Explosion (1838): An experiment gone wrong that leveled half the university district but resulted in the discovery of Liquid Aether.",
+    "The Purge of the Quacks (1850): A violent internal cleansing where rogue alchemists practicing blood-magic were exiled or executed.",
+    "The Treaty of Vapors (1865): An uneasy pact with the city guard, supplying them with healing elixirs in exchange for unrestricted access to rare botanical ingredients."
+  ],
+  "current_agenda": "To unlock the secret of the Philosopher's Engine, a theoretical device capable of transmuting base metals into pure Aether-crystals."
+}

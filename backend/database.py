@@ -176,6 +176,15 @@ class Character(SQLModel, table=True):
     guild_id: Optional[int] = Field(default=None, foreign_key="guild.id", index=True)
     active_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
     completed_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
+    discovered_artifacts: List[int] = Field(default=[], sa_column=Column(JSON))
+
+
+class Artifact(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: str
+    stat_bonus: Dict[str, int] = Field(default={}, sa_column=Column(JSON))
+    rarity: str = Field(default="Common")
 
 
 class Guild(SQLModel, table=True):

@@ -20,6 +20,7 @@ import GuildPanel from './GuildPanel';
 import BulletinBoard from './BulletinBoard';
 import BountyBoard from './BountyBoard';
 import { audioManager } from '../utils/AudioManager';
+import { ArtifactJournal } from './ArtifactJournal';
 
 
 interface Message {
@@ -53,6 +54,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [isGuildOpen, setIsGuildOpen] = useState(false);
   const [isBoardOpen, setIsBoardOpen] = useState(false);
   const [isBountyBoardOpen, setIsBountyBoardOpen] = useState(false);
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -440,6 +442,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       {isGuildOpen && <GuildPanel characterId={characterId || 0} onClose={() => setIsGuildOpen(false)} />}
       {isBoardOpen && <BulletinBoard characterId={characterId || 0} locationId={currentLocationId} onClose={() => setIsBoardOpen(false)} />}
       {isBountyBoardOpen && <BountyBoard characterId={characterId || 0} onClose={() => setIsBountyBoardOpen(false)} />}
+      {isJournalOpen && <ArtifactJournal characterId={characterId || 0} onClose={() => setIsJournalOpen(false)} />}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />
       
@@ -536,6 +539,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           >
             <span>⚔️</span>
             <span>BOUNTIES</span>
+          </button>
+          <button
+            onClick={() => setIsJournalOpen(true)}
+            className="px-4 py-1.5 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>✨</span>
+            <span>JOURNAL</span>
           </button>
           <button
             onClick={() => setIsMapOpen(true)}

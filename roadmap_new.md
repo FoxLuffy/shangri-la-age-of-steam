@@ -64,7 +64,17 @@
 
 ---
 
-## N_phase 7 — Expanded Modding Ecosystem
+## N_phase 7 — Artifact Collection & Rare Items
+
+**Goal:** Add long-term collection goals by seeding rare, lore-rich artifacts throughout the world.
+
+- [x] **Artifact System**: Add an `Artifact` model (name, description, stat_bonus, rarity). Add `discovered_artifacts` to the `Character` model. Apply stat bonuses.
+- [x] **Archaeologist's Journal UI**: Build a beautiful `ArtifactJournal` UI styled like an explorer's leather-bound sketchbook.
+- [x] **Exploration Hook**: Implement endpoint `/gameplay/artifacts/discover` to simulate finding one.
+
+---
+
+## N_phase 8 — Expanded Modding Ecosystem
 
 **Goal:** Transform the basic workshop into a full modding platform that enables community-driven content creation.
 

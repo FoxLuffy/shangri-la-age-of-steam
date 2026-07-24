@@ -9,6 +9,7 @@ from backend.client import VLLMClient
 from backend.database import NPC as DBNPC
 from backend.database import (
     Airship,
+    Artifact,
     BulletinBoardMessage,
     Character,
     Guild,
@@ -439,7 +440,43 @@ async def get_character(character_id: int):
         char = session.exec(select(Character).where(Character.id == character_id)).first()
         if not char:
             raise HTTPException(status_code=404, detail="Character not found")
+
+        # Apply artifact bonuses dynamically
+        if char.discovered_artifacts:
+            artifacts = session.exec(select(Artifact).where(Artifact.id.in_(char.discovered_artifacts))).all()
+            bonus_stats = dict(char.stats)
+            for art in artifacts:
+                for stat, bonus in art.stat_bonus.items():
+                    bonus_stats[stat] = bonus_stats.get(stat, 0) + bonus
+            char.stats = bonus_stats
+
         return char
+
+@router.get("/artifacts")
+async def get_artifacts():
+    with get_session() as session:
+        artifacts = session.exec(select(Artifact)).all()
+        return artifacts
+
+@router.post("/artifacts/discover")
+async def discover_artifact(character_id: int, artifact_id: int):
+    with get_session() as session:
+        char = session.get(Character, character_id)
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        artifact = session.get(Artifact, artifact_id)
+        if not artifact:
+            raise HTTPException(status_code=404, detail="Artifact not found")
+
+        artifacts = list(char.discovered_artifacts or [])
+        if artifact_id not in artifacts:
+            artifacts.append(artifact_id)
+            char.discovered_artifacts = artifacts
+            session.add(char)
+            session.commit()
+
+        return {"status": "success", "artifact": artifact, "character_id": character_id}
 
 @router.post("/characters")
 async def create_character(req: CharacterCreateRequest):

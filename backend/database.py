@@ -159,6 +159,7 @@ class Character(SQLModel, table=True):
     # Settings
     show_tutorials: bool = Field(default=True)
     location_id: str = Field(default="1", index=True)
+    total_strain: int = Field(default=0)
 
 
 class SystemSettings(SQLModel, table=True):

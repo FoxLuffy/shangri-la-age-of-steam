@@ -18,9 +18,9 @@
 
 **Goal:** Activate the existing `Augmentation` schema into a character progression system — players install steam-powered body modifications that grant abilities at a cost.
 
-- [ ] **Augmentation Clinic UI**: Build an `AugmentationPanel.tsx` component. Display a stylized human silhouette with socket slots (left arm, right arm, eyes, torso, legs). Each slot can hold one augmentation. Show installed augmentations with stat bonuses and side effects.
-- [ ] **Augmentation Catalog & Installation**: Create a `/augmentations/catalog` endpoint listing available augmentations (Pneumatic Arm: +3 Strength, Steam-Eye Lens: +2 Intellect but -1 Charm, Clockwork Legs: +3 Speed). Installation requires brass coins, specific crafting materials, and visiting a location with a clinic NPC. Add a `body_slots` field to the Character model.
-- [ ] **Augmentation Side Effects & Narrative Integration**: Each augmentation carries a `strain` value. Total strain above a threshold triggers narrative consequences — NPCs react with fear or fascination, certain factions refuse to deal with "metal-bloods", and the character's backstory panel updates to reflect their transformation. High-strain characters unlock unique dialogue options.
+- [x] **Augmentation Clinic UI**: Build an `AugmentationPanel.tsx` component. Display a stylized human silhouette with socket slots (left arm, right arm, eyes, torso, legs). Each slot can hold one augmentation. Show installed augmentations with stat bonuses and side effects.
+- [x] **Augmentation Catalog & Installation**: Create a `/augmentations/catalog` endpoint listing available augmentations (Pneumatic Arm: +3 Strength, Steam-Eye Lens: +2 Intellect but -1 Charm, Clockwork Legs: +3 Speed). Installation requires brass coins, specific crafting materials, and visiting a location with a clinic NPC. Add a `body_slots` field to the Character model.
+- [x] **Augmentation Side Effects & Narrative Integration**: Each augmentation carries a `strain` value. Total strain above a threshold triggers narrative consequences — NPCs react with fear or fascination, certain factions refuse to deal with "metal-bloods", and the character's backstory panel updates to reflect their transformation. High-strain characters unlock unique dialogue options.
 
 ---
 

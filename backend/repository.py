@@ -104,7 +104,7 @@ class StateRepository:
                 if quest:
                     quests_list.append({"title": quest.title, "description": quest.description, "state": qs.state})
 
-            from backend.database import Faction, FactionStanding, Minigame
+            from backend.database import Augmentation, Faction, FactionStanding, Minigame
 
             factions_list = []
             f_states = self.session.exec(select(FactionStanding).where(FactionStanding.character_id == char.id)).all()
@@ -122,6 +122,16 @@ class StateRepository:
                 active_minigame = {"id": mg.id, "type": mg.type, "state": mg.state}
             else:
                 active_minigame = None
+
+            augmentations_list = []
+            augs = self.session.exec(select(Augmentation).where(Augmentation.character_id == char.id)).all()
+            for aug in augs:
+                augmentations_list.append({
+                    "id": aug.id,
+                    "body_part": aug.body_part,
+                    "augmentation_name": aug.augmentation_name,
+                    "stat_bonus": aug.stat_bonus
+                })
 
             from backend.database import Property
 
@@ -144,6 +154,7 @@ class StateRepository:
             active_minigame = None
             properties_list = []
             factions_list = []
+            augmentations_list = []
 
         from backend.database import CombatSession
 
@@ -180,6 +191,8 @@ class StateRepository:
                 "steam": char.steam,
                 "max_steam": char.max_steam,
                 "status_effects": char.status_effects or [],
+                "total_strain": getattr(char, "total_strain", 0),
+                "augmentations": augmentations_list,
             }
             if char
             else None,

@@ -1,39 +1,53 @@
-from backend.database import engine as db_engine
+from backend.database import Character, get_session
 from backend.main import app
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
 
+client = TestClient(app)
 
-def test_install_augmentation():
-    from backend.database import Augmentation, Character
-
-    with Session(db_engine) as session:
-        # Create character if not exists
-        char = session.exec(select(Character).where(Character.id == 1)).first()
-        if not char:
-            char = Character(id=1, name="Player")
-            session.add(char)
-            session.commit()
-            session.refresh(char)
-
-        # Install augmentation
-        aug = Augmentation(
-            character_id=char.id, body_part="left_arm", augmentation_name="Pneumatic Fist", stat_bonus={"strength": 5.0}
-        )
-        session.add(aug)
-        session.commit()
-        session.refresh(aug)
-
-        assert aug.id is not None
-        assert aug.augmentation_name == "Pneumatic Fist"
-        assert aug.stat_bonus.get("strength") == 5.0
-
-
-def test_api_get_augmentations():
-    client = TestClient(app)
-    response = client.get("/augmentations?character_id=1")
+def test_get_augmentation_catalog():
+    response = client.get("/gameplay/augmentations/catalog")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    names = [a["augmentation_name"] for a in data]
-    assert "Pneumatic Fist" in names
+    assert len(data) > 0
+    assert "pneumatic_arm" in [a["id"] for a in data]
+
+def test_install_augmentation():
+    # First create a test character in DB with enough coins
+    with get_session() as session:
+        char = Character(name="Aug Test Char", brass_coins=500, total_strain=0)
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+        char_id = char.id
+
+    payload = {
+        "character_id": char_id,
+        "augmentation_id": "pneumatic_arm"
+    }
+    response = client.post("/gameplay/augmentations/install", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["status"] == "success"
+    aug_data = data.get("augmentation", {})
+    assert aug_data.get("augmentation_name") == "Pneumatic Arm", f"Data: {data}"
+    assert data["character_strain"] == 10
+    assert data["brass_coins"] == 300  # 500 - 200
+
+def test_install_augmentation_not_enough_coins():
+    # Character with 0 coins
+    with get_session() as session:
+        char = Character(name="Poor Char", brass_coins=0, total_strain=0)
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+        char_id = char.id
+
+    payload = {
+        "character_id": char_id,
+        "augmentation_id": "pneumatic_arm"
+    }
+    response = client.post("/gameplay/augmentations/install", json=payload)
+    assert response.status_code == 400
+    assert "Not enough brass coins" in response.json()["detail"]

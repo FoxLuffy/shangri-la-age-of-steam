@@ -65,6 +65,11 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 - Armor: {{ player_stats.armor }}
 - Status Effects: {{ player_stats.status_effects | join(', ') if player_stats.status_effects else 'None' }}
 - Wealth: {{ brass_coins }} Brass Coins
+- Total Strain: {{ player_stats.total_strain }}
+- Installed Augmentations: {% for aug in player_stats.augmentations %}{{ aug.augmentation_name }}{% if not loop.last %}, {% endif %}{% else %}None{% endfor %}
+{% if player_stats.total_strain > 10 %}
+*(The player's total_strain is high. Their body is heavily mechanized. NPCs should react with fear, suspicion, or fascination at their augmented form.)*
+{% endif %}
 {% endif %}
 **Is Combat Active?**: {{ is_combat_active }}
 

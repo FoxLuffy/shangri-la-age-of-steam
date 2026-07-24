@@ -134,6 +134,7 @@ class DBNPC(SQLModel, base=Base):
     disposition: float = SQLModelField(default=0.0)
     memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
     location_id: str = SQLModelField(default="1", index=True, foreign_key="location.id")
+    faction_id: Optional[str] = None
     custom_system_prompt: Optional[str] = None
 
 

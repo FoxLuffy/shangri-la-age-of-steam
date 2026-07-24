@@ -55,6 +55,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
                 "traits": getattr(npc, "traits", []) or [],
                 "disposition": getattr(npc, "disposition", 0.0),
                 "memories": memories_str,
+                "faction_id": getattr(npc, "faction_id", None),
                 "hp": getattr(npc, "hp", 100),
                 "max_hp": getattr(npc, "max_hp", 100),
                 "armor": getattr(npc, "armor", 0),

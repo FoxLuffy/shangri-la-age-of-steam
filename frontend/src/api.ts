@@ -332,3 +332,20 @@ export const useCodexQuery = () => {
     staleTime: Infinity,
   });
 };
+
+export const fetchAirship = async (characterId: number) => {
+  try {
+    const { data } = await api.get(`/gameplay/airships?character_id=${characterId}`);
+    return data;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const navigateAirship = async (characterId: number, locationId: string) => {
+  const { data } = await api.post(`/gameplay/airships/navigate`, {
+    character_id: characterId,
+    location_id: locationId
+  });
+  return data;
+};

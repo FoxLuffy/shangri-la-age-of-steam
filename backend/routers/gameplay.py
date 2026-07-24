@@ -43,9 +43,9 @@ from backend.schemas import (
     TradeOfferRequest,
 )
 from backend.websocket import manager
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import StreamingResponse
-from sqlmodel import select
+from sqlmodel import select, Session
 
 AUGMENTATION_CATALOG = [
     {
@@ -435,48 +435,45 @@ async def toggle_tutorials(character_id: int, req: ToggleTutorialsRequest):
         return {"status": "success", "show_tutorials": char.show_tutorials}
 
 @router.get("/characters/{character_id}")
-async def get_character(character_id: int):
-    with get_session() as session:
-        char = session.exec(select(Character).where(Character.id == character_id)).first()
-        if not char:
-            raise HTTPException(status_code=404, detail="Character not found")
+async def get_character(character_id: int, session: Session = Depends(get_session)):
+    char = session.exec(select(Character).where(Character.id == character_id)).first()
+    if not char:
+        raise HTTPException(status_code=404, detail="Character not found")
 
-        # Apply artifact bonuses dynamically
-        if char.discovered_artifacts:
-            artifacts = session.exec(select(Artifact).where(Artifact.id.in_(char.discovered_artifacts))).all()
-            bonus_stats = dict(char.stats)
-            for art in artifacts:
-                for stat, bonus in art.stat_bonus.items():
-                    bonus_stats[stat] = bonus_stats.get(stat, 0) + bonus
-            char.stats = bonus_stats
+    # Apply artifact bonuses dynamically
+    if char.discovered_artifacts:
+        artifacts = session.exec(select(Artifact).where(Artifact.id.in_(char.discovered_artifacts))).all()
+        bonus_stats = dict(char.stats)
+        for art in artifacts:
+            for stat, bonus in art.stat_bonus.items():
+                bonus_stats[stat] = bonus_stats.get(stat, 0) + bonus
+        char.stats = bonus_stats
 
-        return char
+    return char
 
 @router.get("/artifacts")
-async def get_artifacts():
-    with get_session() as session:
-        artifacts = session.exec(select(Artifact)).all()
-        return artifacts
+async def get_artifacts(session: Session = Depends(get_session)):
+    artifacts = session.exec(select(Artifact)).all()
+    return artifacts
 
 @router.post("/artifacts/discover")
-async def discover_artifact(character_id: int, artifact_id: int):
-    with get_session() as session:
-        char = session.get(Character, character_id)
-        if not char:
-            raise HTTPException(status_code=404, detail="Character not found")
+async def discover_artifact(character_id: int, artifact_id: int, session: Session = Depends(get_session)):
+    char = session.get(Character, character_id)
+    if not char:
+        raise HTTPException(status_code=404, detail="Character not found")
 
-        artifact = session.get(Artifact, artifact_id)
-        if not artifact:
-            raise HTTPException(status_code=404, detail="Artifact not found")
+    artifact = session.get(Artifact, artifact_id)
+    if not artifact:
+        raise HTTPException(status_code=404, detail="Artifact not found")
 
-        artifacts = list(char.discovered_artifacts or [])
-        if artifact_id not in artifacts:
-            artifacts.append(artifact_id)
-            char.discovered_artifacts = artifacts
-            session.add(char)
-            session.commit()
+    artifacts = list(char.discovered_artifacts or [])
+    if artifact_id not in artifacts:
+        artifacts.append(artifact_id)
+        char.discovered_artifacts = artifacts
+        session.add(char)
+        session.commit()
 
-        return {"status": "success", "artifact": artifact, "character_id": character_id}
+    return {"status": "success", "artifact": artifact, "character_id": character_id}
 
 @router.post("/characters")
 async def create_character(req: CharacterCreateRequest):

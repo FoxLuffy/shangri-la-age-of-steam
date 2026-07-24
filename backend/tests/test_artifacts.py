@@ -7,21 +7,24 @@ from backend.main import app
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
+from sqlalchemy.pool import StaticPool
 sqlite_url = "sqlite:///:memory:"
-test_engine = create_engine(sqlite_url)
+test_engine = create_engine(sqlite_url, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
-@contextlib.contextmanager
 def get_session_override():
     with Session(test_engine) as session:
         yield session
 
 client = TestClient(app)
 
+from backend.database import get_session
+
 @pytest.fixture(autouse=True)
 def setup_db():
     SQLModel.metadata.create_all(test_engine)
-    with patch("backend.routers.gameplay.get_session", get_session_override):
-        yield
+    app.dependency_overrides[get_session] = get_session_override
+    yield
+    app.dependency_overrides.clear()
     SQLModel.metadata.drop_all(test_engine)
 
 def test_get_artifacts():

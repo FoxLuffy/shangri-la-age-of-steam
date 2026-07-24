@@ -29,6 +29,7 @@ from backend.repository import StateRepository
 from backend.schemas import (
     AirshipNavigateRequest,
     AugmentationInstallRequest,
+    BountyAcceptRequest,
     BulletinMessageRequest,
     CharacterCreateRequest,
     GenerateGearRequest,
@@ -320,6 +321,68 @@ async def get_quests(character_id: int):
         quests = session.exec(select(QuestState).where(QuestState.character_id == character_id)).all()
         return quests
 
+@router.get("/bounties")
+async def get_bounties(character_id: int):
+    from backend.database import Bounty
+    with get_session() as session:
+        # Get character to retrieve their active and completed bounties
+        char = session.get(Character, character_id)
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        # Get available bounties (we can procedurally generate if none exist)
+        available = session.exec(select(Bounty).where(Bounty.status == "available")).all()
+
+        if len(available) < 3:
+            import random
+            targets = ["Automata", "Thug", "Smuggler", "Cultist", "Pirate"]
+            adjectives = ["Rogue", "Notorious", "Dangerous", "Wanted", "Crazed"]
+            for _ in range(3 - len(available)):
+                target = random.choice(targets)
+                adj = random.choice(adjectives)
+                bounty = Bounty(
+                    title=f"Bounty: {adj} {target}",
+                    description=f"A {adj.lower()} {target.lower()} has been causing trouble. Eliminate them for a reward.",
+                    target_npc_type=target,
+                    reward_coins=random.randint(50, 150),
+                    status="available"
+                )
+                session.add(bounty)
+            session.commit()
+            available = session.exec(select(Bounty).where(Bounty.status == "available")).all()
+
+        return {
+            "available": available,
+            "active_ids": char.active_bounties or [],
+            "completed_ids": char.completed_bounties or []
+        }
+
+@router.post("/bounties/accept")
+async def accept_bounty(character_id: int, req: BountyAcceptRequest):
+    from backend.database import Bounty
+    with get_session() as session:
+        char = session.get(Character, character_id)
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        bounty = session.get(Bounty, req.bounty_id)
+        if not bounty:
+            raise HTTPException(status_code=404, detail="Bounty not found")
+
+        if bounty.status != "available":
+            raise HTTPException(status_code=400, detail="Bounty is not available")
+
+        bounty.status = "active"
+
+        active_bounties = list(char.active_bounties or [])
+        active_bounties.append(bounty.id)
+        char.active_bounties = active_bounties
+
+        session.add(bounty)
+        session.add(char)
+        session.commit()
+        return {"status": "success", "bounty": bounty}
+
 @router.get("/history")
 async def get_history(limit: int = 50):
     from backend.database import LedgerEntry
@@ -416,7 +479,6 @@ async def create_character(req: CharacterCreateRequest):
             session.commit()
             session.refresh(char)
 
-        raise RuntimeError(f"DEBUG: req={req.model_dump()}, ORIGINS keys={list(ORIGINS.keys())}")
         if req.origin and req.origin in ORIGINS:
             origin_data = ORIGINS[req.origin]
             for item_data in origin_data["items"]:

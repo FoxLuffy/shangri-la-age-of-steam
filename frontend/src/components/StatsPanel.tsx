@@ -95,6 +95,22 @@ export default function StatsPanel({ character, worldState, onReset, onOpenEmpir
         </div>
       )}
 
+      {(character.active_bounties?.length > 0 || character.completed_bounties?.length > 0) && (
+        <div className="mb-6">
+          <div className="text-xs text-amber-600/70 uppercase mb-2">Bounties</div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm font-mono text-amber-200">
+              <span>Active</span>
+              <span className="text-amber-500">{character.active_bounties?.length || 0}</span>
+            </div>
+            <div className="flex justify-between text-sm font-mono text-amber-200">
+              <span>Completed</span>
+              <span className="text-amber-500">{character.completed_bounties?.length || 0}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {worldState && worldState.factions && worldState.factions.length > 0 && (
         <div className="mb-6">
           <div className="text-xs text-amber-600/70 uppercase mb-2">Factions</div>

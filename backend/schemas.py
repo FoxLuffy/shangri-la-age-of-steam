@@ -89,3 +89,17 @@ class BulletinMessageRequest(BaseModel):
     location_id: str
     content: str
 
+
+class BountyResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    target_npc_type: str
+    reward_coins: int
+    status: str
+
+
+class BountyAcceptRequest(BaseModel):
+    bounty_id: int
+
+

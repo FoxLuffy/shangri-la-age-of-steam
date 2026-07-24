@@ -144,17 +144,7 @@ class DBNPC(SQLModel, base=Base):
     custom_system_prompt: Optional[str] = None
 
 
-class DBWorldState(SQLModel, base=Base):
-    __tablename__ = "world_state"
-    id: Optional[int] = SQLModelField(default=None, primary_key=True)
-    current_location_id: str = SQLModelField(default="1")
-    active_npcs_ids: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
-    global_event: Optional[str] = None
-    world_memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
-    world_time: int = SQLModelField(default=0)
-    time_period: str = SQLModelField(default="Day")
-    weather: str = "Clear"
-    season: str = SQLModelField(default="Brass Festival")
+
 
 
 class DBLedgerEntry(SQLModel, base=Base):

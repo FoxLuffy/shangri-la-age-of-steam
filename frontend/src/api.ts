@@ -100,6 +100,8 @@ export interface Character {
     charm: number;
   };
   show_tutorials: boolean;
+  active_bounties?: number[];
+  completed_bounties?: number[];
 }
 
 export const fetchCharacter = async (characterId: number): Promise<Character> => {

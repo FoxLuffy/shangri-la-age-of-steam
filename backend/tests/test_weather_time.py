@@ -1,14 +1,13 @@
 import pytest
 from backend.engine import simulate_weather_time
-from backend.models import DBWorldState
-from sqlmodel import Session, create_engine
+from backend.database import WorldState as DBWorldState
+from sqlmodel import Session, create_engine, SQLModel
 
 
 @pytest.fixture
 def session():
     engine = create_engine("sqlite:///:memory:")
-    from backend.models import Base
-    Base.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
 

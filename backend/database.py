@@ -61,6 +61,10 @@ class WorldState(SQLModel, table=True):
     global_event: Optional[str] = None
     world_memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
     is_combat_active: bool = Field(default=False)
+    world_time: int = Field(default=0)
+    time_period: str = Field(default="Day")
+    weather: str = Field(default="Clear")
+    season: str = Field(default="Brass Festival")
 
 
 class PlayerAction(SQLModel, table=True):
@@ -137,6 +141,15 @@ class UserSession(SQLModel, table=True):
     expires_at: str = Field(default="")
 
 
+class Bounty(SQLModel, table=True):
+    __tablename__ = "bounty"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: str
+    target_npc_type: str
+    reward_coins: int
+    status: str = Field(default="available")  # available, active, completed
+
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="user_account.id", index=True)
@@ -161,6 +174,8 @@ class Character(SQLModel, table=True):
     location_id: str = Field(default="1", index=True)
     total_strain: int = Field(default=0)
     guild_id: Optional[int] = Field(default=None, foreign_key="guild.id", index=True)
+    active_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
+    completed_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
 
 
 class Guild(SQLModel, table=True):

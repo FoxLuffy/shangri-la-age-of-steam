@@ -18,6 +18,7 @@ import { useGameStore } from '../stores/gameStore';
 import WorldMap from './WorldMap';
 import GuildPanel from './GuildPanel';
 import BulletinBoard from './BulletinBoard';
+import BountyBoard from './BountyBoard';
 import { audioManager } from '../utils/AudioManager';
 
 
@@ -51,6 +52,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isGuildOpen, setIsGuildOpen] = useState(false);
   const [isBoardOpen, setIsBoardOpen] = useState(false);
+  const [isBountyBoardOpen, setIsBountyBoardOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -437,6 +439,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       )}
       {isGuildOpen && <GuildPanel characterId={characterId || 0} onClose={() => setIsGuildOpen(false)} />}
       {isBoardOpen && <BulletinBoard characterId={characterId || 0} locationId={currentLocationId} onClose={() => setIsBoardOpen(false)} />}
+      {isBountyBoardOpen && <BountyBoard characterId={characterId || 0} onClose={() => setIsBountyBoardOpen(false)} />}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />
       
@@ -526,6 +529,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           >
             <span>🛡️</span>
             <span>GUILD</span>
+          </button>
+          <button
+            onClick={() => setIsBountyBoardOpen(true)}
+            className="px-4 py-1.5 bg-red-800 hover:bg-red-700 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>⚔️</span>
+            <span>BOUNTIES</span>
           </button>
           <button
             onClick={() => setIsMapOpen(true)}

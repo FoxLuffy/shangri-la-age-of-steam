@@ -58,9 +58,9 @@
 
 **Goal:** Provide an infinite content loop — procedurally generated missions that reward exploration, combat, and faction engagement.
 
-- [ ] **Bounty Board System**: Add a `BountyBoard` model and `/bounties/list` endpoint. Each location generates 3 active bounties per simulation cycle. Bounty types: Hunt (defeat a target NPC), Delivery (transport goods between locations), Investigation (gather clues from NPCs), Sabotage (use minigames to disrupt a rival faction's operation). Bounties expire after N ticks and reward brass coins, faction standing, and rare crafting materials.
-- [ ] **Procedural Mission Generator**: Build `mission_generator.py` that assembles missions from template components: objective (kill/fetch/escort/investigate), target (procedurally named NPC or location), complication (time limit, rival bounty hunter, moral dilemma), and reward tier. The generator uses current world state (active faction wars, market prices, weather) to create contextually relevant missions.
-- [ ] **Bounty Board UI**: Build a `BountyBoard.tsx` component styled as a cork board with pinned parchment notes. Each bounty shows its type icon, brief description, reward, expiration timer, and an "Accept" button. Active bounties appear in the quest tracker.
+- [x] **Bounty Board System**: Add a `BountyBoard` model and `/bounties/list` endpoint. Each location generates 3 active bounties per simulation cycle. Bounty types: Hunt (defeat a target NPC), Delivery (transport goods between locations), Investigation (gather clues from NPCs), Sabotage (use minigames to disrupt a rival faction's operation). Bounties expire after N ticks and reward brass coins, faction standing, and rare crafting materials.
+- [x] **Procedural Mission Generator**: Build `mission_generator.py` that assembles missions from template components: objective (kill/fetch/escort/investigate), target (procedurally named NPC or location), complication (time limit, rival bounty hunter, moral dilemma), and reward tier. The generator uses current world state (active faction wars, market prices, weather) to create contextually relevant missions.
+- [x] **Bounty Board UI**: Build a `BountyBoard.tsx` component styled as a cork board with pinned parchment notes. Each bounty shows its type icon, brief description, reward, expiration timer, and an "Accept" button. Active bounties appear in the quest tracker.
 
 ---
 

@@ -1,6 +1,7 @@
 import pytest
-from backend.models import WorldState, PlayerAction, Location, NPC
+from backend.models import NPC, Location, PlayerAction, WorldState
 from backend.prompt_utils import build_narrative_prompt
+
 
 def test_flavor_prompt_complex_inputs():
     npcs = [
@@ -9,12 +10,12 @@ def test_flavor_prompt_complex_inputs():
         NPC(id="3", name="Merchant", traits=["greedy", "friendly"]),
         NPC(id="4", name="Spy", traits=["sneaky", "silent"]),
         NPC(id="5", name="Thief", traits=["fast", "hungry"]),
-        NPC(id="6", name="Beggar", traits=["pitiful"])
+        NPC(id="6", name="Beggar", traits=["pitiful"]),
     ]
-        
+
     location = Location(id="loc-1", name="The Rusty Tankard", description="A dim, steam-filled tavern.", npcs=[])
     state = WorldState(current_location_id="loc-1", current_location=location, active_npcs=npcs)
-        
+
     long_action = (
         "The player cautiously approaches the bar counter, their boots clanking against the wet floor. "
         "They take a deep breath, feeling the heavy, metallic scent of steam and old grease. "
@@ -22,30 +23,26 @@ def test_flavor_prompt_complex_inputs():
         "reflection in the polished wood show their fear. They want to ask for a drink but are "
         "terrified of the man watching them from the corner."
     )
-        
-    action = PlayerAction(
-        action_text=long_action, 
-        current_location_id="loc-1", 
-        mood="tense", 
-        is_exploration=True
-    )
-        
+
+    action = PlayerAction(action_text=long_action, current_location_id="loc-1", mood="tense", is_exploration=True)
+
     prompt = build_narrative_prompt(state, action)
-        
+
     assert "The Rusty Tankard" in prompt
     assert "dim, steam-filled tavern" in prompt
-        
+
     for npc in npcs:
         assert npc.name in prompt
-            
+
     assert "reflection in the polished wood" in prompt
-        
+
     # Check for mood and exploration instructions
     assert "[Mood: tense]" in prompt
     assert "a detailed and atmospheric description of the new surroundings" in prompt
-        
+
     # Check for system instructions
     assert "You are the Narrator" in prompt
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

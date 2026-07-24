@@ -1,18 +1,27 @@
-from typing import List, Optional, Dict, Any
-from sqlmodel import Session as SQLModelSession, select
-from backend.database import engine, Location as DBLocation, NPC as DBNPC, WorldState as DBWorldState, Character
-from backend.models import WorldState, Location, NPC
+from typing import Any, Dict, List, Optional
+
+from backend.database import NPC as DBNPC
+from backend.database import Character
+from backend.database import Location as DBLocation
+from backend.database import WorldState as DBWorldState
 from backend.database_init import seed_data
+from backend.models import NPC, Location, WorldState
+from sqlmodel import Session as SQLModelSession
+from sqlmodel import select
+
 
 class StateRepository:
     def __init__(self, session: SQLModelSession):
         self.session = session
+
     def get_sessions(self, user_id: int):
         from backend.database import Character
+
         return self.session.exec(select(Character).where(Character.user_id == user_id)).all()
 
     def get_latest_state(self, character_id: Optional[int] = 1) -> WorldState:
         from backend.database import SystemSettings
+
         settings = self.session.exec(select(SystemSettings)).first()
         global_sys_prompt = settings.global_system_prompt if settings else None
 
@@ -22,22 +31,28 @@ class StateRepository:
             db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
 
         char = self.session.get(Character, character_id) if character_id else None
-        
-        loc_id = char.location_id if char and hasattr(char, "location_id") else (db_state.current_location_id if db_state else "1")
+
+        loc_id = (
+            char.location_id
+            if char and hasattr(char, "location_id")
+            else (db_state.current_location_id if db_state else "1")
+        )
         db_loc = self.session.get(DBLocation, loc_id)
         if not db_loc:
             current_location = Location(
                 id=loc_id,
                 name="The Rusty Anchor Tavern",
                 description="A dim, steam-filled tavern near the docks.",
-                npcs=[]
+                npcs=[],
             )
         else:
             current_location = Location(
                 id=db_loc.id,
                 name=db_loc.name,
                 description=db_loc.description,
-                npcs=[npc.id for npc in db_loc.npcs] if hasattr(db_loc, "npcs") and db_loc.npcs and isinstance(db_loc.npcs[0], DBNPC) else (db_loc.npcs or [])
+                npcs=[npc.id for npc in db_loc.npcs]
+                if hasattr(db_loc, "npcs") and db_loc.npcs and isinstance(db_loc.npcs[0], DBNPC)
+                else (db_loc.npcs or []),
             )
 
         active_npc_ids = db_state.active_npcs_ids if db_state and db_state.active_npcs_ids else []
@@ -45,100 +60,102 @@ class StateRepository:
         for npc_id in active_npc_ids:
             db_npc = self.session.get(DBNPC, npc_id)
             if db_npc:
-                active_npcs.append(NPC(
-                    id=db_npc.id,
-                    name=db_npc.name,
-                    traits=db_npc.traits or [],
-                    current_dialogue=db_npc.current_dialogue,
-                    disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
-                    memories=db_npc.memories or [],
-                    faction_id=db_npc.faction_id,
-                    hp=db_npc.hp,
-                    max_hp=db_npc.max_hp,
-                    armor=db_npc.armor,
-                    status_effects=db_npc.status_effects or [],
-                    is_hostile=db_npc.is_hostile,
-                    custom_system_prompt=db_npc.custom_system_prompt
-                ))
+                active_npcs.append(
+                    NPC(
+                        id=db_npc.id,
+                        name=db_npc.name,
+                        traits=db_npc.traits or [],
+                        current_dialogue=db_npc.current_dialogue,
+                        disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
+                        memories=db_npc.memories or [],
+                        faction_id=db_npc.faction_id,
+                        hp=db_npc.hp,
+                        max_hp=db_npc.max_hp,
+                        armor=db_npc.armor,
+                        status_effects=db_npc.status_effects or [],
+                        is_hostile=db_npc.is_hostile,
+                        custom_system_prompt=db_npc.custom_system_prompt,
+                    )
+                )
 
         from backend.database import Inventory, Item, Quest, QuestState
 
         inventory_list = []
         quests_list = []
-        
+
         # Use the provided character_id
         if char:
             inv_items = self.session.exec(select(Inventory).where(Inventory.character_id == char.id)).all()
             for inv in inv_items:
                 item = self.session.get(Item, inv.item_id)
                 if item:
-                    inventory_list.append({
-                        "name": item.name,
-                        "description": item.description,
-                        "quantity": inv.quantity,
-                        "durability": inv.durability
-                    })
-            
+                    inventory_list.append(
+                        {
+                            "name": item.name,
+                            "description": item.description,
+                            "quantity": inv.quantity,
+                            "durability": inv.durability,
+                        }
+                    )
+
             q_states = self.session.exec(select(QuestState).where(QuestState.character_id == char.id)).all()
             for qs in q_states:
                 quest = self.session.get(Quest, qs.quest_id)
                 if quest:
-                    quests_list.append({
-                        "title": quest.title,
-                        "description": quest.description,
-                        "state": qs.state
-                    })
-                    
-            from backend.database import Minigame, Faction, FactionStanding
-            
+                    quests_list.append({"title": quest.title, "description": quest.description, "state": qs.state})
+
+            from backend.database import Faction, FactionStanding, Minigame
+
             factions_list = []
             f_states = self.session.exec(select(FactionStanding).where(FactionStanding.character_id == char.id)).all()
             for fs in f_states:
                 faction = self.session.get(Faction, fs.faction_id)
                 if faction:
-                    factions_list.append({
-                        "faction_id": faction.id,
-                        "faction_name": faction.name,
-                        "standing": fs.standing
-                    })
-                    
-            mg = self.session.exec(select(Minigame).where(Minigame.character_id == char.id, Minigame.solved == False)).first()
+                    factions_list.append(
+                        {"faction_id": faction.id, "faction_name": faction.name, "standing": fs.standing}
+                    )
+
+            mg = self.session.exec(
+                select(Minigame).where(Minigame.character_id == char.id, not Minigame.solved)
+            ).first()
             if mg:
-                active_minigame = {
-                    "id": mg.id,
-                    "type": mg.type,
-                    "state": mg.state
-                }
+                active_minigame = {"id": mg.id, "type": mg.type, "state": mg.state}
             else:
                 active_minigame = None
-                
-            from backend.database import Property, Worker
+
+            from backend.database import Property
+
             properties_list = []
             all_props = self.session.exec(select(Property)).all()
             for p in all_props:
-                properties_list.append({
-                    "id": p.id,
-                    "name": p.name,
-                    "description": p.description,
-                    "location_id": p.location_id,
-                    "owner_id": p.owner_id,
-                    "price": p.price,
-                    "income_per_tick": p.income_per_tick,
-                    "property_type": p.property_type
-                })
+                properties_list.append(
+                    {
+                        "id": p.id,
+                        "name": p.name,
+                        "description": p.description,
+                        "location_id": p.location_id,
+                        "owner_id": p.owner_id,
+                        "price": p.price,
+                        "income_per_tick": p.income_per_tick,
+                        "property_type": p.property_type,
+                    }
+                )
         else:
             active_minigame = None
             properties_list = []
             factions_list = []
 
         from backend.database import CombatSession
-        combat_session = self.session.exec(select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active == True)).first()
+
+        combat_session = self.session.exec(
+            select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active)
+        ).first()
         combat_state = None
         if combat_session:
             combat_state = {
                 "turn_order": combat_session.turn_order,
                 "current_turn_index": combat_session.current_turn_index,
-                "is_active": combat_session.is_active
+                "is_active": combat_session.is_active,
             }
 
         return WorldState(
@@ -162,10 +179,12 @@ class StateRepository:
                 "armor": char.armor,
                 "steam": char.steam,
                 "max_steam": char.max_steam,
-                "status_effects": char.status_effects or []
-            } if char else None,
+                "status_effects": char.status_effects or [],
+            }
+            if char
+            else None,
             properties=properties_list,
-            brass_coins=char.brass_coins if char else 0
+            brass_coins=char.brass_coins if char else 0,
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -173,7 +192,7 @@ class StateRepository:
             current_location_id=state.current_location_id,
             active_npcs_ids=state.active_npcs_ids if isinstance(state.active_npcs_ids, list) else [],
             global_event=state.global_event,
-            world_memories=state.world_memories if isinstance(state.world_memories, list) else []
+            world_memories=state.world_memories if isinstance(state.world_memories, list) else [],
         )
         self.session.add(db_state)
         self.session.commit()
@@ -191,7 +210,9 @@ class StateRepository:
             self.session.refresh(location)
         return location
 
-    def update_npc(self, npc_id: str, disposition_delta: Optional[float] = None, new_memory: Optional[Dict[str, str]] = None) -> Optional[DBNPC]:
+    def update_npc(
+        self, npc_id: str, disposition_delta: Optional[float] = None, new_memory: Optional[Dict[str, str]] = None
+    ) -> Optional[DBNPC]:
         npc = self.session.get(DBNPC, npc_id)
         if npc:
             if disposition_delta is not None:
@@ -213,7 +234,7 @@ class StateRepository:
                 name=npc_data.get("name", "Unknown NPC"),
                 traits=npc_data.get("traits", []),
                 disposition=npc_data.get("disposition", 0.0),
-                location_id=location_id
+                location_id=location_id,
             )
         else:
             if "name" in npc_data:
@@ -227,9 +248,19 @@ class StateRepository:
         self.session.refresh(npc)
         return npc
 
-    def record_ledger_entry(self, action: str, narration: str, state_updates: Dict[str, Any], events: List[Dict[str, Any]], location_id: Optional[str] = None, character_id: Optional[int] = None):
-        from backend.database import LedgerEntry
+    def record_ledger_entry(
+        self,
+        action: str,
+        narration: str,
+        state_updates: Dict[str, Any],
+        events: List[Dict[str, Any]],
+        location_id: Optional[str] = None,
+        character_id: Optional[int] = None,
+    ):
         from datetime import datetime
+
+        from backend.database import LedgerEntry
+
         entry = LedgerEntry(
             character_id=character_id,
             timestamp=datetime.utcnow().isoformat() + "Z",
@@ -237,32 +268,36 @@ class StateRepository:
             narration=narration,
             state_updates=state_updates,
             events=events,
-            location_id=location_id
+            location_id=location_id,
         )
         self.session.add(entry)
         self.session.commit()
         return entry
 
     def apply_inventory_update(self, update: Dict[str, Any]):
-        from backend.database import Inventory, Item, Character
-        
+        from backend.database import Inventory, Item
+
         char_id = 1
         action = update.get("action", "add")
         item_name = update.get("item_name")
         qty = update.get("quantity", 1)
         if not item_name:
             return
-            
+
         # Find or create item
         item = self.session.exec(select(Item).where(Item.name == item_name)).first()
         if not item:
-            item = Item(name=item_name, description=update.get("description", "A mysterious item."), category="Consumables")
+            item = Item(
+                name=item_name, description=update.get("description", "A mysterious item."), category="Consumables"
+            )
             self.session.add(item)
             self.session.commit()
             self.session.refresh(item)
-            
-        inv = self.session.exec(select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)).first()
-        
+
+        inv = self.session.exec(
+            select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)
+        ).first()
+
         if action == "add":
             if inv:
                 inv.quantity += qty
@@ -276,23 +311,26 @@ class StateRepository:
                     self.session.delete(inv)
                 else:
                     self.session.add(inv)
-                    
+
         self.session.commit()
 
     def apply_tool_durability_update(self, update: Dict[str, Any]):
         from backend.database import Inventory, Item
+
         char_id = 1
         tool_name = update.get("tool_name")
         change = update.get("durability_change", 0)
-        
+
         if not tool_name or change == 0:
             return
-            
+
         item = self.session.exec(select(Item).where(Item.name == tool_name)).first()
         if not item:
             return
-            
-        inv = self.session.exec(select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)).first()
+
+        inv = self.session.exec(
+            select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)
+        ).first()
         if inv:
             inv.durability = (inv.durability or 100) + change
             if inv.durability <= 0:
@@ -303,13 +341,13 @@ class StateRepository:
 
     def apply_quest_update(self, update: Dict[str, Any]):
         from backend.database import Quest, QuestState, QuestStateEnum
-        
+
         char_id = 1
         action = update.get("action", "add")
         title = update.get("quest_title")
         if not title:
             return
-            
+
         quest = self.session.exec(select(Quest).where(Quest.title == title)).first()
         if not quest:
             quest = Quest(title=title, description=update.get("description", ""))
@@ -321,49 +359,58 @@ class StateRepository:
             quest.description = update["description"]
             self.session.add(quest)
             self.session.commit()
-            
-        q_state = self.session.exec(select(QuestState).where(QuestState.character_id == char_id, QuestState.quest_id == quest.id)).first()
-        
+
+        q_state = self.session.exec(
+            select(QuestState).where(QuestState.character_id == char_id, QuestState.quest_id == quest.id)
+        ).first()
+
         state_val = QuestStateEnum.active
         if action == "complete":
             state_val = QuestStateEnum.completed
         elif action == "fail":
             state_val = QuestStateEnum.failed
-            
+
         if not q_state:
             q_state = QuestState(character_id=char_id, quest_id=quest.id, state=state_val)
         else:
             q_state.state = state_val
-            
+
         self.session.add(q_state)
         self.session.commit()
 
     def trigger_minigame(self, minigame_type: str):
-        from backend.database import Minigame, Character
+        from backend.database import Character, Minigame
+
         char_id = 1
-        
+
         # Check if already exists
-        existing = self.session.exec(select(Minigame).where(Minigame.character_id == char_id, Minigame.solved == False)).first()
+        existing = self.session.exec(
+            select(Minigame).where(Minigame.character_id == char_id, not Minigame.solved)
+        ).first()
         if existing:
             return
-            
-        from backend.database import Character
+
         char = self.session.get(Character, char_id)
         stats = char.stats if char else {}
-        intellect = stats.get('intellect', 5)
-        strength = stats.get('strength', 5)
-        charm = stats.get('charm', 5)
+        intellect = stats.get("intellect", 5)
+        strength = stats.get("strength", 5)
+        stats.get("charm", 5)
 
         state = {}
         import random
+
         if minigame_type == "hack":
             # Higher intellect gives fewer sequence nodes (easier) or more attempts
             seq_length = max(3, 6 - (intellect // 2))
             attempts = max(4, 3 + (intellect // 2))
             letters = ["A", "B", "C", "D", "E", "F"]
             sequence = [random.choice(letters) for _ in range(seq_length)]
-            
-            hint = f"Hint Gear: The sequence has {seq_length} nodes. It begins with '{sequence[0]}'." if intellect >= 4 else "Hint Gear jammed. Intellect too low."
+
+            hint = (
+                f"Hint Gear: The sequence has {seq_length} nodes. It begins with '{sequence[0]}'."
+                if intellect >= 4
+                else "Hint Gear jammed. Intellect too low."
+            )
             state = {
                 "sequence": sequence,
                 "guesses": [],
@@ -371,50 +418,61 @@ class StateRepository:
                 "attempts_left": attempts,
                 "message": f"Terminal locked. Enter {seq_length}-node bypass sequence.",
                 "hint": hint,
-                "hint_revealed": False
+                "hint_revealed": False,
             }
         elif minigame_type == "lockpick":
             # Higher strength/dexterity reduces the number of pins
             num_pins = max(2, 5 - (strength // 3))
-            hint = f"Hint Gear: Focus on setting {num_pins} pins. Apply even pressure." if strength >= 4 else "Hint Gear jammed. Strength too low."
+            hint = (
+                f"Hint Gear: Focus on setting {num_pins} pins. Apply even pressure."
+                if strength >= 4
+                else "Hint Gear jammed. Strength too low."
+            )
             state = {
                 "pins": [False] * num_pins,
                 "message": f"{num_pins} pins to set. Careful not to break the pick.",
                 "hint": hint,
-                "hint_revealed": False
+                "hint_revealed": False,
             }
-            
+
         minigame = Minigame(character_id=char_id, type=minigame_type, state=state, solved=False)
         self.session.add(minigame)
         self.session.commit()
 
     def apply_faction_update(self, update: Dict[str, Any]):
         from backend.database import FactionStanding
+
         char_id = 1
         faction_id = update.get("faction_id")
         change = update.get("change", 0.0)
-        
+
         if not faction_id:
             return
-            
-        fs = self.session.exec(select(FactionStanding).where(FactionStanding.character_id == char_id, FactionStanding.faction_id == faction_id)).first()
+
+        fs = self.session.exec(
+            select(FactionStanding).where(
+                FactionStanding.character_id == char_id, FactionStanding.faction_id == faction_id
+            )
+        ).first()
         if not fs:
             fs = FactionStanding(character_id=char_id, faction_id=faction_id, standing=0.0)
-            
+
         fs.standing += float(change)
-        
+
         # Clamp between -1.0 and 1.0
         fs.standing = max(-1.0, min(1.0, fs.standing))
-        
+
         self.session.add(fs)
         self.session.commit()
 
     def apply_combat_update(self, update: Dict[str, Any], char_id: int):
-        from backend.database import Character, NPC, WorldState as DBWorldState, CombatSession
+        from backend.database import NPC, Character, CombatSession
+        from backend.database import WorldState as DBWorldState
 
         # Get character to find location
         char = self.session.get(Character, char_id)
-        if not char: return
+        if not char:
+            return
         loc_id = char.location_id
 
         # Update WorldState is_combat_active
@@ -422,40 +480,41 @@ class StateRepository:
         if db_state and "is_combat_active" in update:
             db_state.is_combat_active = update["is_combat_active"]
             self.session.add(db_state)
-            
+
             # Manage CombatSession
             combat_session = self.session.exec(select(CombatSession).where(CombatSession.location_id == loc_id)).first()
             if update["is_combat_active"]:
                 if not combat_session or not combat_session.is_active:
                     # Start combat session
                     active_npc_ids = db_state.active_npcs_ids if isinstance(db_state.active_npcs_ids, list) else []
-                    
+
                     participants = []
                     # Get all players in this location
                     players = self.session.exec(select(Character).where(Character.location_id == loc_id)).all()
                     for p in players:
-                        participants.append({
-                            "id": f"player_{p.id}",
-                            "type": "player",
-                            "name": p.name,
-                            "speed": p.stats.get("speed", 5) if p.stats else 5
-                        })
-                        
+                        participants.append(
+                            {
+                                "id": f"player_{p.id}",
+                                "type": "player",
+                                "name": p.name,
+                                "speed": p.stats.get("speed", 5) if p.stats else 5,
+                            }
+                        )
+
                     for npc_id in active_npc_ids:
                         n = self.session.get(NPC, npc_id)
                         if n:
-                            participants.append({
-                                "id": f"npc_{n.id}",
-                                "type": "npc",
-                                "name": n.name,
-                                "speed": getattr(n, "speed", 5)
-                            })
-                            
+                            participants.append(
+                                {"id": f"npc_{n.id}", "type": "npc", "name": n.name, "speed": getattr(n, "speed", 5)}
+                            )
+
                     # Sort by speed descending
                     participants.sort(key=lambda x: x["speed"], reverse=True)
-                    
+
                     if not combat_session:
-                        combat_session = CombatSession(location_id=loc_id, is_active=True, turn_order=participants, current_turn_index=0)
+                        combat_session = CombatSession(
+                            location_id=loc_id, is_active=True, turn_order=participants, current_turn_index=0
+                        )
                     else:
                         combat_session.is_active = True
                         combat_session.turn_order = participants
@@ -477,7 +536,7 @@ class StateRepository:
                 char.steam += player_updates.get("steam_change", 0)
                 char.hp = max(0, min(char.max_hp, char.hp))
                 char.steam = max(0, min(char.max_steam, char.steam))
-                
+
                 # Handling status effects
                 current_effects = set(char.status_effects or [])
                 for eff in player_updates.get("status_effects_add", []):
@@ -486,7 +545,7 @@ class StateRepository:
                     current_effects.discard(eff)
                 char.status_effects = list(current_effects)
                 self.session.add(char)
-                
+
         # Update NPCs
         npc_updates = update.get("npc_updates", [])
         for npc_u in npc_updates:
@@ -497,7 +556,7 @@ class StateRepository:
             if npc:
                 npc.hp += npc_u.get("hp_change", 0)
                 npc.hp = max(0, min(npc.max_hp, npc.hp))
-                
+
                 current_effects = set(npc.status_effects or [])
                 for eff in npc_u.get("status_effects_add", []):
                     current_effects.add(eff)
@@ -505,36 +564,45 @@ class StateRepository:
                     current_effects.discard(eff)
                 npc.status_effects = list(current_effects)
                 self.session.add(npc)
-                
+
         self.session.commit()
 
     def apply_empire_update(self, update: Dict[str, Any], char_id: int):
         from backend.database import Character, Property, Worker
+
         char = self.session.get(Character, char_id)
         if char:
             coins_change = update.get("brass_coins_change", 0)
             char.brass_coins += coins_change
             self.session.add(char)
-            
+
             bought = update.get("properties_bought", [])
             for prop_id in bought:
                 prop = self.session.get(Property, prop_id)
                 if prop and prop.owner_id is None:
                     prop.owner_id = char.id
                     self.session.add(prop)
-                    
+
             hired = update.get("workers_hired", [])
             for worker_info in hired:
                 npc_id = worker_info.get("npc_id")
                 prop_id = worker_info.get("property_id")
                 if npc_id and prop_id:
-                    worker = Worker(npc_id=npc_id, property_id=prop_id, role=worker_info.get("role", "laborer"), salary=worker_info.get("salary", 5))
+                    worker = Worker(
+                        npc_id=npc_id,
+                        property_id=prop_id,
+                        role=worker_info.get("role", "laborer"),
+                        salary=worker_info.get("salary", 5),
+                    )
                     self.session.add(worker)
-            
+
             self.session.commit()
 
     def apply_new_entities(self, new_entities: List[Dict[str, Any]]):
-        from backend.database import NPC as DBNPC, Location as DBLocation, Item
+        from backend.database import NPC as DBNPC
+        from backend.database import Item
+        from backend.database import Location as DBLocation
+
         for entity in new_entities:
             entity_type = entity.get("type", "").lower()
             if entity_type == "npc":
@@ -545,7 +613,7 @@ class StateRepository:
                         name=entity.get("name", "Unknown NPC"),
                         traits=entity.get("traits", []),
                         disposition=0.0,
-                        location_id="1" # default, could be updated if we pass current location
+                        location_id="1",  # default, could be updated if we pass current location
                     )
                     self.session.add(npc)
             elif entity_type == "location":
@@ -554,25 +622,24 @@ class StateRepository:
                     loc = DBLocation(
                         id=loc_id,
                         name=entity.get("name", "Unknown Location"),
-                        description=entity.get("description", "")
+                        description=entity.get("description", ""),
                     )
                     self.session.add(loc)
             elif entity_type == "item":
                 item_name = entity.get("name")
                 if item_name:
                     from sqlmodel import select
+
                     existing_item = self.session.exec(select(Item).where(Item.name == item_name)).first()
                     if not existing_item:
                         category = entity.get("category", "Consumables")
-                        item = Item(
-                            name=item_name,
-                            description=entity.get("description", ""),
-                            category=category
-                        )
+                        item = Item(name=item_name, description=entity.get("description", ""), category=category)
                         self.session.add(item)
         self.session.commit()
 
+
 if __name__ == "__main__":
+    from backend.database import get_session
     with get_session() as session:
         repo = StateRepository(session)
         pass

@@ -1,11 +1,13 @@
 import logging
-from typing import List, Dict, Optional, Any
+from typing import Dict, List, Optional
+
+from backend.database import DBWorldEvent
+from backend.models import WorldEvent
 from sqlalchemy.orm import Session
 from sqlmodel import select
-from backend.database import DBWorldState, DBWorldEvent
-from backend.models import WorldState, WorldEvent
 
 logger = logging.getLogger(__name__)
+
 
 class WorldEventManager:
     def __init__(self, session: Session):
@@ -17,13 +19,15 @@ class WorldEventManager:
         db_events = self.session.exec(statement).all()
         return [WorldEvent(**e.dict()) for e in db_events]
 
-    def trigger_event(self, 
-                       location_id: str, 
-                       event_type: str, 
-                       event_text: str, 
-                       severity: int = 1,
-                       affected_locations: Optional[List[str]] = None,
-                       faction_impacts: Optional[Dict[str, float]] = None) -> WorldEvent:
+    def trigger_event(
+        self,
+        location_id: str,
+        event_type: str,
+        event_text: str,
+        severity: int = 1,
+        affected_locations: Optional[List[str]] = None,
+        faction_impacts: Optional[Dict[str, float]] = None,
+    ) -> WorldEvent:
         """Trigger a new world event and save it to the database."""
         new_event = DBWorldEvent(
             location_id=location_id,
@@ -32,7 +36,7 @@ class WorldEventManager:
             severity=severity,
             affected_locations=affected_locations or [location_id],
             faction_impacts=faction_impacts or {},
-            is_active=1
+            is_active=1,
         )
         self.session.add(new_event)
         self.session.commit()
@@ -45,9 +49,9 @@ class WorldEventManager:
         db_events = self.session.exec(statement).all()
         return [WorldEvent(**e.dict()) for e in db_events if location_id in e.affected_locations]
 
-    def apply_event_impacts(self, active_events: List[WorldEvent], 
-                             npc_ids: List[str], 
-                             faction_map: Dict[str, List[str]]) -> Dict[str, float]:
+    def apply_event_impacts(
+        self, active_events: List[WorldEvent], npc_ids: List[str], faction_map: Dict[str, List[str]]
+    ) -> Dict[str, float]:
         """
         Calculate and return disposition deltas for NPCs based on active events.
         faction_map: { "faction_id": ["npc_id_1", "npc_id_2"] }

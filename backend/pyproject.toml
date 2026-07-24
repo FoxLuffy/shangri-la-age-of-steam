@@ -14,6 +14,11 @@ dependencies = [
     "python-multipart",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff"
+]
+
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"

@@ -1,14 +1,16 @@
 import json
-import re
-from typing import Any, Dict, Optional, List, Tuple
-from sqlalchemy.orm import Session
-from backend.models import WorldState, PlayerAction, NarrativeResult, Location, NPC
-from backend.client import VLLMClient
 import logging
-from backend.prompt_utils import build_narrative_prompt, build_npc_interaction_prompt
+import re
+from typing import Any, Dict, List, Optional, Tuple
+
+from backend.client import VLLMClient
+from backend.models import NPC, Location, PlayerAction, WorldState
+from backend.prompt_utils import build_narrative_prompt
 from backend.repository import StateRepository
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
+
 
 def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     """
@@ -60,11 +62,11 @@ def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[s
         narration = narration_clean
     else:
         # Strip out any JSON block at the end if present
-        json_match = re.search(r'\{.*\}', narration, re.DOTALL)
+        json_match = re.search(r"\{.*\}", narration, re.DOTALL)
         if json_match:
             try:
                 state_updates = json.loads(json_match.group(0))
-                narration = narration[:json_match.start()].strip()
+                narration = narration[: json_match.start()].strip()
             except Exception:
                 pass
 
@@ -94,9 +96,10 @@ class NarrativeEngine:
 
     def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:
+            from backend.database import Character
+            from backend.database import WorldState as DBWorldState
             from sqlmodel import select
-            from backend.database import Character, WorldState as DBWorldState
-            
+
             if action.current_location_id:
                 loc_changed = False
                 if action.character_id:
@@ -105,13 +108,13 @@ class NarrativeEngine:
                         char.location_id = action.current_location_id
                         session.add(char)
                         loc_changed = True
-                        
+
                 db_state = session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
                 if db_state and db_state.current_location_id != action.current_location_id:
                     db_state.current_location_id = action.current_location_id
                     session.add(db_state)
                     loc_changed = True
-                    
+
                 if loc_changed:
                     session.commit()
 
@@ -125,7 +128,7 @@ class NarrativeEngine:
             state = WorldState(
                 current_location_id="1",
                 current_location=Location(id="1", name="Steamworks", description="A dark workshop.", npcs=[]),
-                active_npcs=[]
+                active_npcs=[],
             )
 
         ghost_echoes = []
@@ -141,26 +144,28 @@ class NarrativeEngine:
                         "narration": f"[System] It is not your turn! It is currently {current_turn['name']}'s turn.",
                         "state_updates": {},
                         "events": [],
-                        "is_combat_active": True
+                        "is_combat_active": True,
                     }
                     return
 
         if session:
-            from backend.database import LedgerEntry, Character
-            from sqlmodel import select
             import random
+
+            from backend.database import Character, LedgerEntry
+            from sqlmodel import select
+
             # Get recent actions from other characters in the same location
             char_id = getattr(getattr(state, "player_stats", None), "id", None)
             loc_id = getattr(state, "current_location_id", "1")
-            
+
             # Fetch up to 10 recent ledger entries in this location, not by this character
             echo_entries = session.exec(
-                select(LedgerEntry).where(
-                    LedgerEntry.location_id == str(loc_id),
-                    LedgerEntry.character_id != char_id
-                ).order_by(LedgerEntry.timestamp.desc()).limit(10)
+                select(LedgerEntry)
+                .where(LedgerEntry.location_id == str(loc_id), LedgerEntry.character_id != char_id)
+                .order_by(LedgerEntry.timestamp.desc())
+                .limit(10)
             ).all()
-            
+
             if isinstance(echo_entries, list) and echo_entries:
                 # Pick 1-2 random echoes to include as flavor
                 chosen = random.sample(echo_entries, min(2, len(echo_entries)))
@@ -170,7 +175,7 @@ class NarrativeEngine:
                     ghost_echoes.append(f"{char_name} recently did this here: {entry.action}")
 
         prompt_str = build_narrative_prompt(state, action, ghost_echoes=ghost_echoes)
-        
+
         system_prompt = getattr(state, "global_system_prompt", None)
 
         full_raw_data = ""
@@ -181,19 +186,23 @@ class NarrativeEngine:
             if isinstance(chunk, dict):
                 if "choices" in chunk and len(chunk["choices"]) > 0:
                     choice = chunk["choices"][0]
-                    text = choice.get("text", "") or choice.get("delta", {}).get("content", "") or choice.get("message", {}).get("content", "")
+                    text = (
+                        choice.get("text", "")
+                        or choice.get("delta", {}).get("content", "")
+                        or choice.get("message", {}).get("content", "")
+                    )
                 elif "text" in chunk:
                     text = chunk["text"]
             elif isinstance(chunk, str):
                 text = chunk
-                
+
             if text:
                 full_raw_data += text
                 if is_narrating:
                     if "[StateUpdates]" in full_raw_data:
                         is_narrating = False
                         continue
-                    
+
                     buffer += text.replace("[Narration]", "")
                     # If buffer has a '[' but doesn't have the full '[StateUpdates]', we hold it.
                     if "[" in buffer:
@@ -203,7 +212,7 @@ class NarrativeEngine:
                         if idx > 0:
                             yield buffer[:idx]
                             buffer = buffer[idx:]
-                        
+
                         # If buffer is a prefix of "[StateUpdates]", we must wait to see more
                         if "[StateUpdates]".startswith(buffer):
                             pass
@@ -214,7 +223,7 @@ class NarrativeEngine:
                     else:
                         yield buffer
                         buffer = ""
-                        
+
         if is_narrating and buffer:
             yield buffer
 
@@ -229,50 +238,47 @@ class NarrativeEngine:
                 if "location_description" in state_updates:
                     loc_data["description"] = state_updates["location_description"]
                 repository.update_location(loc_id, loc_data)
-            
+
             if "active_npcs" in state_updates and isinstance(state_updates["active_npcs"], list):
-                from backend.main import manager
-                import json
                 for npc_info in state_updates["active_npcs"]:
                     if isinstance(npc_info, dict):
                         npc = repository.create_or_update_npc(npc_info, loc_id)
-                        
+
                         is_dead = False
                         if npc.traits:
                             is_dead = any(t.lower() == "dead" for t in npc.traits)
-                            
+
                         if is_dead:
                             if isinstance(state.active_npcs_ids, list) and npc.id in state.active_npcs_ids:
                                 state.active_npcs_ids.remove(npc.id)
                         else:
                             if isinstance(state.active_npcs_ids, list) and npc.id not in state.active_npcs_ids:
                                 state.active_npcs_ids.append(npc.id)
-                                
+
                         try:
                             npc_dict = {
                                 "id": npc.id,
                                 "name": npc.name,
                                 "traits": npc.traits or [],
                                 "disposition": npc.disposition,
-                                "hp": 0 if is_dead else 100
+                                "hp": 0 if is_dead else 100,
                             }
-                            events.append({
-                                "type": "npc_state_change",
-                                "npc": npc_dict
-                            })
+                            events.append({"type": "npc_state_change", "npc": npc_dict})
                         except Exception as e:
                             logger.error(f"Failed to append NPC state change event: {e}")
-                        
+
             if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
                 for inv_update in state_updates["inventory_updates"]:
                     if isinstance(inv_update, dict):
                         repository.apply_inventory_update(inv_update)
 
-            if "tool_durability_updates" in state_updates and isinstance(state_updates["tool_durability_updates"], list):
+            if "tool_durability_updates" in state_updates and isinstance(
+                state_updates["tool_durability_updates"], list
+            ):
                 for td_update in state_updates["tool_durability_updates"]:
                     if isinstance(td_update, dict):
                         repository.apply_tool_durability_update(td_update)
-                        
+
             if "quest_updates" in state_updates and isinstance(state_updates["quest_updates"], list):
                 for quest_update in state_updates["quest_updates"]:
                     if isinstance(quest_update, dict):
@@ -301,12 +307,13 @@ class NarrativeEngine:
                 state.current_location_id = state_updates["location_id"]
                 if action.character_id:
                     from backend.database import Character
+
                     char_to_update = session.get(Character, action.character_id)
                     if char_to_update:
                         char_to_update.location_id = state_updates["location_id"]
                         session.add(char_to_update)
                 repository.save_state(state)
-                
+
         if repository:
             repository.record_ledger_entry(
                 action=action.action_text,
@@ -314,13 +321,12 @@ class NarrativeEngine:
                 state_updates=state_updates,
                 events=events,
                 location_id=getattr(state, "current_location_id", "1"),
-                character_id=getattr(getattr(state, "player_stats", None), "id", None)
+                character_id=getattr(getattr(state, "player_stats", None), "id", None),
             )
 
         active_npcs = getattr(state, "active_npcs", []) or []
         npc_names = [getattr(npc, "name", str(npc)) for npc in active_npcs]
 
-                
         if repository and getattr(state, "is_combat_active", False) and getattr(state, "combat_state", None):
             cs = state.combat_state
             turn_order = cs.get("turn_order", [])
@@ -334,38 +340,40 @@ class NarrativeEngine:
                 # If we just advance the turn index in the database:
                 from backend.database import CombatSession
                 from sqlmodel import select
+
                 loc_id = getattr(state, "current_location_id", "1")
-                combat_session = session.exec(select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active == True)).first()
+                combat_session = session.exec(
+                    select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active)
+                ).first()
                 if combat_session:
-                    
                     # Advance through NPCs and let the engine just generate a generic action for them?
                     # Or just advance the index.
                     combat_session.current_turn_index = idx
                     session.add(combat_session)
                     session.commit()
-                    
-        yield {
 
+        yield {
             "narration": narration,
             "state_updates": state_updates,
             "npcs": npc_names,
             "events": events or [],
-            "is_combat_active": getattr(state, "is_combat_active", False)
+            "is_combat_active": getattr(state, "is_combat_active", False),
         }
 
-from sqlmodel import select
-from backend.database import ResourceMarket, WorldEvent, Location, NPC, get_session
-from backend.repository import StateRepository
-from backend.client import VLLMClient
+
 import random
-import os
+
+from backend.client import VLLMClient
+from backend.database import ResourceMarket, WorldEvent, get_session
+from sqlmodel import select
+
 
 async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
     """
     Generate dialogue between two NPCs in the same location and record it.
     """
     logger.info(f"Interaction resolving for {npc1.name} and {npc2.name} at {location.name}.")
-    
+
     prompt = (
         f"You are the world engine for Shangri-la: Age of Steam. "
         f"Two NPCs are interacting at {location.name}: {location.description}.\n"
@@ -373,12 +381,12 @@ async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
         f"NPC 2: {npc2.name}, Traits: {npc2.traits}\n"
         f"Write a short, engaging 2-3 line dialogue between them reflecting their traits and the location."
     )
-    
+
     client = VLLMClient()
     try:
         response = client.generate(prompt=prompt, max_tokens=150, temperature=0.8)
         dialogue = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-        
+
         if dialogue:
             with get_session() as session:
                 repo = StateRepository(session)
@@ -387,31 +395,31 @@ async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
                     narration=dialogue,
                     state_updates={},
                     events=[],
-                    location_id=location.id
+                    location_id=location.id,
                 )
             logger.info(f"Recorded NPC interaction at {location.name}")
-            
+
             # Broadcast to clients
             try:
-                from backend.main import manager
                 import json
-                await manager.broadcast(json.dumps({
-                    "type": "narrative_event",
-                    "data": {
-                        "narration": f"[NPC Interaction] {dialogue}",
-                        "state_updates": {},
-                        "events": []
-                    },
-                    "action": {
-                        "action_text": f"Overheard {npc1.name} and {npc2.name}",
-                        "client_id": "system"
-                    }
-                }))
+
+                from backend.main import manager
+
+                await manager.broadcast(
+                    json.dumps(
+                        {
+                            "type": "narrative_event",
+                            "data": {"narration": f"[NPC Interaction] {dialogue}", "state_updates": {}, "events": []},
+                            "action": {"action_text": f"Overheard {npc1.name} and {npc2.name}", "client_id": "system"},
+                        }
+                    )
+                )
             except Exception as e:
                 logger.error(f"Failed to broadcast NPC interaction: {e}")
-                
+
     except Exception as e:
         logger.error(f"Failed to generate NPC interaction: {e}")
+
 
 async def scan_locations_and_trigger_interactions():
     """
@@ -429,15 +437,16 @@ async def scan_locations_and_trigger_interactions():
                     logger.info(f"Triggering interaction at location {loc.id} between {npc1.name} and {npc2.name}")
                     await trigger_npc_interaction(loc, npc1, npc2)
 
+
 def simulate_economy_tick(session: Session):
     """
     Simulate the economy tick by fluctuating prices based on base price, volatility, and active world events.
     """
     import random
-    
+
     # Get active events
     active_events = session.exec(select(WorldEvent).where(WorldEvent.is_active == 1)).all()
-    
+
     # Aggregate modifiers from events
     modifiers = {}
     for event in active_events:
@@ -445,26 +454,27 @@ def simulate_economy_tick(session: Session):
             if resource not in modifiers:
                 modifiers[resource] = 1.0
             # Severity scales the impact
-            modifiers[resource] += (impact * event.severity)
-            
+            modifiers[resource] += impact * event.severity
+
     markets = session.exec(select(ResourceMarket)).all()
-    
+
     for market in markets:
         # Base random fluctuation based on volatility
         fluctuation = 1.0 + random.uniform(-market.volatility, market.volatility)
-        
+
         # Apply event modifiers if any
         modifier = modifiers.get(market.resource_name, 1.0)
-        
+
         # Calculate new price
         market.current_price = max(1.0, market.current_price * fluctuation * modifier)
-        
+
         # Trend back towards base price slightly if no extreme events
         if modifier == 1.0:
             market.current_price += (market.base_price - market.current_price) * 0.05
-            
+
         session.add(market)
     session.commit()
+
 
 async def world_tick():
     """
@@ -472,11 +482,12 @@ async def world_tick():
     """
     logger.info("World tick started.")
     await scan_locations_and_trigger_interactions()
-    
-    from backend.database import get_session, Property, Character
+
+    from backend.database import Character, Property, get_session
+
     with get_session() as session:
         simulate_economy_tick(session)
-        
+
         # Passive Income Generation
         char_id = 1
         char = session.get(Character, char_id)
@@ -488,5 +499,5 @@ async def world_tick():
                 session.add(char)
                 session.commit()
                 logger.info(f"Passive income generated: {total_income} coins for Character {char_id}")
-        
+
     logger.info("World tick completed.")

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
@@ -10,7 +10,7 @@ const server = setupServer(
     return HttpResponse.json({ status: 'ok', version: '1.0.0' })
   }),
 
-  http.get('http://localhost:8003/state', ({ request }) => {
+  http.get('http://localhost:8003/state', () => {
     return HttpResponse.json({
       state: {
         current_location_id: '1',

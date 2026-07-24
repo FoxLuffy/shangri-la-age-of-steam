@@ -84,7 +84,7 @@ export default function NarrativeStream({
         className="w-full h-full scrollbar-thin scrollbar-thumb-amber-700"
         initialTopMostItemIndex={messages.length - 1}
         followOutput="smooth"
-        itemContent={(index, msg) => (
+        itemContent={(_index, msg) => (
           <div
             key={msg.id}
             className={`flex flex-col max-w-3xl mb-4 px-2 ${

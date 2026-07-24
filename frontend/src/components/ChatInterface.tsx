@@ -622,7 +622,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                 setIsEnvExpanded(true);
                 localStorage.setItem('saos_env_expanded', 'true');
               }}
-              className="writing-vertical-lr rotate-180 flex items-center gap-2 text-slate-500 hover:text-amber-500 transition-colors uppercase tracking-widest text-xs font-bold"
+              className="[writing-mode:vertical-rl] flex items-center gap-2 text-slate-500 hover:text-amber-500 transition-colors uppercase tracking-widest text-xs font-bold"
             >
               <span>🧭</span>
               <span>Open Environment</span>

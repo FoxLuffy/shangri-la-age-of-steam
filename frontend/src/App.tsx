@@ -14,6 +14,7 @@ import AdminPanel from './components/AdminPanel';
 import SessionLobby from './components/SessionLobby';
 import ReportModal from './components/ReportModal';
 import { WorkshopBrowser } from './components/WorkshopBrowser';
+import AugmentationPanel from './components/AugmentationPanel';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -59,6 +60,7 @@ function MainApp() {
   const [showEmpire, setShowEmpire] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMarket, setShowMarket] = useState(false);
+  const [showClinic, setShowClinic] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showWorkshop, setShowWorkshop] = useState(false);
@@ -196,6 +198,18 @@ function MainApp() {
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         {showReportModal && <ReportModal userId={userId} onClose={() => setShowReportModal(false)} />}
+        {showClinic && (
+          <AugmentationPanel
+            characterId={character.id}
+            brassCoins={worldState?.brass_coins || 0}
+            totalStrain={worldState?.player_stats?.total_strain || 0}
+            installedAugmentations={worldState?.player_stats?.augmentations || []}
+            onClose={() => setShowClinic(false)}
+            onUpdate={() => {
+              fetchCharacter(character.id).then(setCharacter);
+            }}
+          />
+        )}
         {showWorkshop && (
           <div className="absolute inset-0 z-40 bg-slate-950/80 p-4 sm:p-12 flex flex-col items-center">
              <div className="w-full max-w-4xl relative">
@@ -232,6 +246,7 @@ function MainApp() {
         onOpenMarket={() => setShowMarket(true)} 
         onOpenSettings={() => setShowSettings(true)}
         onOpenWorkshop={() => setShowWorkshop(true)}
+        onOpenClinic={() => setShowClinic(true)}
       />
     </div>
   );

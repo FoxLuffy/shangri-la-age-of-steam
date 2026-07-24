@@ -25,6 +25,7 @@ from backend.models import PlayerAction
 from backend.repository import StateRepository
 from backend.schemas import (
     AirshipNavigateRequest,
+    AugmentationInstallRequest,
     CharacterCreateRequest,
     GenerateGearRequest,
     MinigameActionRequest,
@@ -35,6 +36,33 @@ from backend.websocket import manager
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from sqlmodel import select
+
+AUGMENTATION_CATALOG = [
+    {
+        "id": "pneumatic_arm",
+        "name": "Pneumatic Arm",
+        "body_part": "arm",
+        "cost": 200,
+        "strain": 10,
+        "stats": {"strength": 2, "hp": 10}
+    },
+    {
+        "id": "clockwork_legs",
+        "name": "Clockwork Legs",
+        "body_part": "legs",
+        "cost": 250,
+        "strain": 12,
+        "stats": {"speed": 2}
+    },
+    {
+        "id": "optic_sensor",
+        "name": "Optic Sensor",
+        "body_part": "eye",
+        "cost": 150,
+        "strain": 5,
+        "stats": {"intellect": 1}
+    }
+]
 
 router = APIRouter()
 
@@ -582,4 +610,50 @@ async def get_codex():
                         except Exception as e:
                             print(f"Error loading codex file {file_path}: {e}")
     return codex_data
+
+@router.get("/augmentations/catalog")
+async def get_augmentation_catalog():
+    return AUGMENTATION_CATALOG
+
+@router.post("/augmentations/install")
+async def install_augmentation(req: AugmentationInstallRequest):
+    from backend.database import Augmentation
+    aug_data = next((a for a in AUGMENTATION_CATALOG if a["id"] == req.augmentation_id), None)
+    if not aug_data:
+        raise HTTPException(status_code=404, detail="Augmentation not found")
+
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == req.character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        if char.brass_coins < aug_data["cost"]:
+            raise HTTPException(status_code=400, detail="Not enough brass coins")
+
+        char.brass_coins -= aug_data["cost"]
+        char.total_strain = getattr(char, "total_strain", 0) + aug_data["strain"]
+
+        aug = Augmentation(
+            character_id=char.id,
+            body_part=aug_data["body_part"],
+            augmentation_name=aug_data["name"],
+            stat_bonus=aug_data["stats"]
+        )
+        session.add(aug)
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+
+        return {
+            "status": "success",
+            "augmentation": {
+                "id": aug.id,
+                "body_part": aug.body_part,
+                "augmentation_name": aug.augmentation_name,
+                "stat_bonus": aug.stat_bonus
+            },
+            "character_strain": char.total_strain,
+            "brass_coins": char.brass_coins
+        }
+
 

@@ -56,3 +56,8 @@ class MarketTradeRequest(BaseModel):
 class AirshipNavigateRequest(BaseModel):
     character_id: int
     location_id: str
+
+class AugmentationInstallRequest(BaseModel):
+    character_id: int
+    augmentation_id: str
+

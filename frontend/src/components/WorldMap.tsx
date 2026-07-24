@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Location } from '../api';
+import type { Location } from '../api';
 
 interface WorldMapProps {
   locations: Location[];

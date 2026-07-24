@@ -220,7 +220,7 @@ export default function WorldMap({ locations, currentLocationId, onLocationSelec
     setHoveredNodeId(hovered);
   };
 
-  const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseClick = (_e: React.MouseEvent<HTMLCanvasElement>) => {
     if (hoveredNodeId && hoveredNodeId !== currentLocationId && !isTraveling) {
       setIsTraveling(true);
       

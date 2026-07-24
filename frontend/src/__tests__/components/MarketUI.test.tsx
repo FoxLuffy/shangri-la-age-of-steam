@@ -10,7 +10,7 @@ vi.mock('../../api', () => ({
   WS_URL: 'ws://localhost:8003/ws',
 }))
 
-import { getMarket, tradeMarket } from '../../api'
+import { getMarket } from '../../api'
 
 const mockCharacter = {
   id: 1,

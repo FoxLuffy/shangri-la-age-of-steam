@@ -38,7 +38,7 @@ class MockWebSocket {
 
 vi.stubGlobal('WebSocket', MockWebSocket)
 
-import { fetchWorldState, sendAction, fetchGlossary, useWorldStateQuery, useGlossaryQuery } from '../../api'
+import { sendAction, useWorldStateQuery, useGlossaryQuery } from '../../api'
 
 const mockWorldState = {
   state: {

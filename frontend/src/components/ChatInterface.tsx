@@ -135,7 +135,6 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   // Load initial state on component mount
   useEffect(() => {
-    let hasHistory = false;
     if (characterId) {
       const stored = localStorage.getItem(`saos_chat_history_${characterId}`);
       if (stored) {
@@ -143,10 +142,9 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMessages(parsed);
-            hasHistory = true;
           }
         } catch (e) {
-          console.error("Failed to parse chat history", e);
+          console.error("Failed to parse chat history:", e);
         }
       }
     }

@@ -16,6 +16,8 @@ import { WebSocketSync } from './WebSocketSync';
 import { StateUpdateHandler } from './StateUpdateHandler';
 import { useGameStore } from '../stores/gameStore';
 import WorldMap from './WorldMap';
+import { audioManager } from '../utils/AudioManager';
+
 
 interface Message {
   id: string;
@@ -156,6 +158,12 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     window.addEventListener('saos_ping_exploration', handlePing);
     return () => window.removeEventListener('saos_ping_exploration', handlePing);
   }, [characterId]);
+
+  useEffect(() => {
+    if (currentLocationId) {
+      audioManager.setAmbience(currentLocationId);
+    }
+  }, [currentLocationId]);
 
   useEffect(() => {
     const handlePeerEvent = (e: any) => {
@@ -395,8 +403,14 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     return 'bg-amber-500 text-amber-100';
   };
 
+  const steamOpacity = currentLocationId === '1' ? 0.4 : currentLocationId === '2' ? 0.1 : 0.2;
+
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
+      <div 
+        className="pointer-events-none absolute inset-0 steam-overlay z-50 transition-opacity duration-1000"
+        style={{ opacity: steamOpacity }}
+      />
       <AudioManager locationId={currentLocationId} mood={selectedMood} />
       {showHistory && <WorldHistory onClose={() => setShowHistory(false)} />}
       {isMapOpen && (

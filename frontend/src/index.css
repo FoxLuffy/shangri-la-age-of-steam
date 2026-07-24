@@ -63,6 +63,20 @@ body {
   animation: steam-rise 3s infinite ease-out;
 }
 
+.steam-overlay {
+  background: radial-gradient(circle at 50% 50%, rgba(200, 220, 230, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 80% 20%, rgba(200, 220, 230, 0.1) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: steam-drift 15s infinite alternate ease-in-out;
+  mix-blend-mode: screen;
+}
+
+@keyframes steam-drift {
+  0% { background-position: 0% 0%; transform: scale(1); }
+  50% { background-position: 100% 50%; transform: scale(1.05); }
+  100% { background-position: 0% 100%; transform: scale(1); }
+}
+
 @keyframes shake {
   0%, 100% { transform: translate(0); }
   20% { transform: translate(-2px, 2px); }

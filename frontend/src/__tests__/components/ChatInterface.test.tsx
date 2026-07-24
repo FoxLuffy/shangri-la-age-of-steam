@@ -10,6 +10,8 @@ vi.mock('../../api', () => ({
   importWorldState: vi.fn(),
   fetchGlossary: vi.fn(),
   fetchHistory: vi.fn(),
+  useWorldStateQuery: vi.fn(() => ({ data: undefined, refetch: vi.fn() })),
+  useGlossaryQuery: vi.fn(() => ({ data: undefined })),
   BACKEND_URL: 'http://localhost:8003',
   WS_URL: 'ws://localhost:8003/ws',
 }))
@@ -36,7 +38,7 @@ class MockWebSocket {
 
 vi.stubGlobal('WebSocket', MockWebSocket)
 
-import { fetchWorldState, sendAction, fetchGlossary } from '../../api'
+import { fetchWorldState, sendAction, fetchGlossary, useWorldStateQuery, useGlossaryQuery } from '../../api'
 
 const mockWorldState = {
   state: {
@@ -63,9 +65,12 @@ const mockWorldState = {
 describe('ChatInterface', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(fetchWorldState as ReturnType<typeof vi.fn>).mockResolvedValue(mockWorldState)
-    ;(fetchGlossary as ReturnType<typeof vi.fn>).mockResolvedValue({
-      locations: [], npcs: [], items: [],
+    ;(useWorldStateQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: mockWorldState,
+      refetch: vi.fn(),
+    })
+    ;(useGlossaryQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { locations: [], npcs: [], items: [] },
     })
     ;(sendAction as ReturnType<typeof vi.fn>).mockResolvedValue({
       narration: 'The tavern is quiet.',
@@ -91,7 +96,7 @@ describe('ChatInterface', () => {
   it('loads world state on mount', async () => {
     render(<ChatInterface characterId={1} />)
     await waitFor(() => {
-      expect(fetchWorldState).toHaveBeenCalledWith(1)
+      expect(useWorldStateQuery).toHaveBeenCalledWith(1)
     })
   })
 

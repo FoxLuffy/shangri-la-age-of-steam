@@ -1,20 +1,20 @@
-import { useState, useEffect, useRef, useMemo, type FormEvent } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   sendAction, 
-  fetchWorldState, 
   resetWorldState, 
   importWorldState,
-  fetchGlossary,
   BACKEND_URL,
-  WS_URL,
-  type Location as LocationType, 
-  type NPC as NPCType,
-  type GetStateResponse,
-  type GlossaryData
+  useWorldStateQuery,
+  useGlossaryQuery
 } from '../api';
 
 import AudioManager from './AudioManager';
 import WorldHistory from './WorldHistory';
+import NarrativeStream from './NarrativeStream';
+import ActionBar from './ActionBar';
+import { WebSocketSync } from './WebSocketSync';
+import { StateUpdateHandler } from './StateUpdateHandler';
+import { useGameStore } from '../stores/gameStore';
 
 interface Message {
   id: string;
@@ -40,23 +40,68 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [selectedMood, setSelectedMood] = useState<string>('');
   const [isExploration, setIsExploration] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [currentLocationId, setCurrentLocationId] = useState<string>('1');
-  const [currentLocation, setCurrentLocation] = useState<LocationType | null>(null);
-  const [allLocations, setAllLocations] = useState<LocationType[]>([]);
-  const [activeNpcs, setActiveNpcs] = useState<NPCType[]>([]);
-  const [activePlayers, setActivePlayers] = useState<any[]>([]);
-  const [globalEvent, setGlobalEvent] = useState<string>('');
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
-  const [isMinigameActive, setIsMinigameActive] = useState(false);
-  const [combatState, setCombatState] = useState<any>(null);
-  const [glossary, setGlossary] = useState<GlossaryData | null>(null);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
-  const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // useGameStore mapped states
+  const currentLocationId = useGameStore(state => state.currentLocationId);
+  const currentLocation = useGameStore(state => state.currentLocation);
+  const allLocations = useGameStore(state => state.allLocations);
+  const activeNpcs = useGameStore(state => state.activeNpcs);
+  const globalEvent = useGameStore(state => state.globalEvent);
+  const combatState = useGameStore(state => state.combatState);
+  const isMinigameActive = useGameStore(state => state.isMinigameActive);
+  
+  const setCurrentLocationId = useGameStore(state => state.setCurrentLocationId);
+  const setCurrentLocation = useGameStore(state => state.setCurrentLocation);
+  const setAllLocations = useGameStore(state => state.setAllLocations);
+  const setActiveNpcs = useGameStore(state => state.setActiveNpcs);
+  const setActivePlayers = useGameStore(state => state.setActivePlayers);
+  const setIsMinigameActive = useGameStore(state => state.setIsMinigameActive);
+  const setCombatState = useGameStore(state => state.setCombatState);
+  const setGlobalEvent = useGameStore(state => state.setGlobalEvent);
+
+  const { data: worldStateData, refetch: loadState } = useWorldStateQuery(characterId);
+  const { data: glossaryData } = useGlossaryQuery();
+
+  // Sync state to gameStore on worldStateData update
+  useEffect(() => {
+    if (worldStateData) {
+      if (worldStateData.state) {
+        setCurrentLocationId(worldStateData.state.current_location_id || '1');
+        setCurrentLocation(worldStateData.state.current_location || null);
+        setActiveNpcs(worldStateData.state.active_npcs || []);
+        setIsMinigameActive(!!worldStateData.state.active_minigame);
+        setCombatState(worldStateData.state.combat_state || null);
+        setGlobalEvent(worldStateData.state.global_event || '');
+
+        if (onStateUpdate) {
+          onStateUpdate(worldStateData.state);
+        }
+
+        const shouldAutoExpand = localStorage.getItem('saos_auto_expand_env') === 'true';
+        if (shouldAutoExpand) {
+          setIsEnvExpanded(true);
+          localStorage.setItem('saos_env_expanded', 'true');
+        }
+      }
+      if (worldStateData.all_locations) {
+        setAllLocations(worldStateData.all_locations);
+        const match = worldStateData.all_locations.find(l => l.id === (worldStateData.state?.current_location_id || '1'));
+        if (match) setCurrentLocation(match);
+      }
+      if (worldStateData.active_players) {
+        setActivePlayers(worldStateData.active_players);
+      } else {
+        setActivePlayers([]);
+      }
+    }
+  }, [worldStateData, setCurrentLocationId, setCurrentLocation, setActiveNpcs, setIsMinigameActive, setCombatState, setGlobalEvent, setAllLocations, setActivePlayers, onStateUpdate]);
 
   const handleExportSave = () => {
     window.open(`${BACKEND_URL}/export`, '_blank');
@@ -69,7 +114,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         await importWorldState(e.target.files[0]);
         setStatusMessage('Save imported successfully');
         await loadState();
-        setMessages([]); // clear chat history or keep it? clear makes sense for new world state
+        setMessages([]); 
       } catch (err) {
         console.error('Import failed', err);
         setStatusMessage('Failed to import save');
@@ -78,80 +123,6 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       }
     }
   };
-
-  // WebSocket connection for Multiplayer Sync
-  useEffect(() => {
-    const ws = new WebSocket(WS_URL);
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'market_sync') {
-          window.dispatchEvent(new CustomEvent('saos_market_sync', { detail: msg }));
-        } else if (msg.type === 'global_event') {
-          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const newMsg: Message = {
-            id: Date.now().toString(),
-            sender: 'system',
-            content: `[GLOBAL BROADCAST] ${msg.event}`,
-            timestamp: now
-          };
-          setMessages(prev => [...prev, newMsg]);
-        } else if (msg.type === 'trigger_minigame') {
-          if (msg.character_id === characterId && onOpenMinigame) {
-            onOpenMinigame();
-          }
-        } else if (msg.type === 'narrative_event' && msg.action && msg.action.client_id !== clientId) {
-          const actionText = msg.action.action_text || 'Another player acted.';
-          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          
-          setMessages(prev => [
-            ...prev,
-            {
-              id: `peer-user-${Date.now()}`,
-              sender: 'user',
-              content: actionText,
-              timestamp: now,
-              mood: msg.action.mood
-            },
-            {
-              id: `peer-narrator-${Date.now()}`,
-              sender: 'narrator',
-              content: msg.data.narration || '',
-              timestamp: now,
-              mood: msg.action.mood,
-              stateUpdates: msg.data.state_updates,
-              events: msg.data.events
-            }
-          ]);
-          loadState(); // Refresh world state
-        } else if (msg.type === 'npc_state_change') {
-          setActiveNpcs((prev: NPCType[]) => {
-            const isDead = msg.npc.hp <= 0 || (msg.npc.traits && msg.npc.traits.some((t: string) => t.toLowerCase() === 'dead'));
-            if (isDead) {
-              return prev.filter((n: NPCType) => n.id !== msg.npc.id);
-            }
-            const exists = prev.find((n: NPCType) => n.id === msg.npc.id);
-            if (exists) {
-              return prev.map((n: NPCType) => n.id === msg.npc.id ? msg.npc : n);
-            }
-            return [...prev, msg.npc];
-          });
-        }
-      } catch (err) {
-        console.error('WS parse error', err);
-      }
-    };
-    return () => {
-      ws.close();
-    };
-  }, [clientId]);
-
-  // Auto-scroll message feed
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isLoading]);
 
   // Sync messages to localStorage
   useEffect(() => {
@@ -177,9 +148,6 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         }
       }
     }
-    loadState(hasHistory);
-
-    fetchGlossary().then(setGlossary).catch(err => console.error("Failed to fetch glossary", err));
     
     const handlePing = () => {
       setIsEnvExpanded(true);
@@ -189,72 +157,62 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     return () => window.removeEventListener('saos_ping_exploration', handlePing);
   }, [characterId]);
 
-  const loadState = async (hasHistory: boolean = false) => {
-    try {
-      const data: GetStateResponse = await fetchWorldState(characterId);
-      if (data.state) {
-        if (data.state.current_location_id) {
-          setCurrentLocationId(data.state.current_location_id);
-        }
-        if (data.state.current_location) {
-          setCurrentLocation(data.state.current_location);
-        }
-        setAllLocations(data.all_locations || []);
-        setActiveNpcs(data.state.active_npcs || []);
-        if (data.active_players) {
-          setActivePlayers(data.active_players);
-        } else {
-          setActivePlayers([]);
-        }
-        
-        // Auto-expand environment if there are NPCs or if we just loaded, ONLY IF SETTINGS ALLOW IT
-        const shouldAutoExpand = localStorage.getItem('saos_auto_expand_env') === 'true';
-        if (shouldAutoExpand) {
-          const locationChanged = data.state.current_location_id !== currentLocationId;
-          const newNpcs = data.state.active_npcs || [];
-          const oldNpcIds = activeNpcs.map(n => n.id).sort().join(',');
-          const newNpcIds = newNpcs.map((n: any) => n.id).sort().join(',');
-          if (locationChanged || oldNpcIds !== newNpcIds) {
-            setIsEnvExpanded(true);
-            localStorage.setItem('saos_env_expanded', 'true');
-          }
-        }
-        
-        setIsMinigameActive(!!data.state.active_minigame);
-        if (data.state.combat_state) {
-          setCombatState(data.state.combat_state);
-        } else {
-          setCombatState(null);
-        }
-
-        if (data.state.global_event) {
-          setGlobalEvent(data.state.global_event);
-        }
-        if (onStateUpdate) {
-          onStateUpdate(data.state);
-        }
-      }
-      if (data.all_locations) {
-        setAllLocations(data.all_locations);
-        const match = data.all_locations.find(l => l.id === (data.state?.current_location_id || '1'));
-        if (match) setCurrentLocation(match);
-      }
-
-      // Initial welcome message if messages list is empty
-      if (!hasHistory) {
-        const welcomeMessage: Message = {
-          id: 'msg-0',
+  useEffect(() => {
+    const handlePeerEvent = (e: any) => {
+      const msg = e.detail;
+      const actionText = msg.action.action_text || 'Another player acted.';
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `peer-user-${Date.now()}`,
+          sender: 'user',
+          content: actionText,
+          timestamp: now,
+          mood: msg.action.mood
+        },
+        {
+          id: `peer-narrator-${Date.now()}`,
           sender: 'narrator',
-          content: `Welcome to Shangri-la: Age of Steam.\n\nYou stand in ${data.state?.current_location?.name || 'The Rusty Anchor Tavern'}. ${data.state?.current_location?.description || 'Steam discharges softly from the overhead copper valves.'}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prev => prev.length === 0 ? [welcomeMessage] : prev);
-      }
-    } catch (err) {
-      console.error('Failed to fetch world state:', err);
-      setStatusMessage('Warning: Could not connect to backend state server.');
+          content: msg.data.narration || '',
+          timestamp: now,
+          mood: msg.action.mood,
+          stateUpdates: msg.data.state_updates,
+          events: msg.data.events
+        }
+      ]);
+    };
+    const handleGlobalEvent = (e: any) => {
+      const msg = e.detail;
+      const newMsg: Message = {
+        id: Date.now().toString(),
+        sender: 'system',
+        content: `[GLOBAL BROADCAST] ${msg.event}`,
+        timestamp: msg.timestamp
+      };
+      setMessages(prev => [...prev, newMsg]);
+    };
+
+    window.addEventListener('saos_peer_event', handlePeerEvent);
+    window.addEventListener('saos_global_event', handleGlobalEvent);
+    return () => {
+      window.removeEventListener('saos_peer_event', handlePeerEvent);
+      window.removeEventListener('saos_global_event', handleGlobalEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (worldStateData && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: 'msg-0',
+        sender: 'narrator',
+        content: `Welcome to Shangri-la: Age of Steam.\n\nYou stand in ${worldStateData.state?.current_location?.name || 'The Rusty Anchor Tavern'}. ${worldStateData.state?.current_location?.description || 'Steam discharges softly from the overhead copper valves.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages([welcomeMessage]);
     }
-  };
+  }, [worldStateData, messages.length]);
 
   useEffect(() => {
     const handleSystemAction = (e: any) => {
@@ -276,13 +234,6 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   }, [combatState, characterId]);
   
   const currentTurnActor = combatState?.turn_order?.[combatState?.current_turn_index]?.name || '';
-  
-  const handleSendMessage = async (e: FormEvent) => {
-    e.preventDefault();
-    if (input.trim()) {
-      submitAction(input.trim(), false);
-    }
-  };
 
   const submitAction = async (actionText: string, isSystem: boolean = false) => {
     if (!actionText || isLoading) return;
@@ -444,58 +395,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     return 'bg-amber-500 text-amber-100';
   };
 
-  const moods = [
-    { id: '', label: 'Neutral 😐' },
-    { id: 'cautious', label: 'Cautious 🔍' },
-    { id: 'bold', label: 'Bold ⚔️' },
-    { id: 'inquisitive', label: 'Inquisitive 📜' },
-    { id: 'tense', label: 'Tense ⚡' }
-  ];
-
-  const renderWithGlossary = (text: string, glossary: GlossaryData) => {
-    if (!text) return text;
-    
-    const terms = [
-      ...glossary.locations.map(l => ({ ...l, type: 'location' })),
-      ...glossary.npcs.map(n => ({ ...n, type: 'npc' })),
-      ...glossary.items.map(i => ({ ...i, type: 'item' }))
-    ];
-    
-    if (!terms.length) return text;
-    
-    const sortedTerms = terms.sort((a, b) => b.name.length - a.name.length);
-    const escapedTerms = sortedTerms.map(t => t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regex = new RegExp(`\\b(${escapedTerms.join('|')})\\b`, 'gi');
-    
-    const parts = text.split(regex);
-    return parts.map((part, i) => {
-      const termMatch = sortedTerms.find(t => t.name.toLowerCase() === part.toLowerCase());
-      if (termMatch) {
-         let colorClass = "text-amber-300";
-         if (termMatch.type === "location") colorClass = "text-emerald-400";
-         else if (termMatch.type === "npc") colorClass = "text-sky-400";
-         
-         return (
-           <span 
-             key={i} 
-             className={`${colorClass} font-bold cursor-help underline decoration-dotted underline-offset-2 transition-colors hover:text-white`}
-             title={`${termMatch.type.toUpperCase()}: ${termMatch.description || 'No description available'}`}
-             onClick={() => {
-               window.dispatchEvent(new CustomEvent('saos_ping_exploration'));
-             }}
-           >
-             {part}
-           </span>
-         );
-      }
-      return part;
-    });
-  };
-
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
       <AudioManager locationId={currentLocationId} mood={selectedMood} />
       {showHistory && <WorldHistory onClose={() => setShowHistory(false)} />}
+      <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
+      <StateUpdateHandler />
+      
       {/* Top Header */}
       <header className="bg-slate-900/90 border-b border-amber-800/40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -590,155 +496,26 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Side: Interactive Narration Stream */}
         <div className="flex-1 flex flex-col p-4 overflow-hidden border-r border-slate-800">
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-amber-700"
-          >
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col max-w-3xl ${
-                  msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1 px-1">
-                  <span className="font-bold uppercase tracking-wider text-amber-500">
-                    {msg.sender === 'user' ? '👤 Player Action' : msg.sender === 'narrator' ? '📜 Narrator' : '⚠️ System'}
-                  </span>
-                  <span>•</span>
-                  <span>{msg.timestamp}</span>
-                  {msg.mood && (
-                    <span className="bg-amber-950 text-amber-300 border border-amber-700/50 px-1.5 py-0.5 rounded text-[9px]">
-                      Mood: {msg.mood}
-                    </span>
-                  )}
-                  {msg.isExploration && (
-                    <span className="bg-sky-950 text-sky-300 border border-sky-700/50 px-1.5 py-0.5 rounded text-[9px]">
-                      🔍 Exploration Mode
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className={`p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap shadow-md border ${
-                    msg.sender === 'user'
-                      ? 'bg-amber-950/40 border-amber-700/50 text-amber-100 rounded-tr-none'
-                      : msg.sender === 'system'
-                      ? 'bg-rose-950/30 border-rose-800/40 text-rose-200 rounded-tl-none'
-                      : 'bg-slate-900/90 border-slate-700/60 text-slate-200 rounded-tl-none'
-                  } ${msg.mood ? `mood-${msg.mood}` : ''}`}
-                >
-                  {glossary ? renderWithGlossary(msg.content, glossary) : msg.content}
-
-                  {msg.events && msg.events.length > 0 && (
-                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex flex-wrap gap-2 text-xs">
-                      <span className="font-semibold text-amber-400">⚡ Dynamic Events:</span>
-                      {msg.events.map((ev: any, idx: number) => (
-                        <span key={idx} className="bg-amber-900/60 text-amber-200 px-2 py-0.5 rounded border border-amber-700/50">
-                          {typeof ev === 'string' ? ev : JSON.stringify(ev)}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {msg.sender === 'narrator' && msg.stateUpdates && (
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                      {msg.stateUpdates.empire_updates?.brass_coins_change !== undefined && msg.stateUpdates.empire_updates.brass_coins_change !== 0 && (
-                        <span className={`px-2 py-0.5 rounded border ${msg.stateUpdates.empire_updates.brass_coins_change > 0 ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border-rose-700/50'}`}>
-                          🪙 {msg.stateUpdates.empire_updates.brass_coins_change > 0 ? '+' : ''}{msg.stateUpdates.empire_updates.brass_coins_change} Coins
-                        </span>
-                      )}
-                      {msg.stateUpdates.tool_durability_updates && msg.stateUpdates.tool_durability_updates.map((td: any, idx: number) => (
-                        <span key={`td-${idx}`} className={`px-2 py-0.5 rounded border ${td.durability_change > 0 ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50' : 'bg-rose-900/60 text-rose-300 border-rose-700/50'}`}>
-                          🔧 {td.tool_name}: {td.durability_change > 0 ? '+' : ''}{td.durability_change} Durability
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {msg.sender === 'narrator' && msg.stateUpdates?.combat_updates?.is_combat_active && onOpenCombat && (
-                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex justify-end">
-                      <button 
-                        onClick={onOpenCombat}
-                        className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-200 text-xs font-mono uppercase tracking-widest border border-red-700/50 rounded flex items-center gap-2 transition-colors"
-                      >
-                        ⚔️ Enter Combat
-                      </button>
-                    </div>
-                  )}
-
-                  {msg.sender === 'narrator' && msg.stateUpdates?.minigame_trigger && onOpenMinigame && (
-                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex justify-end">
-                      <button 
-                        onClick={onOpenMinigame}
-                        className="px-3 py-1.5 bg-cyan-900/50 hover:bg-cyan-800 text-cyan-200 text-xs font-mono uppercase tracking-widest border border-cyan-700/50 rounded flex items-center gap-2 transition-colors"
-                      >
-                        ⚙️ Start Minigame
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex items-center gap-3 text-amber-400/80 p-3 bg-slate-900/60 rounded-lg border border-amber-800/30 w-fit">
-                <div className="w-4 h-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"></div>
-                <span className="text-xs animate-pulse">Consulting the Steam Engine & vLLM...</span>
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={handleSendMessage} className="mt-4 pt-3 border-t border-slate-800 flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-slate-400 mr-1">Player Mood:</span>
-                {moods.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setSelectedMood(m.id)}
-                    className={`px-2.5 py-1 rounded text-[11px] transition-colors ${
-                      selectedMood === m.id
-                        ? 'bg-amber-600 text-slate-950 font-bold shadow'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2.5 py-1 rounded hover:border-sky-500 transition-all">
-                <input
-                  type="checkbox"
-                  checked={isExploration}
-                  onChange={(e) => setIsExploration(e.target.checked)}
-                  className="accent-sky-500"
-                />
-                <span className="text-sky-300 font-semibold">🔍 Exploration Mode</span>
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isMinigameActive ? "Focus on the minigame..." : !isMyTurn ? `Waiting for ${currentTurnActor} to act...` : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
-                className="flex-1 bg-slate-900 border border-amber-800/50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-amber-100 placeholder-slate-500 shadow-inner disabled:opacity-50"
-                disabled={isLoading || isMinigameActive || !isMyTurn}
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim() || isMinigameActive || !isMyTurn}
-                className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-bold px-6 py-3 rounded-lg text-sm transition-all shadow-lg flex items-center gap-2"
-              >
-                <span>SEND</span>
-                <span>➔</span>
-              </button>
-            </div>
-          </form>
+          <NarrativeStream
+            messages={messages}
+            isLoading={isLoading}
+            glossary={glossaryData || null}
+            onOpenCombat={onOpenCombat}
+            onOpenMinigame={onOpenMinigame}
+          />
+          <ActionBar
+            input={input}
+            setInput={setInput}
+            selectedMood={selectedMood}
+            setSelectedMood={setSelectedMood}
+            isExploration={isExploration}
+            setIsExploration={setIsExploration}
+            isLoading={isLoading}
+            isMinigameActive={isMinigameActive}
+            isMyTurn={isMyTurn}
+            currentTurnActor={currentTurnActor}
+            onSubmit={(val) => submitAction(val, false)}
+          />
         </div>
 
         {/* Right Side: Active NPCs */}
@@ -799,28 +576,26 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                       </span>
                     ))}
                   </div>
-
-                  {npc.memories && npc.memories.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-800">
-                      <button
-                        onClick={() => setExpandedNpcId(expandedNpcId === npc.id ? null : npc.id)}
-                        className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center justify-between w-full"
-                      >
-                        <span>🧠 Persistent Memories ({npc.memories.length})</span>
-                        <span>{expandedNpcId === npc.id ? '▲' : '▼'}</span>
-                      </button>
-
-                      {expandedNpcId === npc.id && (
-                        <div className="mt-2 space-y-1.5">
-                          {npc.memories.map((m, idx) => (
-                            <div key={idx} className="bg-slate-950 p-2 rounded text-[10px] border border-slate-800">
-                              <span className="font-bold text-amber-300">{m.key}: </span>
-                              <span className="text-slate-300">{m.value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                  
+                  {expandedNpcId === npc.id ? (
+                    <div className="mt-2 text-xs text-amber-200/80 bg-slate-950/50 p-2 rounded italic">
+                      {npc.current_dialogue || 'No current dialogue.'}
                     </div>
+                  ) : (
+                    <button 
+                      onClick={() => setExpandedNpcId(npc.id)}
+                      className="mt-2 text-[10px] text-sky-400 hover:text-sky-300 text-left"
+                    >
+                      Show Dialogue...
+                    </button>
+                  )}
+                  {expandedNpcId === npc.id && (
+                    <button 
+                      onClick={() => setExpandedNpcId(null)}
+                      className="mt-1 text-[10px] text-slate-500 hover:text-slate-400 text-left"
+                    >
+                      Hide Dialogue
+                    </button>
                   )}
                 </div>
               ))}
@@ -828,44 +603,17 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             )}
           </aside>
         ) : (
-          <div className="h-full flex flex-col items-center py-4 gap-4 overflow-y-auto w-12 border-l border-amber-900/20 bg-slate-900/40">
+          <div className="hidden md:flex flex-col items-center justify-center p-2 border-l border-slate-800 bg-slate-900/20">
             <button 
               onClick={() => {
                 setIsEnvExpanded(true);
                 localStorage.setItem('saos_env_expanded', 'true');
               }}
-              className="text-amber-500/70 hover:text-amber-400 p-2 hover:bg-slate-800 rounded transition-colors"
-              title="Expand Environment Pane"
+              className="writing-vertical-lr rotate-180 flex items-center gap-2 text-slate-500 hover:text-amber-500 transition-colors uppercase tracking-widest text-xs font-bold"
             >
-              🧭
+              <span>🧭</span>
+              <span>Open Environment</span>
             </button>
-            {activePlayers.length > 0 && (
-              <button 
-                onClick={() => {
-                  setIsEnvExpanded(true);
-                  localStorage.setItem('saos_env_expanded', 'true');
-                }}
-                className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
-                title={`Active Players: ${activePlayers.length}`}
-              >
-                👥
-                <span className="absolute -top-1 -right-1 bg-sky-600 text-white text-[9px] font-bold px-1 rounded-full">{activePlayers.length}</span>
-              </button>
-            )}
-
-            {activeNpcs.length > 0 && (
-              <button 
-                onClick={() => {
-                  setIsEnvExpanded(true);
-                  localStorage.setItem('saos_env_expanded', 'true');
-                }}
-                className="text-sky-400/70 hover:text-sky-300 p-2 hover:bg-slate-800 rounded transition-colors relative"
-                title={`Active NPCs: ${activeNpcs.length}`}
-              >
-                👥
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] font-bold px-1 rounded-full">{activeNpcs.length}</span>
-              </button>
-            )}
           </div>
         )}
       </div>

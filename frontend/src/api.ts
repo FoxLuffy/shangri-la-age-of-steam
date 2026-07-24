@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
 console.log("Cache buster: v3");
 export let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '__VITE_BACKEND_URL__';
 
@@ -291,4 +292,27 @@ export const fetchWorkshopMods = async () => {
 export const installWorkshopMod = async (modId: string) => {
   const { data } = await api.post(`/workshop/mods/${modId}/install`);
   return data;
+};
+export const useWorldStateQuery = (characterId?: number) => {
+  return useQuery({
+    queryKey: ['worldState', characterId],
+    queryFn: () => fetchWorldState(characterId),
+    staleTime: 5000,
+  });
+};
+
+export const useGlossaryQuery = () => {
+  return useQuery({
+    queryKey: ['glossary'],
+    queryFn: fetchGlossary,
+    staleTime: Infinity,
+  });
+};
+
+export const useMarketQuery = () => {
+  return useQuery({
+    queryKey: ['market'],
+    queryFn: getMarket,
+    staleTime: 30000,
+  });
 };

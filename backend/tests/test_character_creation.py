@@ -33,3 +33,28 @@ def test_api_create_character():
     assert data["character_class"] == "Scrapper"
     assert "stats" in data
     assert data["stats"]["strength"] >= 5  # Scrappers are strong
+
+
+def test_api_create_character_origin():
+    from backend.database import NPC, Inventory, Item
+    from backend.database import engine as db_engine
+    from sqlmodel import Session, select
+
+    client = TestClient(app)
+    response = client.post("/characters", json={"name": "Lyra Origin", "preset": "Scrapper", "origin": "Foundry Orphan"})
+    assert response.status_code == 200
+    data = response.json()
+    char_id = data["id"]
+
+    with Session(db_engine) as session:
+        # Check that the items were created and added to inventory
+        inv_items = session.exec(select(Inventory).where(Inventory.character_id == char_id)).all()
+        assert len(inv_items) >= 2
+        item_names = [session.get(Item, i.item_id).name for i in inv_items]
+        assert "Soot-Stained Rag" in item_names
+        assert "Scrap Metal" in item_names
+
+        # Check NPC disposition bump
+        npc = session.exec(select(NPC).where(NPC.name == "Foreman Ironfist")).first()
+        assert npc is not None
+        assert npc.disposition >= 0.3

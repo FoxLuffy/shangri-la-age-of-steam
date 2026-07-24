@@ -70,6 +70,44 @@ PRESETS = {
     },
 }
 
+ORIGINS = {
+    "Foundry Orphan": {
+        "items": [
+            {"name": "Soot-Stained Rag", "description": "A dirty rag from the foundry.", "quantity": 1, "category": "Equipment"},
+            {"name": "Scrap Metal", "description": "A piece of scrap metal.", "quantity": 3, "category": "Crafting_Materials"}
+        ],
+        "npc_disposition": {"npc_name": "Foreman Ironfist", "bump": 0.3}
+    },
+    "Aristocratic Heir": {
+        "items": [
+            {"name": "Signet Ring", "description": "A family signet ring.", "quantity": 1, "category": "Equipment"},
+            {"name": "Fine Wine", "description": "A bottle of expensive wine.", "quantity": 1, "category": "Consumables"}
+        ],
+        "npc_disposition": {"npc_name": "Lord Sterling", "bump": 0.3}
+    },
+    "Guild Apprentice": {
+        "items": [
+            {"name": "Apprentice Badge", "description": "A badge of the guild.", "quantity": 1, "category": "Equipment"},
+            {"name": "Basic Tools", "description": "Basic crafting tools.", "quantity": 1, "category": "Equipment"}
+        ],
+        "npc_disposition": {"npc_name": "Master Craftsman", "bump": 0.3}
+    },
+    "Smuggler's Ward": {
+        "items": [
+            {"name": "Lockpick Set", "description": "A set of lockpicks.", "quantity": 1, "category": "Equipment"},
+            {"name": "Smuggler's Map", "description": "A map of secret routes.", "quantity": 1, "category": "Equipment"}
+        ],
+        "npc_disposition": {"npc_name": "Sly The Fox", "bump": 0.3}
+    },
+    "Automata Tinkerer": {
+        "items": [
+            {"name": "Spare Gear", "description": "A spare brass gear.", "quantity": 5, "category": "Steam_Tech_Components"},
+            {"name": "Wrench", "description": "A trusty wrench.", "quantity": 1, "category": "Equipment"}
+        ],
+        "npc_disposition": {"npc_name": "Tinkerer Tom", "bump": 0.3}
+    }
+}
+
 @router.get("/state")
 async def get_world_state(character_id: Optional[int] = None):
     with get_session() as session:
@@ -339,6 +377,39 @@ async def create_character(req: CharacterCreateRequest):
                 session.add(inv)
             session.commit()
             session.refresh(char)
+
+        raise RuntimeError(f"DEBUG: req={req.model_dump()}, ORIGINS keys={list(ORIGINS.keys())}")
+        if req.origin and req.origin in ORIGINS:
+            origin_data = ORIGINS[req.origin]
+            for item_data in origin_data["items"]:
+                cat_str = item_data.get("category", "Equipment")
+                try:
+                    category = ItemCategory(cat_str)
+                except ValueError:
+                    category = ItemCategory.equipment
+
+                item = DBItem(
+                    name=item_data.get("name", "Unknown Item"),
+                    description=item_data.get("description", ""),
+                    category=category,
+                )
+                session.add(item)
+                session.commit()
+                session.refresh(item)
+
+                inv = Inventory(character_id=char.id, item_id=item.id, quantity=item_data.get("quantity", 1))
+                session.add(inv)
+            session.commit()
+            session.refresh(char)
+
+            npc_info = origin_data["npc_disposition"]
+            npc = session.exec(select(DBNPC).where(DBNPC.name == npc_info["npc_name"])).first()
+            if not npc:
+                npc = DBNPC(id=npc_info["npc_name"].lower().replace(" ", "_"), name=npc_info["npc_name"], disposition=npc_info["bump"], location_id="1")
+            else:
+                npc.disposition += npc_info["bump"]
+            session.add(npc)
+            session.commit()
 
         client = VLLMClient()
         quest_prompt = (

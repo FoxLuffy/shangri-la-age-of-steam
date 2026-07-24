@@ -115,6 +115,7 @@ export const fetchSessions = async (userId: number): Promise<Character[]> => {
 export const createCharacter = async (
   name: string,
   preset: string,
+  origin: string = "",
   backstory: string = "",
   gearPrompt: string = "",
   showTutorials: boolean = true,
@@ -124,6 +125,7 @@ export const createCharacter = async (
   const { data } = await api.post('/characters', { 
     name, 
     preset, 
+    origin,
     backstory, 
     gear_prompt: gearPrompt, 
     show_tutorials: showTutorials, 

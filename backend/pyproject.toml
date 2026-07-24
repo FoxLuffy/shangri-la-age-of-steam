@@ -12,6 +12,7 @@ dependencies = [
     "jinja2",
     "sqlmodel",
     "python-multipart",
+    "alembic",
 ]
 
 [project.optional-dependencies]

@@ -1,13 +1,11 @@
-import contextlib
-from unittest.mock import patch
 
 import pytest
 from backend.database import Artifact, Character
 from backend.main import app
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
-from sqlalchemy.pool import StaticPool
 sqlite_url = "sqlite:///:memory:"
 test_engine = create_engine(sqlite_url, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
@@ -18,6 +16,7 @@ def get_session_override():
 client = TestClient(app)
 
 from backend.database import get_session
+
 
 @pytest.fixture(autouse=True)
 def setup_db():

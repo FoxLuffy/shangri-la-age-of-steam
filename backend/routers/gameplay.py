@@ -43,9 +43,9 @@ from backend.schemas import (
     TradeOfferRequest,
 )
 from backend.websocket import manager
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
-from sqlmodel import select, Session
+from sqlmodel import Session, select
 
 AUGMENTATION_CATALOG = [
     {

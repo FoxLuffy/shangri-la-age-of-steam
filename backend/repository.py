@@ -198,6 +198,10 @@ class StateRepository:
             else None,
             properties=properties_list,
             brass_coins=char.brass_coins if char else 0,
+            world_time=db_state.world_time if db_state and hasattr(db_state, 'world_time') else 0,
+            time_period=db_state.time_period if db_state and hasattr(db_state, 'time_period') else "Day",
+            weather=db_state.weather if db_state and hasattr(db_state, 'weather') else "Clear",
+            season=db_state.season if db_state and hasattr(db_state, 'season') else "Brass Festival",
         )
 
     def save_state(self, state: WorldState) -> WorldState:
@@ -206,6 +210,10 @@ class StateRepository:
             active_npcs_ids=state.active_npcs_ids if isinstance(state.active_npcs_ids, list) else [],
             global_event=state.global_event,
             world_memories=state.world_memories if isinstance(state.world_memories, list) else [],
+            world_time=state.world_time,
+            time_period=state.time_period,
+            weather=state.weather,
+            season=state.season,
         )
         self.session.add(db_state)
         self.session.commit()
@@ -479,7 +487,7 @@ class StateRepository:
         self.session.commit()
 
     def apply_combat_update(self, update: Dict[str, Any], char_id: int):
-        from backend.database import NPC, Character, CombatSession
+        from backend.database import NPC, Bounty, Character, CombatSession
         from backend.database import WorldState as DBWorldState
 
         # Get character to find location
@@ -567,8 +575,25 @@ class StateRepository:
                 continue
             npc = self.session.get(NPC, npc_id)
             if npc:
+                old_hp = npc.hp
                 npc.hp += npc_u.get("hp_change", 0)
                 npc.hp = max(0, min(npc.max_hp, npc.hp))
+
+                # Bounty Check
+                if old_hp > 0 and npc.hp == 0 and char:
+                    active_bounties = list(char.active_bounties or [])
+                    completed_bounties = list(char.completed_bounties or [])
+                    for b_id in active_bounties:
+                        bounty = self.session.get(Bounty, b_id)
+                        if bounty and bounty.status == "active" and (bounty.target_npc_type.lower() in npc.name.lower() or (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower())):
+                            bounty.status = "completed"
+                            char.brass_coins += bounty.reward_coins
+                            completed_bounties.append(b_id)
+                            active_bounties.remove(b_id)
+                            self.session.add(bounty)
+                    char.active_bounties = active_bounties
+                    char.completed_bounties = completed_bounties
+                    self.session.add(char)
 
                 current_effects = set(npc.status_effects or [])
                 for eff in npc_u.get("status_effects_add", []):

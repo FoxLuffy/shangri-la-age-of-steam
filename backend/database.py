@@ -61,6 +61,10 @@ class WorldState(SQLModel, table=True):
     global_event: Optional[str] = None
     world_memories: List[Dict[str, str]] = Field(default=[], sa_column=Column(JSON))
     is_combat_active: bool = Field(default=False)
+    world_time: int = Field(default=0)
+    time_period: str = Field(default="Day")
+    weather: str = Field(default="Clear")
+    season: str = Field(default="Brass Festival")
 
 
 class PlayerAction(SQLModel, table=True):
@@ -137,6 +141,15 @@ class UserSession(SQLModel, table=True):
     expires_at: str = Field(default="")
 
 
+class Bounty(SQLModel, table=True):
+    __tablename__ = "bounty"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: str
+    target_npc_type: str
+    reward_coins: int
+    status: str = Field(default="available")  # available, active, completed
+
 class Character(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="user_account.id", index=True)
@@ -160,7 +173,49 @@ class Character(SQLModel, table=True):
     show_tutorials: bool = Field(default=True)
     location_id: str = Field(default="1", index=True)
     total_strain: int = Field(default=0)
+    guild_id: Optional[int] = Field(default=None, foreign_key="guild.id", index=True)
+    active_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
+    completed_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
+    discovered_artifacts: List[int] = Field(default=[], sa_column=Column(JSON))
 
+
+class Artifact(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: str
+    stat_bonus: Dict[str, int] = Field(default={}, sa_column=Column(JSON))
+    rarity: str = Field(default="Common")
+
+
+class Guild(SQLModel, table=True):
+    __tablename__ = "guild"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    description: Optional[str] = None
+    treasury: int = Field(default=0)
+    leader_id: int = Field(foreign_key="character.id")
+
+
+class TradeHistory(SQLModel, table=True):
+    __tablename__ = "trade_history"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    initiator_id: int = Field(foreign_key="character.id")
+    receiver_id: int = Field(foreign_key="character.id")
+    initiator_item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    initiator_coins: int = Field(default=0)
+    receiver_item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    receiver_coins: int = Field(default=0)
+    status: str = Field(default="pending")  # pending, accepted, rejected
+    timestamp: str = Field(default="")
+
+
+class BulletinBoardMessage(SQLModel, table=True):
+    __tablename__ = "bulletin_board_message"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    location_id: str = Field(foreign_key="location.id", index=True)
+    author_id: int = Field(foreign_key="character.id")
+    content: str
+    timestamp: str = Field(default="")
 
 class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -16,7 +16,11 @@ import { WebSocketSync } from './WebSocketSync';
 import { StateUpdateHandler } from './StateUpdateHandler';
 import { useGameStore } from '../stores/gameStore';
 import WorldMap from './WorldMap';
+import GuildPanel from './GuildPanel';
+import BulletinBoard from './BulletinBoard';
+import BountyBoard from './BountyBoard';
 import { audioManager } from '../utils/AudioManager';
+import { ArtifactJournal } from './ArtifactJournal';
 
 
 interface Message {
@@ -47,6 +51,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isGuildOpen, setIsGuildOpen] = useState(false);
+  const [isBoardOpen, setIsBoardOpen] = useState(false);
+  const [isBountyBoardOpen, setIsBountyBoardOpen] = useState(false);
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -405,8 +413,17 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   const steamOpacity = currentLocationId === '1' ? 0.4 : currentLocationId === '2' ? 0.1 : 0.2;
 
+  const timePeriod = worldStateData?.state?.time_period || 'Day';
+  const weather = worldStateData?.state?.weather || 'Clear';
+  let envClass = '';
+  if (timePeriod === 'Night' || weather === 'Thunderstorm') {
+    envClass = 'theme-cool';
+  } else if (timePeriod === 'Day' || timePeriod === 'Dawn' || timePeriod === 'Dusk') {
+    envClass = 'theme-warm';
+  }
+
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
+    <div className={`flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative transition-colors duration-1000 ${envClass}`}>
       <div 
         className="pointer-events-none absolute inset-0 steam-overlay z-50 transition-opacity duration-1000"
         style={{ opacity: steamOpacity }}
@@ -422,6 +439,10 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           onClose={() => setIsMapOpen(false)}
         />
       )}
+      {isGuildOpen && <GuildPanel characterId={characterId || 0} onClose={() => setIsGuildOpen(false)} />}
+      {isBoardOpen && <BulletinBoard characterId={characterId || 0} locationId={currentLocationId} onClose={() => setIsBoardOpen(false)} />}
+      {isBountyBoardOpen && <BountyBoard characterId={characterId || 0} onClose={() => setIsBountyBoardOpen(false)} />}
+      {isJournalOpen && <ArtifactJournal characterId={characterId || 0} onClose={() => setIsJournalOpen(false)} />}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />
       
@@ -499,11 +520,39 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setIsBoardOpen(true)}
+            className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>📜</span>
+            <span>BOARD</span>
+          </button>
+          <button
+            onClick={() => setIsGuildOpen(true)}
+            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>🛡️</span>
+            <span>GUILD</span>
+          </button>
+          <button
+            onClick={() => setIsBountyBoardOpen(true)}
+            className="px-4 py-1.5 bg-red-800 hover:bg-red-700 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>⚔️</span>
+            <span>BOUNTIES</span>
+          </button>
+          <button
+            onClick={() => setIsJournalOpen(true)}
+            className="px-4 py-1.5 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>✨</span>
+            <span>JOURNAL</span>
+          </button>
+          <button
             onClick={() => setIsMapOpen(true)}
             className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded shadow-lg transition-all flex items-center gap-2"
           >
             <span>🧭</span>
-            <span>OPEN WORLD MAP</span>
+            <span>MAP</span>
           </button>
         </div>
       </div>

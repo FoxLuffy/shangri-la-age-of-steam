@@ -118,6 +118,9 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         ghost_echoes=ghost_echoes,
         character_name=getattr(getattr(state, "player_stats", None), "name", "Traveler"),
         recent_events=recent_events,
+        time_period=getattr(state, "time_period", "Day"),
+        weather=getattr(state, "weather", "Clear"),
+        season=getattr(state, "season", "Brass Festival"),
     )
 
     if hasattr(action, "mood") and action.mood:

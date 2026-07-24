@@ -38,9 +38,9 @@
 
 **Goal:** Deepen the multiplayer experience beyond shared narrative space — add direct player-to-player interaction mechanics.
 
-- [ ] **Player Trading System**: Implement `/trade/offer` and `/trade/accept` endpoints. Players in the same location can propose item/currency trades via a split-screen trade modal. Both parties must confirm before the transaction executes. Add a `TradeHistory` ledger table for audit trails.
-- [ ] **Guild Formation**: Allow players to form named guilds with a shared treasury, guild emblem, and member roster. Guilds can collectively own properties, pool resources for large crafting projects, and declare allegiance to a faction (boosting faction standing for all members). Implement `/guilds/create`, `/guilds/invite`, `/guilds/treasury` endpoints and a `GuildPanel.tsx` component.
-- [ ] **Player Messaging & Bulletin Board**: Add a `/messages/send` endpoint for async player-to-player messages delivered on next login. Build a `BulletinBoard.tsx` component at each location where players can post public notices (trade offers, warnings, recruitment, role-play flavor text). Messages persist for 7 in-game days.
+- [x] **Player Trading System**: Implement `/trade/offer` and `/trade/accept` endpoints. Players in the same location can propose item/currency trades via a split-screen trade modal. Both parties must confirm before the transaction executes. Add a `TradeHistory` ledger table for audit trails.
+- [x] **Guild Formation**: Allow players to form named guilds with a shared treasury, guild emblem, and member roster. Guilds can collectively own properties, pool resources for large crafting projects, and declare allegiance to a faction (boosting faction standing for all members). Implement `/guilds/create`, `/guilds/invite`, `/guilds/treasury` endpoints and a `GuildPanel.tsx` component.
+- [x] **Player Messaging & Bulletin Board**: Add a `/messages/send` endpoint for async player-to-player messages delivered on next login. Build a `BulletinBoard.tsx` component at each location where players can post public notices (trade offers, warnings, recruitment, role-play flavor text). Messages persist for 7 in-game days.
 
 ---
 
@@ -48,9 +48,9 @@
 
 **Goal:** Make the world feel temporally alive — a day/night cycle and weather system that affect gameplay, narrative, and visuals.
 
-- [ ] **World Clock & Day/Night Cycle**: Add a `world_time` field to `WorldState` that advances with each simulation tick. Define 4 time periods (Dawn, Day, Dusk, Night). The narrative prompt receives the current period and adjusts descriptions — lamplighters igniting gas lamps at dusk, night markets opening, Syndicate patrols doubling after dark. The frontend UI shifts color temperature (warm amber → cool blue) based on time period.
-- [ ] **Dynamic Weather Engine**: Each simulation tick rolls weather for each location: Clear, Overcast, Fog, Rain, Thunderstorm, Aether Storm. Weather affects: market prices (storms disrupt supply lines → price spikes), combat modifiers (fog reduces ranged accuracy, rain extinguishes fire), NPC behavior (NPCs seek shelter, smugglers prefer fog), and narrative descriptions.
-- [ ] **Seasonal Events**: Define a 4-season calendar with annual events — The Brass Festival (crafting XP bonus), The Fog Season (increased random encounters), The Founder's Day (faction recruitment drives), The Long Dark (resource scarcity + exclusive quest availability).
+- [x] **World Clock & Day/Night Cycle**: Add a `world_time` field to `WorldState` that advances with each simulation tick. Define 4 time periods (Dawn, Day, Dusk, Night). The narrative prompt receives the current period and adjusts descriptions — lamplighters igniting gas lamps at dusk, night markets opening, Syndicate patrols doubling after dark. The frontend UI shifts color temperature (warm amber → cool blue) based on time period.
+- [x] **Dynamic Weather Engine**: Each simulation tick rolls weather for each location: Clear, Overcast, Fog, Rain, Thunderstorm, Aether Storm. Weather affects: market prices (storms disrupt supply lines → price spikes), combat modifiers (fog reduces ranged accuracy, rain extinguishes fire), NPC behavior (NPCs seek shelter, smugglers prefer fog), and narrative descriptions.
+- [x] **Seasonal Events**: Define a 4-season calendar with annual events — The Brass Festival (crafting XP bonus), The Fog Season (increased random encounters), The Founder's Day (faction recruitment drives), The Long Dark (resource scarcity + exclusive quest availability).
 
 ---
 
@@ -58,13 +58,23 @@
 
 **Goal:** Provide an infinite content loop — procedurally generated missions that reward exploration, combat, and faction engagement.
 
-- [ ] **Bounty Board System**: Add a `BountyBoard` model and `/bounties/list` endpoint. Each location generates 3 active bounties per simulation cycle. Bounty types: Hunt (defeat a target NPC), Delivery (transport goods between locations), Investigation (gather clues from NPCs), Sabotage (use minigames to disrupt a rival faction's operation). Bounties expire after N ticks and reward brass coins, faction standing, and rare crafting materials.
-- [ ] **Procedural Mission Generator**: Build `mission_generator.py` that assembles missions from template components: objective (kill/fetch/escort/investigate), target (procedurally named NPC or location), complication (time limit, rival bounty hunter, moral dilemma), and reward tier. The generator uses current world state (active faction wars, market prices, weather) to create contextually relevant missions.
-- [ ] **Bounty Board UI**: Build a `BountyBoard.tsx` component styled as a cork board with pinned parchment notes. Each bounty shows its type icon, brief description, reward, expiration timer, and an "Accept" button. Active bounties appear in the quest tracker.
+- [x] **Bounty Board System**: Add a `BountyBoard` model and `/bounties/list` endpoint. Each location generates 3 active bounties per simulation cycle. Bounty types: Hunt (defeat a target NPC), Delivery (transport goods between locations), Investigation (gather clues from NPCs), Sabotage (use minigames to disrupt a rival faction's operation). Bounties expire after N ticks and reward brass coins, faction standing, and rare crafting materials.
+- [x] **Procedural Mission Generator**: Build `mission_generator.py` that assembles missions from template components: objective (kill/fetch/escort/investigate), target (procedurally named NPC or location), complication (time limit, rival bounty hunter, moral dilemma), and reward tier. The generator uses current world state (active faction wars, market prices, weather) to create contextually relevant missions.
+- [x] **Bounty Board UI**: Build a `BountyBoard.tsx` component styled as a cork board with pinned parchment notes. Each bounty shows its type icon, brief description, reward, expiration timer, and an "Accept" button. Active bounties appear in the quest tracker.
 
 ---
 
-## N_phase 7 — Expanded Modding Ecosystem
+## N_phase 7 — Artifact Collection & Rare Items
+
+**Goal:** Add long-term collection goals by seeding rare, lore-rich artifacts throughout the world.
+
+- [x] **Artifact System**: Add an `Artifact` model (name, description, stat_bonus, rarity). Add `discovered_artifacts` to the `Character` model. Apply stat bonuses.
+- [x] **Archaeologist's Journal UI**: Build a beautiful `ArtifactJournal` UI styled like an explorer's leather-bound sketchbook.
+- [x] **Exploration Hook**: Implement endpoint `/gameplay/artifacts/discover` to simulate finding one.
+
+---
+
+## N_phase 8 — Expanded Modding Ecosystem
 
 **Goal:** Transform the basic workshop into a full modding platform that enables community-driven content creation.
 

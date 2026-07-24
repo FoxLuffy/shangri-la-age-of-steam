@@ -82,6 +82,10 @@ class WorldState(BaseModel):
     player_stats: Optional[Dict[str, Any]] = None
     properties: List[PropertyModel] = []
     brass_coins: int = 0
+    world_time: int = 0
+    time_period: str = "Day"
+    weather: str = "Clear"
+    season: str = "Brass Festival"
 
 
 class PlayerAction(BaseModel):
@@ -140,13 +144,7 @@ class DBNPC(SQLModel, base=Base):
     custom_system_prompt: Optional[str] = None
 
 
-class DBWorldState(SQLModel, base=Base):
-    __tablename__ = "world_state"
-    id: Optional[int] = SQLModelField(default=None, primary_key=True)
-    current_location_id: str = SQLModelField(default="1")
-    active_npcs_ids: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
-    global_event: Optional[str] = None
-    world_memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
+
 
 
 class DBLedgerEntry(SQLModel, base=Base):

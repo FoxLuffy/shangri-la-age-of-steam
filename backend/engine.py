@@ -489,6 +489,31 @@ def simulate_economy_tick(session: Session):
     session.commit()
 
 
+def simulate_weather_time(session: Session):
+    import random
+
+    from backend.database import WorldState as DBWorldState
+
+    db_state = session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
+    if db_state:
+        db_state.world_time = (db_state.world_time or 0) + 1
+        hour = db_state.world_time % 24
+
+        if 5 <= hour < 8:
+            db_state.time_period = "Dawn"
+        elif 8 <= hour < 18:
+            db_state.time_period = "Day"
+        elif 18 <= hour < 21:
+            db_state.time_period = "Dusk"
+        else:
+            db_state.time_period = "Night"
+
+        if random.random() < 0.2:
+            db_state.weather = random.choice(["Clear", "Fog", "Rain", "Thunderstorm"])
+
+        session.add(db_state)
+        session.commit()
+
 async def world_tick():
     """
     Runs the world simulation tick.
@@ -499,6 +524,7 @@ async def world_tick():
     from backend.database import Character, Property, get_session
 
     with get_session() as session:
+        simulate_weather_time(session)
         simulate_economy_tick(session)
 
         # Passive Income Generation

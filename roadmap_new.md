@@ -8,9 +8,9 @@
 
 **Goal:** Activate the existing `Airship` schema into a full gameplay system — players acquire, customize, and pilot airships between locations with real flight mechanics.
 
-- [ ] **Airship Hangar UI**: Build an `AirshipPanel.tsx` React component accessible from the main UI. Display the player's airship stats (hull integrity, fuel level, altitude ceiling, installed modules) with steampunk gauge visualizations (circular dials with brass bezels). Include buttons for refueling, repairing, and managing modules.
-- [ ] **Flight Navigation System**: Implement a `/airships/navigate` endpoint that calculates travel time between locations based on distance, wind resistance (random per-tick), and engine module quality. During flight, stream narrative descriptions of the journey (cloud formations, other airships, weather hazards) via SSE. Fuel depletes proportionally to distance and altitude.
-- [ ] **Aerial Encounters**: During airship travel, trigger random encounters (sky pirates, aether storms, floating trade barges, distress signals). Each encounter presents a choice: engage, evade, or investigate. Outcomes affect hull integrity, fuel, cargo, and reputation.
+- [x] **Airship Hangar UI**: Build an `AirshipPanel.tsx` React component accessible from the main UI. Display the player's airship stats (hull integrity, fuel level, altitude ceiling, installed modules) with steampunk gauge visualizations (circular dials with brass bezels). Include buttons for refueling, repairing, and managing modules.
+- [x] **Flight Navigation System**: Implement a `/airships/navigate` endpoint that calculates travel time between locations based on distance, wind resistance (random per-tick), and engine module quality. During flight, stream narrative descriptions of the journey (cloud formations, other airships, weather hazards) via SSE. Fuel depletes proportionally to distance and altitude.
+- [x] **Aerial Encounters**: During airship travel, trigger random encounters (sky pirates, aether storms, floating trade barges, distress signals). Each encounter presents a choice: engage, evade, or investigate. Outcomes affect hull integrity, fuel, cargo, and reputation.
 
 ---
 

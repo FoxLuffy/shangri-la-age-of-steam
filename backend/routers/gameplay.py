@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import random
 import re
 from typing import Optional
 
@@ -23,6 +24,7 @@ from backend.engine import NarrativeEngine
 from backend.models import PlayerAction
 from backend.repository import StateRepository
 from backend.schemas import (
+    AirshipNavigateRequest,
     CharacterCreateRequest,
     GenerateGearRequest,
     MinigameActionRequest,
@@ -510,6 +512,52 @@ async def fly_airship(airship_id: int, altitude: int, distance: float):
         session.add(ship)
         session.commit()
         session.refresh(ship)
+        return ship
+
+@router.post("/airships/navigate")
+async def navigate_airship(req: AirshipNavigateRequest):
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == req.character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        ship = session.exec(select(Airship).where(Airship.character_id == req.character_id)).first()
+        if not ship:
+            raise HTTPException(status_code=404, detail="Airship not found")
+
+        fuel_cost = 15.0 # Fixed rate or based on distance
+        if ship.fuel_level < fuel_cost:
+            raise HTTPException(status_code=400, detail="Not enough fuel")
+
+        ship.fuel_level -= fuel_cost
+
+        encounter_trigger = random.random() < 0.3
+        narration = f"You fired up the {ship.name}'s steam engines and successfully navigated to location {req.location_id}."
+        if encounter_trigger:
+            damage = 10.0
+            ship.hull_integrity -= damage
+            narration = f"During your flight to location {req.location_id}, the {ship.name} encountered heavy aether storms! You lost {damage} hull integrity, but managed to land."
+
+        char.location_id = req.location_id
+
+        session.add(ship)
+        session.add(char)
+        session.commit()
+        session.refresh(ship)
+        session.refresh(char)
+
+        return {
+            "ship": ship,
+            "character": char,
+            "narration": narration
+        }
+
+@router.get("/airships")
+async def get_airship(character_id: int):
+    with get_session() as session:
+        ship = session.exec(select(Airship).where(Airship.character_id == character_id)).first()
+        if not ship:
+            raise HTTPException(status_code=404, detail="Airship not found")
         return ship
 
 @router.get("/codex")

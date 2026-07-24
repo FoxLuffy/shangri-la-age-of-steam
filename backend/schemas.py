@@ -52,3 +52,7 @@ class MarketTradeRequest(BaseModel):
     resource_name: str
     quantity: int
     action: str  # "buy" or "sell"
+
+class AirshipNavigateRequest(BaseModel):
+    character_id: int
+    location_id: str

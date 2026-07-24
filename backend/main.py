@@ -36,6 +36,7 @@ from sqlmodel import select
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from backend.routers import gameplay
 from backend.simulation import simulate_faction_wars, simulate_global_market, world_simulation_loop
 
 # Background task reference
@@ -66,6 +67,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Shangri-la: Age of Steam API", lifespan=lifespan)
+app.include_router(gameplay.router, prefix="/gameplay")
 
 # Enable CORS for frontend integration
 app.add_middleware(

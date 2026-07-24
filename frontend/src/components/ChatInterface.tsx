@@ -417,6 +417,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         <WorldMap 
           locations={allLocations}
           currentLocationId={currentLocationId}
+          characterId={characterId}
           onLocationSelect={handleLocationSwitch}
           onClose={() => setIsMapOpen(false)}
         />

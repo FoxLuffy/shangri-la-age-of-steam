@@ -4,6 +4,7 @@ import type { Location } from '../api';
 interface WorldMapProps {
   locations: Location[];
   currentLocationId: string;
+  characterId: number;
   onLocationSelect: (locationId: string) => void;
   onClose: () => void;
 }
@@ -17,12 +18,26 @@ interface NodeData {
   controllingFaction?: string;
 }
 
-export default function WorldMap({ locations, currentLocationId, onLocationSelect, onClose }: WorldMapProps) {
+import { fetchAirship, navigateAirship } from '../api';
+import AirshipPanel from './AirshipPanel';
+
+export default function WorldMap({ locations, currentLocationId, characterId, onLocationSelect, onClose }: WorldMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [isTraveling, setIsTraveling] = useState(false);
   const [travelState, setTravelState] = useState<{fromId: string, toId: string, progress: number} | null>(null);
+  const [airship, setAirship] = useState<any>(null);
+  const [useAirship, setUseAirship] = useState(false);
+
+  useEffect(() => {
+    fetchAirship(characterId).then(data => {
+      if (data) {
+        setAirship(data);
+        setUseAirship(true);
+      }
+    });
+  }, [characterId]);
 
   // Generate node positions in a circle
   const nodes = useMemo<NodeData[]>(() => {
@@ -243,8 +258,21 @@ export default function WorldMap({ locations, currentLocationId, onLocationSelec
         if (progress < 1) {
           requestAnimationFrame(travelAnim);
         } else {
-          onLocationSelect(hoveredNodeId);
-          onClose(); // Close modal after travel animation
+          if (useAirship && airship) {
+            navigateAirship(characterId, hoveredNodeId).then((res) => {
+                if (res.narration) {
+                    window.dispatchEvent(new CustomEvent('saos_system_action', { detail: `Airship Fast Travel: ${res.narration}` }));
+                }
+                onLocationSelect(hoveredNodeId);
+                onClose();
+            }).catch(e => {
+                console.error("Airship travel failed", e);
+                onClose();
+            });
+          } else {
+            onLocationSelect(hoveredNodeId);
+            onClose(); // Close modal after travel animation
+          }
         }
       };
       
@@ -257,9 +285,17 @@ export default function WorldMap({ locations, currentLocationId, onLocationSelec
       <div className="relative w-full max-w-5xl h-[80vh] bg-slate-900 border border-amber-800/60 rounded-xl shadow-[0_0_50px_rgba(180,83,9,0.3)] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 bg-slate-950/80 border-b border-amber-900/50">
-          <h2 className="text-xl font-bold text-amber-500 tracking-widest uppercase copper-gradient-text flex items-center gap-2">
-            <span>🧭</span> World Map
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-amber-500 tracking-widest uppercase copper-gradient-text flex items-center gap-2">
+              <span>🧭</span> World Map
+            </h2>
+            {airship && (
+                <label className="flex items-center gap-2 cursor-pointer text-amber-200 text-sm">
+                    <input type="checkbox" checked={useAirship} onChange={e => setUseAirship(e.target.checked)} className="accent-amber-500" />
+                    Fast Travel via Airship
+                </label>
+            )}
+          </div>
           <button 
             onClick={onClose}
             className="text-slate-400 hover:text-amber-400 transition-colors"
@@ -301,6 +337,11 @@ export default function WorldMap({ locations, currentLocationId, onLocationSelec
           {isTraveling && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-sky-900/90 border border-sky-500/50 px-6 py-2 rounded text-sky-200 text-sm shadow-xl pointer-events-none">
               Traveling to destination...
+            </div>
+          )}
+          {airship && (
+            <div className="absolute top-16 right-4 z-40 pointer-events-none">
+                <AirshipPanel airship={airship} />
             </div>
           )}
         </div>

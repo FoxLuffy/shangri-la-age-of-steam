@@ -426,10 +426,12 @@ async def scan_locations_and_trigger_interactions():
     Background logic to scan locations and trigger NPC-to-NPC interactions.
     """
     logger.info("Scanning locations for NPC interactions...")
+    from backend.database import NPC as DBNPC
+    from backend.database import Location as DBLocation
     with get_session() as session:
-        locations = session.exec(select(Location)).all()
+        locations = session.exec(select(DBLocation)).all()
         for loc in locations:
-            npcs_in_loc = session.exec(select(NPC).where(NPC.location_id == loc.id)).all()
+            npcs_in_loc = session.exec(select(DBNPC).where(DBNPC.location_id == loc.id)).all()
             if len(npcs_in_loc) > 1:
                 # 30% chance for an interaction to happen if there are multiple NPCs
                 if random.random() < 0.3:

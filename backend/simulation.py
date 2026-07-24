@@ -29,13 +29,7 @@ async def simulate_global_market(manager):
             with get_session() as session:
                 markets = session.exec(select(ResourceMarket)).all()
                 if not markets:
-                    # Initialize
-                    for res in ["Brass", "Copper", "Aetherium", "Coal"]:
-                        session.add(
-                            ResourceMarket(resource_name=res, base_price=10.0, current_price=10.0, volatility=0.1)
-                        )
-                    session.commit()
-                    markets = session.exec(select(ResourceMarket)).all()
+                    continue
 
                 # Simulate global player actions fluctuating the market
                 for m in markets:

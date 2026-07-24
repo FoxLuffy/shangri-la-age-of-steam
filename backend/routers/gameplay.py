@@ -443,12 +443,12 @@ async def fly_airship(airship_id: int, altitude: int, distance: float):
 
 @router.get("/codex")
 async def get_codex():
-    import os
     import json
-    
+    import os
+
     codex_path = os.path.join(os.path.dirname(__file__), "..", "codex")
     codex_data = {}
-    
+
     if os.path.exists(codex_path):
         for category in os.listdir(codex_path):
             category_path = os.path.join(codex_path, category)

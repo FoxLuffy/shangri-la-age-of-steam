@@ -96,7 +96,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         pass
 
     prompt_str = template.render(
-        location={"name": loc_name, "description": loc_desc},
+        location={"name": loc_name, "description": loc_desc, "condition": getattr(current_loc, "condition", 50)},
         active_npcs=active_npcs,
         npc_contexts=npc_contexts,
         action_text=action.action_text,

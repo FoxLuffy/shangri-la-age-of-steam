@@ -17,6 +17,7 @@ class Location(BaseModel):
     description: str
     lore_text: Optional[str] = None
     npcs: Union[List[str], str] = []
+    condition: int = 50
 
 
 class NPC(BaseModel):
@@ -123,6 +124,7 @@ class DBLocation(SQLModel, base=Base):
     description: str
     lore_text: Optional[str] = SQLModelField(default=None)
     npcs: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
+    condition: int = SQLModelField(default=50)
 
 
 class DBNPC(SQLModel, base=Base):

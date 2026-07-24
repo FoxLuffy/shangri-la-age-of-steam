@@ -17,8 +17,8 @@ interface BountyBoardProps {
 
 export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoardProps) {
   const [available, setAvailable] = useState<Bounty[]>([]);
-  const [activeIds, setActiveIds] = useState<number[]>([]);
-  const [completedIds, setCompletedIds] = useState<number[]>([]);
+  const [_activeIds, setActiveIds] = useState<number[]>([]);
+  const [_completedIds, setCompletedIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

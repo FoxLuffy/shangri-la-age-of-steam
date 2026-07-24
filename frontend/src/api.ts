@@ -60,6 +60,8 @@ export interface WorldStateData {
   current_location_id: string;
   active_npcs_ids: string[];
   global_event?: string;
+  time_period?: string;
+  weather?: string;
   world_memories?: { key: string; value: string }[];
   current_location: Location;
   active_npcs: NPC[];

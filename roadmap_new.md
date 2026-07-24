@@ -28,9 +28,9 @@
 
 **Goal:** Expand the basic crafting system into a discovery-driven progression loop where players experiment, research, and specialize.
 
-- [ ] **Recipe Discovery System**: Recipes are not known by default. Players discover them through: NPC dialogue (Alchemists reveal formulas at high disposition), exploration (finding blueprints in new locations), experimentation (combining materials at a workbench with a chance of discovery), or purchasing from the Workshop mod market. Store discovered recipes per-character in a `known_recipes` table.
-- [ ] **Crafting Specialization Trees**: Define 3 crafting branches — **Metallurgy** (weapons, armor, structural components), **Alchemy** (potions, transmutations, volatile compounds), **Clockwork** (automata modules, precision instruments, traps). Each branch has a proficiency level (0–10) that unlocks higher-tier recipes and improves success rates.
-- [ ] **Crafting Workbench UI**: Build a `CraftingPanel.tsx` component with a drag-and-drop material grid, recipe browser filtered by known recipes, and a crafting progress bar. Show success probability based on proficiency, materials quality, and available facility tier.
+- [x] **Recipe Discovery System**: Recipes are not known by default. Players discover them through: NPC dialogue (Alchemists reveal formulas at high disposition), exploration (finding blueprints in new locations), experimentation (combining materials at a workbench with a chance of discovery), or purchasing from the Workshop mod market. Store discovered recipes per-character in a `known_recipes` table.
+- [x] **Crafting Specialization Trees**: Define 3 crafting branches — **Metallurgy** (weapons, armor, structural components), **Alchemy** (potions, transmutations, volatile compounds), **Clockwork** (automata modules, precision instruments, traps). Each branch has a proficiency level (0–10) that unlocks higher-tier recipes and improves success rates.
+- [x] **Crafting Workbench UI**: Build a `CraftingPanel.tsx` component with a drag-and-drop material grid, recipe browser filtered by known recipes, and a crafting progress bar. Show success probability based on proficiency, materials quality, and available facility tier.
 
 ---
 

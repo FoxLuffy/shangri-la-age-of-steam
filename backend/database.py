@@ -160,6 +160,8 @@ class Character(SQLModel, table=True):
     show_tutorials: bool = Field(default=True)
     location_id: str = Field(default="1", index=True)
     total_strain: int = Field(default=0)
+    known_recipes: List[str] = Field(default=[], sa_column=Column(JSON))
+    crafting_proficiencies: Dict[str, int] = Field(default={"Metallurgy": 1, "Alchemy": 1, "Clockwork": 1}, sa_column=Column(JSON))
 
 
 class SystemSettings(SQLModel, table=True):

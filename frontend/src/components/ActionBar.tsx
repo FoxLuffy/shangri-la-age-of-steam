@@ -12,6 +12,7 @@ interface ActionBarProps {
   isMyTurn: boolean;
   currentTurnActor: string;
   onSubmit: (actionText: string) => void;
+  onOpenWorkbench?: () => void;
 }
 
 export default function ActionBar({
@@ -25,7 +26,8 @@ export default function ActionBar({
   isMinigameActive,
   isMyTurn,
   currentTurnActor,
-  onSubmit
+  onSubmit,
+  onOpenWorkbench
 }: ActionBarProps) {
   const moods = [
     { id: '', label: 'Neutral 😐' },
@@ -72,6 +74,16 @@ export default function ActionBar({
           />
           <span className="text-sky-300 font-semibold">🔍 Exploration Mode</span>
         </label>
+        
+        {onOpenWorkbench && (
+          <button
+            type="button"
+            onClick={onOpenWorkbench}
+            className="bg-amber-600 hover:bg-amber-500 text-slate-950 px-2.5 py-1 rounded text-[11px] font-bold shadow"
+          >
+            🛠 Workbench
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

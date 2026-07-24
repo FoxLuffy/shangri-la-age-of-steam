@@ -656,4 +656,56 @@ async def install_augmentation(req: AugmentationInstallRequest):
             "brass_coins": char.brass_coins
         }
 
+from pydantic import BaseModel
 
+
+class RecipeDiscoverRequest(BaseModel):
+    character_id: int
+    recipe_id: str
+
+@router.post("/crafting/discover")
+async def discover_recipe(req: RecipeDiscoverRequest):
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == req.character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        recipes = list(char.known_recipes) if char.known_recipes else []
+        if req.recipe_id not in recipes:
+            recipes.append(req.recipe_id)
+            char.known_recipes = recipes
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(char, "known_recipes")
+            session.add(char)
+            session.commit()
+            session.refresh(char)
+
+        return {"status": "success", "known_recipes": char.known_recipes}
+
+class CraftRequest(BaseModel):
+    character_id: int
+    recipe_id: str
+    branch: str
+
+@router.post("/craft")
+async def craft_item(req: CraftRequest):
+    with get_session() as session:
+        char = session.exec(select(Character).where(Character.id == req.character_id)).first()
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+
+        known = char.known_recipes or []
+        if req.recipe_id not in known:
+            raise HTTPException(status_code=400, detail="Recipe not known")
+
+        profs = char.crafting_proficiencies or {}
+        level = profs.get(req.branch, 1)
+
+        prob = min(0.95, 0.5 + (level * 0.1))
+        import random
+        success = random.random() < prob
+
+        if success:
+            return {"status": "success", "message": "Crafting succeeded", "probability": prob}
+        else:
+            return {"status": "failed", "message": "Crafting failed", "probability": prob}

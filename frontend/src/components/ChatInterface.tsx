@@ -17,6 +17,7 @@ import { StateUpdateHandler } from './StateUpdateHandler';
 import { useGameStore } from '../stores/gameStore';
 import WorldMap from './WorldMap';
 import { audioManager } from '../utils/AudioManager';
+import { CraftingPanel } from './CraftingPanel';
 
 
 interface Message {
@@ -47,6 +48,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isCraftingOpen, setIsCraftingOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -413,6 +415,14 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       />
       <AudioManager locationId={currentLocationId} mood={selectedMood} />
       {showHistory && <WorldHistory onClose={() => setShowHistory(false)} />}
+      {isCraftingOpen && (
+        <div className="absolute inset-0 z-40 bg-slate-950/80 p-4 sm:p-12 flex flex-col items-center">
+          <div className="w-full max-w-4xl relative">
+            <button onClick={() => setIsCraftingOpen(false)} className="absolute top-2 right-2 text-white bg-red-600 px-3 py-1 rounded">Close</button>
+            <CraftingPanel />
+          </div>
+        </div>
+      )}
       {isMapOpen && (
         <WorldMap 
           locations={allLocations}
@@ -531,6 +541,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             isMyTurn={isMyTurn}
             currentTurnActor={currentTurnActor}
             onSubmit={(val) => submitAction(val, false)}
+            onOpenWorkbench={() => setIsCraftingOpen(true)}
           />
         </div>
 

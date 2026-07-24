@@ -193,6 +193,8 @@ class StateRepository:
                 "status_effects": char.status_effects or [],
                 "total_strain": getattr(char, "total_strain", 0),
                 "augmentations": augmentations_list,
+                "known_recipes": getattr(char, "known_recipes", []),
+                "crafting_proficiencies": getattr(char, "crafting_proficiencies", {"Metallurgy": 1, "Alchemy": 1, "Clockwork": 1}),
             }
             if char
             else None,

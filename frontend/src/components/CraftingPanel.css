@@ -1,0 +1,62 @@
+.crafting-panel {
+    padding: 20px;
+    color: white;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.crafting-panel h2 {
+    margin-top: 0;
+    color: #ffd700;
+}
+
+.proficiencies ul, .recipes-list ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.recipes-list li {
+    cursor: pointer;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.recipes-list li:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.recipes-list li.selected {
+    background: rgba(255,215,0,0.3);
+    border: 1px solid #ffd700;
+}
+
+.recipe-details {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.recipe-details p {
+    margin: 5px 0;
+}
+
+.primary-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: #ffd700;
+    color: #111;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.primary-btn:hover {
+    background: #ffea00;
+}

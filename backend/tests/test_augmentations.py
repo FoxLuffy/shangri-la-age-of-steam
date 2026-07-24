@@ -1,11 +1,12 @@
-import pytest
-from sqlmodel import Session, select
+from backend.database import engine as db_engine
 from backend.main import app
-from backend.database import engine as db_engine, get_session
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
+
 
 def test_install_augmentation():
-    from backend.database import Character, Augmentation
+    from backend.database import Augmentation, Character
+
     with Session(db_engine) as session:
         # Create character if not exists
         char = session.exec(select(Character).where(Character.id == 1)).first()
@@ -17,10 +18,7 @@ def test_install_augmentation():
 
         # Install augmentation
         aug = Augmentation(
-            character_id=char.id,
-            body_part="left_arm",
-            augmentation_name="Pneumatic Fist",
-            stat_bonus={"strength": 5.0}
+            character_id=char.id, body_part="left_arm", augmentation_name="Pneumatic Fist", stat_bonus={"strength": 5.0}
         )
         session.add(aug)
         session.commit()
@@ -29,6 +27,7 @@ def test_install_augmentation():
         assert aug.id is not None
         assert aug.augmentation_name == "Pneumatic Fist"
         assert aug.stat_bonus.get("strength") == 5.0
+
 
 def test_api_get_augmentations():
     client = TestClient(app)

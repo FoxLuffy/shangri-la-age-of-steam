@@ -1,7 +1,8 @@
-from fastapi.testclient import TestClient
 from backend.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
+
 
 def test_get_glossary():
     response = client.get("/glossary")

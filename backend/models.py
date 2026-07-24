@@ -1,18 +1,22 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, JSON
-from sqlmodel import SQLModel, Field as SQLModelField
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel
+from sqlalchemy import JSON, Column
 from sqlalchemy.orm import declarative_base
+from sqlmodel import Field as SQLModelField
+from sqlmodel import SQLModel
 
 # Use SQLAlchemy's declarative_base for the base model
 Base = declarative_base()
+
 
 class Location(BaseModel):
     id: str
     name: str
     description: str
     npcs: Union[List[str], str] = []
+
 
 class NPC(BaseModel):
     id: str
@@ -23,7 +27,7 @@ class NPC(BaseModel):
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
     faction_id: Optional[str] = None
     custom_system_prompt: Optional[str] = None
-    
+
     # Combat
     speed: int = 5
     hp: int = 100
@@ -32,10 +36,12 @@ class NPC(BaseModel):
     status_effects: List[str] = []
     is_hostile: bool = False
 
+
 class FactionStandingModel(BaseModel):
     faction_id: str
     faction_name: str
     standing: float
+
 
 class PropertyModel(BaseModel):
     id: int
@@ -47,12 +53,14 @@ class PropertyModel(BaseModel):
     income_per_tick: int
     property_type: str
 
+
 class WorkerModel(BaseModel):
     id: int
     npc_id: str
     property_id: int
     role: str
     salary: int
+
 
 class WorldState(BaseModel):
     current_location_id: Optional[str] = "1"
@@ -73,6 +81,7 @@ class WorldState(BaseModel):
     properties: List[PropertyModel] = []
     brass_coins: int = 0
 
+
 class PlayerAction(BaseModel):
     action_text: str
     current_location_id: str = "1"
@@ -82,15 +91,18 @@ class PlayerAction(BaseModel):
     client_id: Optional[str] = None
     character_id: Optional[int] = None
 
+
 class Prompt(BaseModel):
     system_prompt: str
     user_content: str
+
 
 class RawResponse(BaseModel):
     text: str
     tool_calls: Optional[List[Dict[str, Any]]] = None
     state_updates: Optional[Dict[str, Any]] = None
     events: Optional[List[Dict[str, Any]]] = None
+
 
 class NarrativeResult(BaseModel):
     narration: str
@@ -99,7 +111,9 @@ class NarrativeResult(BaseModel):
     events: Optional[List[Dict[str, Any]]] = None
     is_combat_active: bool = False
 
+
 # Database Models (SQLModel)
+
 
 class DBLocation(SQLModel, base=Base):
     __tablename__ = "location"
@@ -107,6 +121,7 @@ class DBLocation(SQLModel, base=Base):
     name: str
     description: str
     npcs: List[str] = SQLModelField(default=[], sa_column=Column(JSON))
+
 
 class DBNPC(SQLModel, base=Base):
     __tablename__ = "npc"
@@ -118,6 +133,7 @@ class DBNPC(SQLModel, base=Base):
     memories: List[Dict[str, str]] = SQLModelField(default=[], sa_column=Column(JSON))
     location_id: str = SQLModelField(default="1", index=True, foreign_key="location.id")
     custom_system_prompt: Optional[str] = None
+
 
 class DBWorldState(SQLModel, base=Base):
     __tablename__ = "world_state"

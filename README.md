@@ -1,5 +1,7 @@
 # Shangri-la: Age of Steam
 
+[![CI Pipeline](https://github.com/FoxLuffy/shangri-la-age-of-steam/actions/workflows/ci.yml/badge.svg)](https://github.com/FoxLuffy/shangri-la-age-of-steam/actions/workflows/ci.yml)
+
 A text-driven RPG powered by vLLM backends.
 
 ## Architecture & Key Features

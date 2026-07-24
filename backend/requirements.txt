@@ -8,3 +8,4 @@ openai
 jinja2
 sqlmodel
 python-multipart
+ruff

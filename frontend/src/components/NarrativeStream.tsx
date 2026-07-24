@@ -120,7 +120,14 @@ export default function NarrativeStream({
             >
               {glossary ? renderWithGlossary(msg.content, glossary) : msg.content}
 
-              {msg.events && msg.events.length > 0 && (
+              {msg.events && msg.events.length > 0 && msg.stateUpdates && (
+                (msg.stateUpdates.empire_updates?.brass_coins_change !== 0 && msg.stateUpdates.empire_updates?.brass_coins_change !== undefined) ||
+                (msg.stateUpdates.tool_durability_updates && msg.stateUpdates.tool_durability_updates.length > 0) ||
+                (msg.stateUpdates.inventory_updates && Object.keys(msg.stateUpdates.inventory_updates).length > 0) ||
+                (msg.stateUpdates.quest_updates && Object.keys(msg.stateUpdates.quest_updates).length > 0) ||
+                msg.stateUpdates.combat_updates?.is_combat_active ||
+                msg.stateUpdates.minigame_trigger
+              ) && (
                 <div className="mt-3 pt-2 border-t border-amber-900/40 flex flex-wrap gap-2 text-xs">
                   <span className="font-semibold text-amber-400">⚡ Dynamic Events:</span>
                   {msg.events.map((ev: any, idx: number) => (

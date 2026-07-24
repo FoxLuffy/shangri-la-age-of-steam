@@ -61,3 +61,31 @@ class AugmentationInstallRequest(BaseModel):
     character_id: int
     augmentation_id: str
 
+
+class TradeOfferRequest(BaseModel):
+    receiver_id: int
+    initiator_item_id: Optional[int] = None
+    initiator_coins: int = 0
+    receiver_item_id: Optional[int] = None
+    receiver_coins: int = 0
+
+
+class TradeAcceptRequest(BaseModel):
+    trade_id: int
+    accept: bool
+
+
+class GuildCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class GuildInviteRequest(BaseModel):
+    guild_id: int
+    character_id: int
+
+
+class BulletinMessageRequest(BaseModel):
+    location_id: str
+    content: str
+

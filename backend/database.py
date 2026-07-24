@@ -160,7 +160,38 @@ class Character(SQLModel, table=True):
     show_tutorials: bool = Field(default=True)
     location_id: str = Field(default="1", index=True)
     total_strain: int = Field(default=0)
+    guild_id: Optional[int] = Field(default=None, foreign_key="guild.id", index=True)
 
+
+class Guild(SQLModel, table=True):
+    __tablename__ = "guild"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    description: Optional[str] = None
+    treasury: int = Field(default=0)
+    leader_id: int = Field(foreign_key="character.id")
+
+
+class TradeHistory(SQLModel, table=True):
+    __tablename__ = "trade_history"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    initiator_id: int = Field(foreign_key="character.id")
+    receiver_id: int = Field(foreign_key="character.id")
+    initiator_item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    initiator_coins: int = Field(default=0)
+    receiver_item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    receiver_coins: int = Field(default=0)
+    status: str = Field(default="pending")  # pending, accepted, rejected
+    timestamp: str = Field(default="")
+
+
+class BulletinBoardMessage(SQLModel, table=True):
+    __tablename__ = "bulletin_board_message"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    location_id: str = Field(foreign_key="location.id", index=True)
+    author_id: int = Field(foreign_key="character.id")
+    content: str
+    timestamp: str = Field(default="")
 
 class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

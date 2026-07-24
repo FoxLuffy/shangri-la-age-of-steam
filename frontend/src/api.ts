@@ -349,3 +349,28 @@ export const navigateAirship = async (characterId: number, locationId: string) =
   });
   return data;
 };
+
+export const fetchGuildTreasury = async (guildId: number) => {
+  const { data } = await api.get(`/gameplay/guilds/treasury?guild_id=${guildId}`);
+  return data;
+};
+
+export const createGuild = async (characterId: number, name: string, description: string) => {
+  const { data } = await api.post(`/gameplay/guilds/create?character_id=${characterId}`, { name, description });
+  return data;
+};
+
+export const inviteGuild = async (leaderId: number, guildId: number, characterId: number) => {
+  const { data } = await api.post(`/gameplay/guilds/invite?leader_id=${leaderId}`, { guild_id: guildId, character_id: characterId });
+  return data;
+};
+
+export const fetchMessages = async (locationId: string) => {
+  const { data } = await api.get(`/gameplay/messages/board?location_id=${locationId}`);
+  return data;
+};
+
+export const sendMessage = async (characterId: number, locationId: string, content: string) => {
+  const { data } = await api.post(`/gameplay/messages/send?character_id=${characterId}`, { location_id: locationId, content });
+  return data;
+};

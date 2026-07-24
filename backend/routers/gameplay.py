@@ -9,13 +9,16 @@ from backend.client import VLLMClient
 from backend.database import NPC as DBNPC
 from backend.database import (
     Airship,
+    BulletinBoardMessage,
     Character,
+    Guild,
     Inventory,
     ItemCategory,
     Minigame,
     Quest,
     QuestState,
     QuestStateEnum,
+    TradeHistory,
     get_session,
 )
 from backend.database import Item as DBItem
@@ -26,11 +29,16 @@ from backend.repository import StateRepository
 from backend.schemas import (
     AirshipNavigateRequest,
     AugmentationInstallRequest,
+    BulletinMessageRequest,
     CharacterCreateRequest,
     GenerateGearRequest,
+    GuildCreateRequest,
+    GuildInviteRequest,
     MinigameActionRequest,
     MinigamePlayPayload,
     ToggleTutorialsRequest,
+    TradeAcceptRequest,
+    TradeOfferRequest,
 )
 from backend.websocket import manager
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
@@ -655,5 +663,152 @@ async def install_augmentation(req: AugmentationInstallRequest):
             "character_strain": char.total_strain,
             "brass_coins": char.brass_coins
         }
+
+@router.post("/trade/offer")
+async def trade_offer(initiator_id: int, req: TradeOfferRequest):
+    from datetime import datetime
+    with get_session() as session:
+        trade = TradeHistory(
+            initiator_id=initiator_id,
+            receiver_id=req.receiver_id,
+            initiator_item_id=req.initiator_item_id,
+            initiator_coins=req.initiator_coins,
+            receiver_item_id=req.receiver_item_id,
+            receiver_coins=req.receiver_coins,
+            status="pending",
+            timestamp=datetime.utcnow().isoformat()
+        )
+        session.add(trade)
+        session.commit()
+        session.refresh(trade)
+        return trade
+
+@router.post("/trade/accept")
+async def trade_accept(character_id: int, req: TradeAcceptRequest):
+    with get_session() as session:
+        trade = session.exec(select(TradeHistory).where(TradeHistory.id == req.trade_id)).first()
+        if not trade:
+            raise HTTPException(status_code=404, detail="Trade not found")
+        if trade.receiver_id != character_id:
+            raise HTTPException(status_code=403, detail="Not the receiver of this trade")
+        if trade.status != "pending":
+            raise HTTPException(status_code=400, detail="Trade is not pending")
+
+        if not req.accept:
+            trade.status = "rejected"
+            session.add(trade)
+            session.commit()
+            return {"status": "rejected"}
+
+        # For simplicity, we assume they have the items and coins, and we just swap them.
+        initiator = session.get(Character, trade.initiator_id)
+        receiver = session.get(Character, trade.receiver_id)
+
+        if initiator.brass_coins < trade.initiator_coins or receiver.brass_coins < trade.receiver_coins:
+            raise HTTPException(status_code=400, detail="Insufficient coins")
+
+        initiator.brass_coins += trade.receiver_coins - trade.initiator_coins
+        receiver.brass_coins += trade.initiator_coins - trade.receiver_coins
+
+        # Move items if present
+        if trade.initiator_item_id:
+            i_inv = session.exec(select(Inventory).where(Inventory.character_id == initiator.id, Inventory.item_id == trade.initiator_item_id)).first()
+            if i_inv and i_inv.quantity > 0:
+                i_inv.quantity -= 1
+                r_inv = session.exec(select(Inventory).where(Inventory.character_id == receiver.id, Inventory.item_id == trade.initiator_item_id)).first()
+                if r_inv:
+                    r_inv.quantity += 1
+                else:
+                    session.add(Inventory(character_id=receiver.id, item_id=trade.initiator_item_id, quantity=1))
+                session.add(i_inv)
+
+        if trade.receiver_item_id:
+            r_inv = session.exec(select(Inventory).where(Inventory.character_id == receiver.id, Inventory.item_id == trade.receiver_item_id)).first()
+            if r_inv and r_inv.quantity > 0:
+                r_inv.quantity -= 1
+                i_inv = session.exec(select(Inventory).where(Inventory.character_id == initiator.id, Inventory.item_id == trade.receiver_item_id)).first()
+                if i_inv:
+                    i_inv.quantity += 1
+                else:
+                    session.add(Inventory(character_id=initiator.id, item_id=trade.receiver_item_id, quantity=1))
+                session.add(r_inv)
+
+        trade.status = "accepted"
+        session.add(trade)
+        session.add(initiator)
+        session.add(receiver)
+        session.commit()
+        return {"status": "accepted"}
+
+@router.post("/guilds/create")
+async def create_guild(character_id: int, req: GuildCreateRequest):
+    with get_session() as session:
+        char = session.get(Character, character_id)
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+        if char.guild_id:
+            raise HTTPException(status_code=400, detail="Character already in a guild")
+
+        guild = Guild(name=req.name, description=req.description, leader_id=character_id)
+        session.add(guild)
+        session.commit()
+        session.refresh(guild)
+
+        char.guild_id = guild.id
+        session.add(char)
+        session.commit()
+        return {"id": guild.id, "name": guild.name, "description": guild.description, "treasury": guild.treasury, "leader_id": guild.leader_id}
+
+@router.post("/guilds/invite")
+async def invite_guild(leader_id: int, req: GuildInviteRequest):
+    with get_session() as session:
+        guild = session.get(Guild, req.guild_id)
+        if not guild or guild.leader_id != leader_id:
+            raise HTTPException(status_code=403, detail="Not guild leader")
+
+        target = session.get(Character, req.character_id)
+        if not target:
+            raise HTTPException(status_code=404, detail="Target character not found")
+
+        target.guild_id = guild.id
+        session.add(target)
+        session.commit()
+        return {"status": "success", "message": f"{target.name} added to guild"}
+
+@router.get("/guilds/treasury")
+async def get_guild_treasury(guild_id: int):
+    with get_session() as session:
+        guild = session.get(Guild, guild_id)
+        if not guild:
+            raise HTTPException(status_code=404, detail="Guild not found")
+
+        members = session.exec(select(Character).where(Character.guild_id == guild.id)).all()
+        return {
+            "guild": guild,
+            "members": [m.name for m in members],
+            "treasury": guild.treasury
+        }
+
+@router.post("/messages/send")
+async def send_message(character_id: int, req: BulletinMessageRequest):
+    from datetime import datetime
+    with get_session() as session:
+        msg = BulletinBoardMessage(
+            location_id=req.location_id,
+            author_id=character_id,
+            content=req.content,
+            timestamp=datetime.utcnow().isoformat()
+        )
+        session.add(msg)
+        session.commit()
+        session.refresh(msg)
+        return msg
+
+@router.get("/messages/board")
+async def get_messages(location_id: str):
+    with get_session() as session:
+        msgs = session.exec(select(BulletinBoardMessage).where(BulletinBoardMessage.location_id == location_id).order_by(BulletinBoardMessage.id.desc()).limit(50)).all()
+        return msgs
+
 
 

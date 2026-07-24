@@ -38,9 +38,9 @@
 
 **Goal:** Deepen the multiplayer experience beyond shared narrative space — add direct player-to-player interaction mechanics.
 
-- [ ] **Player Trading System**: Implement `/trade/offer` and `/trade/accept` endpoints. Players in the same location can propose item/currency trades via a split-screen trade modal. Both parties must confirm before the transaction executes. Add a `TradeHistory` ledger table for audit trails.
-- [ ] **Guild Formation**: Allow players to form named guilds with a shared treasury, guild emblem, and member roster. Guilds can collectively own properties, pool resources for large crafting projects, and declare allegiance to a faction (boosting faction standing for all members). Implement `/guilds/create`, `/guilds/invite`, `/guilds/treasury` endpoints and a `GuildPanel.tsx` component.
-- [ ] **Player Messaging & Bulletin Board**: Add a `/messages/send` endpoint for async player-to-player messages delivered on next login. Build a `BulletinBoard.tsx` component at each location where players can post public notices (trade offers, warnings, recruitment, role-play flavor text). Messages persist for 7 in-game days.
+- [x] **Player Trading System**: Implement `/trade/offer` and `/trade/accept` endpoints. Players in the same location can propose item/currency trades via a split-screen trade modal. Both parties must confirm before the transaction executes. Add a `TradeHistory` ledger table for audit trails.
+- [x] **Guild Formation**: Allow players to form named guilds with a shared treasury, guild emblem, and member roster. Guilds can collectively own properties, pool resources for large crafting projects, and declare allegiance to a faction (boosting faction standing for all members). Implement `/guilds/create`, `/guilds/invite`, `/guilds/treasury` endpoints and a `GuildPanel.tsx` component.
+- [x] **Player Messaging & Bulletin Board**: Add a `/messages/send` endpoint for async player-to-player messages delivered on next login. Build a `BulletinBoard.tsx` component at each location where players can post public notices (trade offers, warnings, recruitment, role-play flavor text). Messages persist for 7 in-game days.
 
 ---
 

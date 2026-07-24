@@ -16,6 +16,8 @@ import { WebSocketSync } from './WebSocketSync';
 import { StateUpdateHandler } from './StateUpdateHandler';
 import { useGameStore } from '../stores/gameStore';
 import WorldMap from './WorldMap';
+import GuildPanel from './GuildPanel';
+import BulletinBoard from './BulletinBoard';
 import { audioManager } from '../utils/AudioManager';
 
 
@@ -47,6 +49,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isGuildOpen, setIsGuildOpen] = useState(false);
+  const [isBoardOpen, setIsBoardOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -422,6 +426,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
           onClose={() => setIsMapOpen(false)}
         />
       )}
+      {isGuildOpen && <GuildPanel characterId={characterId || 0} onClose={() => setIsGuildOpen(false)} />}
+      {isBoardOpen && <BulletinBoard characterId={characterId || 0} locationId={currentLocationId} onClose={() => setIsBoardOpen(false)} />}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />
       
@@ -499,11 +505,25 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setIsBoardOpen(true)}
+            className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>📜</span>
+            <span>BOARD</span>
+          </button>
+          <button
+            onClick={() => setIsGuildOpen(true)}
+            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>🛡️</span>
+            <span>GUILD</span>
+          </button>
+          <button
             onClick={() => setIsMapOpen(true)}
             className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded shadow-lg transition-all flex items-center gap-2"
           >
             <span>🧭</span>
-            <span>OPEN WORLD MAP</span>
+            <span>MAP</span>
           </button>
         </div>
       </div>

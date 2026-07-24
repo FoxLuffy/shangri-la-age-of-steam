@@ -15,6 +15,7 @@ import ActionBar from './ActionBar';
 import { WebSocketSync } from './WebSocketSync';
 import { StateUpdateHandler } from './StateUpdateHandler';
 import { useGameStore } from '../stores/gameStore';
+import WorldMap from './WorldMap';
 
 interface Message {
   id: string;
@@ -43,6 +44,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Connected to vLLM Engine');
   const [showHistory, setShowHistory] = useState(false);
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [isEnvExpanded, setIsEnvExpanded] = useState(() => localStorage.getItem('saos_env_expanded') === 'true');
   const [clientId] = useState(() => `client-${Math.random().toString(36).substring(2, 9)}`);
   
@@ -399,6 +401,14 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 rounded-xl border border-amber-900/40 shadow-2xl overflow-hidden font-mono relative">
       <AudioManager locationId={currentLocationId} mood={selectedMood} />
       {showHistory && <WorldHistory onClose={() => setShowHistory(false)} />}
+      {isMapOpen && (
+        <WorldMap 
+          locations={allLocations}
+          currentLocationId={currentLocationId}
+          onLocationSelect={handleLocationSwitch}
+          onClose={() => setIsMapOpen(false)}
+        />
+      )}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />
       
@@ -475,20 +485,13 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-slate-400">Fast Travel:</span>
-          {allLocations.map((loc) => (
-            <button
-              key={loc.id}
-              onClick={() => handleLocationSwitch(loc.id)}
-              className={`px-2.5 py-1 rounded transition-colors ${
-                loc.id === currentLocationId
-                  ? 'bg-amber-600 text-slate-950 font-bold shadow'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {loc.name}
-            </button>
-          ))}
+          <button
+            onClick={() => setIsMapOpen(true)}
+            className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>🧭</span>
+            <span>OPEN WORLD MAP</span>
+          </button>
         </div>
       </div>
 

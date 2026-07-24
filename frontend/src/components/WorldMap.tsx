@@ -1,0 +1,297 @@
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Location } from '../api';
+
+interface WorldMapProps {
+  locations: Location[];
+  currentLocationId: string;
+  onLocationSelect: (locationId: string) => void;
+  onClose: () => void;
+}
+
+interface NodeData {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  radius: number;
+  controllingFaction?: string;
+}
+
+export default function WorldMap({ locations, currentLocationId, onLocationSelect, onClose }: WorldMapProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [isTraveling, setIsTraveling] = useState(false);
+  const [travelState, setTravelState] = useState<{fromId: string, toId: string, progress: number} | null>(null);
+
+  // Generate node positions in a circle
+  const nodes = useMemo<NodeData[]>(() => {
+    if (locations.length === 0) return [];
+    
+    // We'll calculate actual x, y based on canvas size, but let's store normalized positions 0-1
+    return locations.map((loc, i) => {
+      const angle = (i / locations.length) * 2 * Math.PI - Math.PI / 2;
+      return {
+        id: loc.id,
+        name: loc.name,
+        // Calculate normalized positions with a bit of randomness or just a circle
+        x: 0.5 + 0.35 * Math.cos(angle),
+        y: 0.5 + 0.35 * Math.sin(angle),
+        radius: 20
+      };
+    });
+  }, [locations]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let bgImage = new Image();
+    bgImage.src = '/steampunk_map_bg.jpg';
+
+    const render = () => {
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      if (bgImage.complete && bgImage.naturalWidth > 0) {
+        // Draw background
+        ctx.globalAlpha = 0.4; // Darken it a bit
+        ctx.drawImage(bgImage, 0, 0, width, height);
+        ctx.globalAlpha = 1.0;
+      } else {
+        ctx.fillStyle = '#0f172a'; // slate-950
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // Draw brass pipes (connections)
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      // Connect nodes in a ring, plus random cross connections
+      ctx.strokeStyle = '#92400e'; // amber-800
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 10;
+      
+      for (let i = 0; i < nodes.length; i++) {
+        const current = nodes[i];
+        const next = nodes[(i + 1) % nodes.length];
+        
+        ctx.beginPath();
+        ctx.moveTo(current.x * width, current.y * height);
+        ctx.lineTo(next.x * width, next.y * height);
+        ctx.stroke();
+
+        // Inner highlight for brass pipe
+        ctx.strokeStyle = '#fbbf24'; // amber-400
+        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#92400e';
+        ctx.shadowBlur = 10;
+      }
+
+      // Draw nodes
+      nodes.forEach(node => {
+        const x = node.x * width;
+        const y = node.y * height;
+        const isCurrent = node.id === currentLocationId;
+        const isHovered = node.id === hoveredNodeId;
+
+        // Outer brass ring
+        ctx.beginPath();
+        ctx.arc(x, y, node.radius + 4, 0, 2 * Math.PI);
+        ctx.fillStyle = '#b45309'; // amber-700
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 15;
+        ctx.fill();
+
+        // Inner core
+        ctx.beginPath();
+        ctx.arc(x, y, node.radius, 0, 2 * Math.PI);
+        if (isCurrent) {
+          ctx.fillStyle = '#38bdf8'; // sky-400
+          ctx.shadowColor = '#0284c7'; // sky-600
+          ctx.shadowBlur = 20;
+        } else if (isHovered) {
+          ctx.fillStyle = '#fbbf24'; // amber-400
+          ctx.shadowColor = '#d97706'; // amber-600
+          ctx.shadowBlur = 15;
+        } else {
+          ctx.fillStyle = '#1e293b'; // slate-800
+          ctx.shadowBlur = 0;
+        }
+        ctx.fill();
+
+        // Draw gear teeth around the ring (simplified)
+        ctx.strokeStyle = '#fcd34d'; // amber-300
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * 2 * Math.PI + (isCurrent ? Date.now() / 1000 : 0);
+          const r1 = node.radius + 4;
+          const r2 = node.radius + 8;
+          ctx.beginPath();
+          ctx.moveTo(x + Math.cos(angle) * r1, y + Math.sin(angle) * r1);
+          ctx.lineTo(x + Math.cos(angle) * r2, y + Math.sin(angle) * r2);
+          ctx.stroke();
+        }
+
+        // Draw node name
+        ctx.font = isHovered || isCurrent ? 'bold 16px "Courier New", monospace' : '14px "Courier New", monospace';
+        ctx.fillStyle = isCurrent ? '#bae6fd' : '#fef3c7'; // sky-200 or amber-50
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(node.name, x, y + node.radius + 25);
+      });
+
+      // Draw Airship if traveling
+      if (travelState) {
+        const fromNode = nodes.find(n => n.id === travelState.fromId);
+        const toNode = nodes.find(n => n.id === travelState.toId);
+        
+        if (fromNode && toNode) {
+          const startX = fromNode.x * width;
+          const startY = fromNode.y * height;
+          const endX = toNode.x * width;
+          const endY = toNode.y * height;
+          
+          const airshipX = startX + (endX - startX) * travelState.progress;
+          const airshipY = startY + (endY - startY) * travelState.progress;
+          
+          ctx.beginPath();
+          ctx.arc(airshipX, airshipY, 8, 0, 2 * Math.PI);
+          ctx.fillStyle = '#10b981'; // emerald-500
+          ctx.shadowColor = '#059669'; // emerald-600
+          ctx.shadowBlur = 15;
+          ctx.fill();
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    bgImage.onload = () => {
+      render();
+    };
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [nodes, currentLocationId, hoveredNodeId, travelState]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current && containerRef.current) {
+        canvasRef.current.width = containerRef.current.clientWidth;
+        canvasRef.current.height = containerRef.current.clientHeight;
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || isTraveling) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scaleX = canvasRef.current.width / rect.width;
+    const scaleY = canvasRef.current.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    let hovered = null;
+    for (const node of nodes) {
+      const nodeX = node.x * canvasRef.current.width;
+      const nodeY = node.y * canvasRef.current.height;
+      const dist = Math.sqrt((x - nodeX) ** 2 + (y - nodeY) ** 2);
+      if (dist <= node.radius + 10) {
+        hovered = node.id;
+        break;
+      }
+    }
+    setHoveredNodeId(hovered);
+  };
+
+  const handleMouseClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (hoveredNodeId && hoveredNodeId !== currentLocationId && !isTraveling) {
+      setIsTraveling(true);
+      
+      const startTime = performance.now();
+      const duration = 1500; // 1.5 seconds travel time
+      
+      const travelAnim = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function: easeInOutQuad
+        const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        
+        setTravelState({
+          fromId: currentLocationId,
+          toId: hoveredNodeId,
+          progress: easeProgress
+        });
+        
+        if (progress < 1) {
+          requestAnimationFrame(travelAnim);
+        } else {
+          onLocationSelect(hoveredNodeId);
+          onClose(); // Close modal after travel animation
+        }
+      };
+      
+      requestAnimationFrame(travelAnim);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-5xl h-[80vh] bg-slate-900 border border-amber-800/60 rounded-xl shadow-[0_0_50px_rgba(180,83,9,0.3)] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 bg-slate-950/80 border-b border-amber-900/50">
+          <h2 className="text-xl font-bold text-amber-500 tracking-widest uppercase copper-gradient-text flex items-center gap-2">
+            <span>🧭</span> World Map
+          </h2>
+          <button 
+            onClick={onClose}
+            className="text-slate-400 hover:text-amber-400 transition-colors"
+          >
+            ✕ CLOSE
+          </button>
+        </div>
+        
+        {/* Map Canvas */}
+        <div className="flex-1 relative" ref={containerRef}>
+          <canvas
+            ref={canvasRef}
+            onMouseMove={handleMouseMove}
+            onClick={handleMouseClick}
+            onMouseLeave={() => setHoveredNodeId(null)}
+            className="absolute inset-0 w-full h-full cursor-crosshair"
+            style={{ display: 'block' }}
+          />
+          
+          {/* Overlay info */}
+          {hoveredNodeId && !isTraveling && hoveredNodeId !== currentLocationId && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/90 border border-amber-600/50 px-6 py-3 rounded-full text-amber-200 text-sm shadow-xl pointer-events-none animate-pulse">
+              Click to travel to {nodes.find(n => n.id === hoveredNodeId)?.name}
+            </div>
+          )}
+          {isTraveling && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-sky-900/90 border border-sky-500/50 px-6 py-2 rounded text-sky-200 text-sm shadow-xl pointer-events-none">
+              Traveling to destination...
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from backend.models import PlayerAction, WorldState
+from unittest.mock import MagicMock, patch
+
 from backend.database import WorldEvent
+from backend.models import PlayerAction, WorldState
 from backend.prompt_utils import build_narrative_prompt
+
 
 @patch("backend.prompt_utils.get_session")
 def test_gossip_engine_injection(mock_get_session):
@@ -14,8 +15,8 @@ def test_gossip_engine_injection(mock_get_session):
 
     state = WorldState()
     action = PlayerAction(action_text="I ask about the news.", current_location_id="1")
-    
+
     prompt = build_narrative_prompt(state, action)
-    
+
     assert "Current World Gossip / Recent Rumors:" in prompt
     assert "The Copper shortage has begun!" in prompt

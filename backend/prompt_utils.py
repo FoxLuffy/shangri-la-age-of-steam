@@ -1,11 +1,12 @@
 import os
 from typing import Optional
 
+from backend.database import WorldEvent, get_session
 from backend.models import Location, PlayerAction, WorldState
 from jinja2 import Template
 from sqlmodel import select
 
-from backend.database import WorldEvent, get_session
+
 def get_dynamic_narration(
     action: Optional[PlayerAction] = None, location: Optional[Location] = None, world_state: Optional[WorldState] = None
 ) -> str:

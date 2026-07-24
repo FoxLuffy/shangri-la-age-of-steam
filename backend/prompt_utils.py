@@ -1,8 +1,10 @@
 import os
 from typing import Optional
 
+from backend.database import WorldEvent, get_session
 from backend.models import Location, PlayerAction, WorldState
 from jinja2 import Template
+from sqlmodel import select
 
 
 def get_dynamic_narration(
@@ -79,6 +81,20 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
     location_properties = [p for p in all_properties if str(p.location_id) == str(loc_id)]
     player_properties = [p for p in all_properties if p.owner_id == player_id] if player_id else []
 
+    recent_events = []
+    try:
+        with get_session() as session:
+            events = session.exec(
+                select(WorldEvent)
+                .where(WorldEvent.is_active == 1)
+                .order_by(WorldEvent.id.desc())
+                .limit(3)
+            ).all()
+            for event in events:
+                recent_events.append(event.event_text)
+    except Exception:
+        pass
+
     prompt_str = template.render(
         location={"name": loc_name, "description": loc_desc},
         active_npcs=active_npcs,
@@ -94,6 +110,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         player_properties=player_properties,
         ghost_echoes=ghost_echoes,
         character_name=getattr(getattr(state, "player_stats", None), "name", "Traveler"),
+        recent_events=recent_events,
     )
 
     if hasattr(action, "mood") and action.mood:

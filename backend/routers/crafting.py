@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from backend.database import (
     Character,
+    CraftingProficiency,
     KnownRecipe,
     Recipe,
     RecipeRequirement,
@@ -17,6 +18,47 @@ router = APIRouter(prefix="/crafting")
 
 # Probability that an experimentation attempt with the right materials yields a discovery.
 DISCOVERY_CHANCE = 0.5
+
+# Crafting specialization (C3.2).
+BRANCHES = ["metallurgy", "alchemy", "clockwork"]
+XP_PER_LEVEL = 3
+MAX_LEVEL = 10
+SUCCESS_BASE = 0.5
+SUCCESS_PER_LEVEL = 0.1
+
+
+def level_for_xp(xp: int) -> int:
+    return min(MAX_LEVEL, xp // XP_PER_LEVEL)
+
+
+def craft_success_chance(level: int, tier: int) -> float:
+    chance = SUCCESS_BASE + SUCCESS_PER_LEVEL * (level - tier)
+    return max(0.05, min(0.98, chance))
+
+
+def roll_success(chance: float) -> bool:
+    return random.random() < chance
+
+
+def get_or_create_proficiency(session, character_id: int, branch: str) -> CraftingProficiency:
+    prof = session.exec(
+        select(CraftingProficiency).where(
+            CraftingProficiency.character_id == character_id,
+            CraftingProficiency.branch == branch,
+        )
+    ).first()
+    if prof is None:
+        prof = CraftingProficiency(character_id=character_id, branch=branch, xp=0)
+        session.add(prof)
+        session.commit()
+        session.refresh(prof)
+    return prof
+
+
+def add_craft_xp(session, character_id: int, branch: str) -> None:
+    prof = get_or_create_proficiency(session, character_id, branch)
+    prof.xp += 1
+    session.add(prof)
 
 
 class DiscoverRequest(BaseModel):
@@ -47,6 +89,16 @@ def _grant(session, character_id: int, recipe_id: int, method: str) -> Optional[
     )
     session.add(known)
     return known
+
+
+@router.get("/proficiency")
+async def list_proficiency(character_id: int):
+    with get_session() as session:
+        result = []
+        for branch in BRANCHES:
+            prof = get_or_create_proficiency(session, character_id, branch)
+            result.append({"branch": branch, "level": level_for_xp(prof.xp), "xp": prof.xp})
+        return result
 
 
 @router.get("/known")

@@ -43,53 +43,70 @@ def _build_snapshot(session, character: Character) -> dict:
     }
 
 
+def _save_payload(save: SaveState) -> dict:
+    return {
+        "id": save.id,
+        "character_id": save.character_id,
+        "name": save.name,
+        "created_at": save.created_at,
+    }
+
+
 @router.post("/saves")
 async def create_save(req: SaveCreateRequest):
+    """Create or overwrite the single save slot for a character.
+
+    Each character has at most one save state. Saving again (manually or via
+    autosave) overwrites the existing slot rather than creating a new one.
+    """
     with get_session() as session:
         character = session.get(Character, req.character_id)
         if not character:
             raise HTTPException(status_code=404, detail="Character not found")
 
-        save = SaveState(
-            character_id=character.id,
-            name=req.name or f"{character.name} — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}",
-            created_at=datetime.utcnow().isoformat() + "Z",
-            snapshot=_build_snapshot(session, character),
-        )
+        save = session.exec(
+            select(SaveState).where(SaveState.character_id == character.id)
+        ).first()
+        is_new = save is None
+        if is_new:
+            save = SaveState(character_id=character.id)
+
+        default_name = f"{character.name} — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+        if req.name:
+            save.name = req.name
+        elif is_new:
+            save.name = default_name
+        # Otherwise keep the existing slot name on overwrite/autosave.
+        save.created_at = datetime.utcnow().isoformat() + "Z"
+        save.snapshot = _build_snapshot(session, character)
         session.add(save)
         session.commit()
         session.refresh(save)
-        return {
-            "id": save.id,
-            "character_id": save.character_id,
-            "name": save.name,
-            "created_at": save.created_at,
-        }
+        return _save_payload(save)
 
 
-@router.get("/saves")
-async def list_saves(character_id: int):
+@router.get("/saves/{character_id}")
+async def get_save(character_id: int):
     with get_session() as session:
-        saves = session.exec(
-            select(SaveState)
-            .where(SaveState.character_id == character_id)
-            .order_by(SaveState.id.desc())
-        ).all()
-        return [
-            {"id": s.id, "character_id": s.character_id, "name": s.name, "created_at": s.created_at}
-            for s in saves
-        ]
-
-
-@router.get("/saves/{save_id}/load")
-async def load_save(save_id: int):
-    with get_session() as session:
-        save = session.get(SaveState, save_id)
+        save = session.exec(
+            select(SaveState).where(SaveState.character_id == character_id)
+        ).first()
         if not save:
-            raise HTTPException(status_code=404, detail="Save not found")
+            raise HTTPException(status_code=404, detail="No save for this character")
+        return _save_payload(save)
+
+
+@router.get("/saves/{character_id}/load")
+async def load_save(character_id: int):
+    with get_session() as session:
+        save = session.exec(
+            select(SaveState).where(SaveState.character_id == character_id)
+        ).first()
+        if not save:
+            raise HTTPException(status_code=404, detail="No save for this character")
 
         snapshot = save.snapshot or {}
-        character = session.get(Character, save.character_id)
+        character = session.get(Character, character_id)
         if not character:
             raise HTTPException(status_code=404, detail="Character not found")
 
@@ -146,18 +163,20 @@ async def load_save(save_id: int):
         session.commit()
         return {
             "status": "loaded",
-            "save_id": save_id,
+            "save_id": save.id,
             "character_id": character.id,
             "name": save.name,
         }
 
 
-@router.delete("/saves/{save_id}")
-async def delete_save(save_id: int):
+@router.delete("/saves/{character_id}")
+async def delete_save(character_id: int):
     with get_session() as session:
-        save = session.get(SaveState, save_id)
+        save = session.exec(
+            select(SaveState).where(SaveState.character_id == character_id)
+        ).first()
         if not save:
-            raise HTTPException(status_code=404, detail="Save not found")
+            raise HTTPException(status_code=404, detail="No save for this character")
         session.delete(save)
         session.commit()
-        return {"status": "deleted", "save_id": save_id}
+        return {"status": "deleted", "character_id": character_id}

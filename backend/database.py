@@ -377,7 +377,7 @@ class LedgerEntry(SQLModel, table=True):
 class SaveState(SQLModel, table=True):
     __tablename__ = "save_state"
     id: Optional[int] = Field(default=None, primary_key=True)
-    character_id: int = Field(foreign_key="character.id", index=True)
+    character_id: int = Field(foreign_key="character.id", index=True, unique=True)
     name: str = Field(default="Save")
     created_at: str = Field(default="")
     snapshot: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))

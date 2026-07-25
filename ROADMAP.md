@@ -54,14 +54,17 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - D7 [COMPLETE] PWA/perf/DX: vite-plugin-pwa, react-virtuoso, .env.example, scripts/
 
 ## E. Save State Management (NEW)
-- E1 [PARTIAL] Save slots: /sessions/{user_id} lists characters as slots — add explicit
-      slot metadata (name, timestamp, playtime, location preview)
-- E2 [COMPLETE] Manual save/load: POST /saves (snapshot), GET /saves/{id}/load,
-      GET /saves?character_id=, DELETE /saves/{id}. Snapshot = character + world +
-      quest + inventory state. Router backend/routers/saves.py, SaveState model,
-      Alembic migration c3a1f0e2d4b7. 6 tests in test_save_state.py.
-- E3 [NOT STARTED] Autosave & checkpoints: periodic + pre-combat/pre-travel checkpoints,
-      rolling ring buffer (keep last N)
+> Model: ONE save slot per character (single SaveState row, unique character_id).
+> Manual save and autosave both overwrite that one slot — no multi-slot per character.
+- E1 [PARTIAL] Character sessions: /sessions/{user_id} lists a user's characters —
+      add per-character save metadata (last-saved timestamp, location preview)
+- E2 [COMPLETE] Manual save/load, single slot per character: POST /saves (create or
+      overwrite), GET /saves/{character_id}, GET /saves/{character_id}/load,
+      DELETE /saves/{character_id}. Snapshot = character + world + quest + inventory.
+      Router backend/routers/saves.py, SaveState model (unique character_id),
+      Alembic migration c3a1f0e2d4b7. 8 tests in test_save_state.py.
+- E3 [NOT STARTED] Autosave & checkpoints: periodic + pre-combat/pre-travel autosave
+      that overwrites the character's single slot (reuses POST /saves)
 - E4 [NOT STARTED] Export/import save (JSON download/upload) with schema validation
 - E5 [NOT STARTED] Save-slot UI: SaveManager.tsx in SessionLobby — create/load/delete/
       rename/export, with confirmation on destructive actions

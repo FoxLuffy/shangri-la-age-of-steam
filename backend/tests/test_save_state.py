@@ -6,6 +6,7 @@ from backend.database import (
     Quest,
     QuestState,
     QuestStateEnum,
+    SaveState,
     SQLModel,
     User,
     WorldState,
@@ -74,10 +75,52 @@ def test_create_save_unknown_character_404():
     assert resp.status_code == 404
 
 
+def test_second_save_overwrites_single_slot():
+    ids = setup_db()
+    cid = ids["character_id"]
+
+    first = client.post("/saves", json={"character_id": cid, "name": "manual"}).json()
+
+    # Change state, then save again (e.g. autosave) — must overwrite the same row.
+    with Session(engine) as session:
+        char = session.get(Character, cid)
+        char.brass_coins = 12345
+        session.add(char)
+        session.commit()
+
+    second = client.post("/saves", json={"character_id": cid}).json()
+
+    # Same slot (same id), name preserved when not re-specified.
+    assert second["id"] == first["id"]
+    assert second["name"] == "manual"
+
+    # Exactly one save row exists for this character.
+    with Session(engine) as session:
+        rows = session.exec(select(SaveState).where(SaveState.character_id == cid)).all()
+        assert len(rows) == 1
+        assert rows[0].snapshot["character"]["brass_coins"] == 12345
+
+
+def test_get_save_metadata():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid, "name": "slot"})
+
+    resp = client.get(f"/saves/{cid}")
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "slot"
+
+
+def test_get_save_none_404():
+    ids = setup_db()
+    resp = client.get(f"/saves/{ids['character_id']}")
+    assert resp.status_code == 404
+
+
 def test_load_restores_character_world_inventory_quests():
     ids = setup_db()
     cid = ids["character_id"]
-    save_id = client.post("/saves", json={"character_id": cid}).json()["id"]
+    client.post("/saves", json={"character_id": cid})
 
     # Mutate everything after the save.
     with Session(engine) as session:
@@ -101,7 +144,7 @@ def test_load_restores_character_world_inventory_quests():
         session.add(qs)
         session.commit()
 
-    resp = client.get(f"/saves/{save_id}/load")
+    resp = client.get(f"/saves/{cid}/load")
     assert resp.status_code == 200
 
     with Session(engine) as session:
@@ -124,34 +167,21 @@ def test_load_restores_character_world_inventory_quests():
         assert qs[0].state == QuestStateEnum.active
 
 
-def test_load_unknown_save_404():
-    setup_db()
-    resp = client.get("/saves/424242/load")
-    assert resp.status_code == 404
-
-
-def test_list_saves_for_character():
+def test_load_no_save_404():
     ids = setup_db()
-    cid = ids["character_id"]
-    client.post("/saves", json={"character_id": cid, "name": "slot A"})
-    client.post("/saves", json={"character_id": cid, "name": "slot B"})
-
-    resp = client.get(f"/saves?character_id={cid}")
-    assert resp.status_code == 200
-    saves = resp.json()
-    assert len(saves) == 2
-    names = {s["name"] for s in saves}
-    assert names == {"slot A", "slot B"}
+    resp = client.get(f"/saves/{ids['character_id']}/load")
+    assert resp.status_code == 404
 
 
 def test_delete_save():
     ids = setup_db()
     cid = ids["character_id"]
-    save_id = client.post("/saves", json={"character_id": cid}).json()["id"]
+    client.post("/saves", json={"character_id": cid})
 
-    resp = client.delete(f"/saves/{save_id}")
+    resp = client.delete(f"/saves/{cid}")
     assert resp.status_code == 200
 
-    # Gone: loading it now 404s.
-    assert client.get(f"/saves/{save_id}/load").status_code == 404
-    assert client.get(f"/saves?character_id={cid}").json() == []
+    # Gone: fetching/loading now 404s.
+    assert client.get(f"/saves/{cid}").status_code == 404
+    assert client.get(f"/saves/{cid}/load").status_code == 404
+    assert client.delete(f"/saves/{cid}").status_code == 404

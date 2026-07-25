@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["character_id"], ["character.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_save_state_character_id", "save_state", ["character_id"])
+    op.create_index("ix_save_state_character_id", "save_state", ["character_id"], unique=True)
 
 
 def downgrade() -> None:

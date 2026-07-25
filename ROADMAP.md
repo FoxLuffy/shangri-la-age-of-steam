@@ -63,8 +63,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
       DELETE /saves/{character_id}. Snapshot = character + world + quest + inventory.
       Router backend/routers/saves.py, SaveState model (unique character_id),
       Alembic migration c3a1f0e2d4b7. 8 tests in test_save_state.py.
-- E3 [NOT STARTED] Autosave & checkpoints: periodic + pre-combat/pre-travel autosave
-      that overwrites the character's single slot (reuses POST /saves)
+- E3 [COMPLETE] Autosave: frontend-driven, one living save (overwrites the single slot
+      via createSave). Periodic every 5 player actions + pre-travel checkpoint. No
+      pre-combat (combat is emergent). Module frontend/src/utils/autosave.ts wired into
+      ChatInterface (submitAction + handleLocationSwitch); best-effort, never blocks
+      gameplay. 5 tests in autosave.test.ts.
 - E4 [NOT STARTED] Export/import save (JSON download/upload) with schema validation
 - E5 [COMPLETE] Save UI: SaveManager.tsx rendered inside the in-game SettingsMenu —
       Save (create/overwrite), Load, Delete, with window.confirm on Load + Delete.

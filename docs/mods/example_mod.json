@@ -1,0 +1,36 @@
+{
+  "factions": [
+    {
+      "id": "mod_clockwork_cabal",
+      "name": "The Clockwork Cabal",
+      "description": "A secretive guild of rogue tinkers who believe automata deserve free will."
+    }
+  ],
+  "locations": [
+    {
+      "id": "mod_brass_bazaar",
+      "name": "The Brass Bazaar",
+      "description": "A cramped, lamp-lit market where black-market gears change hands.",
+      "faction_id": "mod_clockwork_cabal"
+    }
+  ],
+  "npcs": [
+    {
+      "id": "mod_tik_the_tinker",
+      "name": "Tik the Tinker",
+      "traits": ["inventive", "paranoid"],
+      "current_dialogue": "Keep your voice down — the Syndicate has ears everywhere.",
+      "disposition": 0.2,
+      "location_id": "mod_brass_bazaar",
+      "faction_id": "mod_clockwork_cabal",
+      "is_hostile": false
+    }
+  ],
+  "items": [
+    {
+      "name": "Aether-Tuned Gear",
+      "description": "A precision gear that hums faintly when aether is near.",
+      "category": "Steam_Tech_Components"
+    }
+  ]
+}

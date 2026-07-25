@@ -271,24 +271,24 @@ class NarrativeEngine:
             if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
                 for inv_update in state_updates["inventory_updates"]:
                     if isinstance(inv_update, dict):
-                        repository.apply_inventory_update(inv_update)
+                        repository.apply_inventory_update(inv_update, action.character_id or 1)
 
             if "tool_durability_updates" in state_updates and isinstance(
                 state_updates["tool_durability_updates"], list
             ):
                 for td_update in state_updates["tool_durability_updates"]:
                     if isinstance(td_update, dict):
-                        repository.apply_tool_durability_update(td_update)
+                        repository.apply_tool_durability_update(td_update, action.character_id or 1)
 
             if "quest_updates" in state_updates and isinstance(state_updates["quest_updates"], list):
                 for quest_update in state_updates["quest_updates"]:
                     if isinstance(quest_update, dict):
-                        repository.apply_quest_update(quest_update)
+                        repository.apply_quest_update(quest_update, action.character_id or 1)
 
             if "faction_updates" in state_updates and isinstance(state_updates["faction_updates"], list):
                 for faction_update in state_updates["faction_updates"]:
                     if isinstance(faction_update, dict):
-                        repository.apply_faction_update(faction_update)
+                        repository.apply_faction_update(faction_update, action.character_id or 1)
 
             if "combat_updates" in state_updates:
                 repository.apply_combat_update(state_updates["combat_updates"], action.character_id or 1)
@@ -302,7 +302,7 @@ class NarrativeEngine:
             if "minigame_trigger" in state_updates:
                 minigame_type = state_updates["minigame_trigger"]
                 if minigame_type in ["hack", "lockpick"]:
-                    repository.trigger_minigame(minigame_type)
+                    repository.trigger_minigame(minigame_type, action.character_id or 1)
 
             if state_updates.get("location_id"):
                 state.current_location_id = state_updates["location_id"]
@@ -335,10 +335,12 @@ class NarrativeEngine:
             if turn_order:
                 # Advance turn
                 idx = (idx + 1) % len(turn_order)
-                # Skip NPCs for now by advancing until a player is found, or we could let a background task handle NPCs
-                # For simplicity in this feature, let's just advance to the next player.
-                # Actually, the prompt says "Players must wait their turn to act".
-                # If we just advance the turn index in the database:
+                original_idx = idx
+                while turn_order[idx].get("type") != "player":
+                    idx = (idx + 1) % len(turn_order)
+                    if idx == original_idx:
+                        break
+
                 from backend.database import CombatSession
                 from sqlmodel import select
 
@@ -347,8 +349,6 @@ class NarrativeEngine:
                     select(CombatSession).where(CombatSession.location_id == loc_id, CombatSession.is_active)
                 ).first()
                 if combat_session:
-                    # Advance through NPCs and let the engine just generate a generic action for them?
-                    # Or just advance the index.
                     combat_session.current_turn_index = idx
                     session.add(combat_session)
                     session.commit()
@@ -509,7 +509,7 @@ def simulate_weather_time(session: Session):
         else:
             db_state.time_period = "Night"
 
-        if random.random() < 0.2:
+        if random.random() < 0.02:
             db_state.weather = random.choice(["Clear", "Fog", "Rain", "Thunderstorm"])
 
         session.add(db_state)
@@ -529,15 +529,13 @@ async def world_tick():
         simulate_economy_tick(session)
 
         # Passive Income Generation
-        char_id = 1
-        char = session.get(Character, char_id)
-        if char:
-            properties = session.exec(select(Property).where(Property.owner_id == char_id)).all()
+        chars = session.exec(select(Character)).all()
+        for char in chars:
+            properties = session.exec(select(Property).where(Property.owner_id == char.id)).all()
             total_income = sum(p.income_per_tick for p in properties)
             if total_income > 0:
                 char.brass_coins += total_income
                 session.add(char)
-                session.commit()
-                logger.info(f"Passive income generated: {total_income} coins for Character {char_id}")
+        session.commit()
 
     logger.info("World tick completed.")

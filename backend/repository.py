@@ -55,28 +55,26 @@ class StateRepository:
                 else (db_loc.npcs or []),
             )
 
-        active_npc_ids = db_state.active_npcs_ids if db_state and db_state.active_npcs_ids else []
         active_npcs: List[NPC] = []
-        for npc_id in active_npc_ids:
-            db_npc = self.session.get(DBNPC, npc_id)
-            if db_npc:
-                active_npcs.append(
-                    NPC(
-                        id=db_npc.id,
-                        name=db_npc.name,
-                        traits=db_npc.traits or [],
-                        current_dialogue=db_npc.current_dialogue,
-                        disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
-                        memories=db_npc.memories or [],
-                        faction_id=db_npc.faction_id,
-                        hp=db_npc.hp,
-                        max_hp=db_npc.max_hp,
-                        armor=db_npc.armor,
-                        status_effects=db_npc.status_effects or [],
-                        is_hostile=db_npc.is_hostile,
-                        custom_system_prompt=db_npc.custom_system_prompt,
-                    )
+        db_npcs_at_loc = self.session.exec(select(DBNPC).where(DBNPC.location_id == loc_id)).all()
+        for db_npc in db_npcs_at_loc:
+            active_npcs.append(
+                NPC(
+                    id=db_npc.id,
+                    name=db_npc.name,
+                    traits=db_npc.traits or [],
+                    current_dialogue=db_npc.current_dialogue,
+                    disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
+                    memories=db_npc.memories or [],
+                    faction_id=db_npc.faction_id,
+                    hp=db_npc.hp,
+                    max_hp=db_npc.max_hp,
+                    armor=db_npc.armor,
+                    status_effects=db_npc.status_effects or [],
+                    is_hostile=db_npc.is_hostile,
+                    custom_system_prompt=db_npc.custom_system_prompt,
                 )
+            )
 
         from backend.database import Inventory, Item, Quest, QuestState
 
@@ -171,7 +169,7 @@ class StateRepository:
 
         return WorldState(
             current_location_id=current_location.id,
-            active_npcs_ids=active_npc_ids,
+            active_npcs_ids=[npc.id for npc in active_npcs],
             global_event=db_state.global_event if db_state else None,
             world_memories=db_state.world_memories if db_state else [],
             global_system_prompt=global_sys_prompt,
@@ -222,13 +220,20 @@ class StateRepository:
 
     def update_location(self, location_id: str, data: Dict[str, Any]) -> Optional[DBLocation]:
         location = self.session.get(DBLocation, location_id)
-        if location:
+        if not location:
+            location = DBLocation(
+                id=location_id,
+                name=data.get("name", location_id),
+                description=data.get("description", "")
+            )
+            self.session.add(location)
+        else:
             for key, value in data.items():
                 if hasattr(location, key) and key != "id":
                     setattr(location, key, value)
             self.session.add(location)
-            self.session.commit()
-            self.session.refresh(location)
+        self.session.commit()
+        self.session.refresh(location)
         return location
 
     def update_npc(
@@ -636,7 +641,7 @@ class StateRepository:
 
             self.session.commit()
 
-    def apply_new_entities(self, new_entities: List[Dict[str, Any]]):
+    def apply_new_entities(self, new_entities: List[Dict[str, Any]], current_location_id: str = "1"):
         from backend.database import NPC as DBNPC
         from backend.database import Item
         from backend.database import Location as DBLocation
@@ -651,7 +656,7 @@ class StateRepository:
                         name=entity.get("name", "Unknown NPC"),
                         traits=entity.get("traits", []),
                         disposition=0.0,
-                        location_id="1",  # default, could be updated if we pass current location
+                        location_id=current_location_id,
                     )
                     self.session.add(npc)
             elif entity_type == "location":

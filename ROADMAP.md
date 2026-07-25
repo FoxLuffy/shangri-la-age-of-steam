@@ -66,8 +66,12 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - E3 [NOT STARTED] Autosave & checkpoints: periodic + pre-combat/pre-travel autosave
       that overwrites the character's single slot (reuses POST /saves)
 - E4 [NOT STARTED] Export/import save (JSON download/upload) with schema validation
-- E5 [NOT STARTED] Save-slot UI: SaveManager.tsx in SessionLobby — create/load/delete/
-      rename/export, with confirmation on destructive actions
+- E5 [COMPLETE] Save UI: SaveManager.tsx rendered inside the in-game SettingsMenu —
+      Save (create/overwrite), Load, Delete, with window.confirm on Load + Delete.
+      api.ts helpers (createSave/getSave/loadSave/deleteSave); Load reloads the app to
+      re-fetch restored state. 7 tests in SaveManager.test.tsx. (Rename/export deferred
+      to E4; placed in SettingsMenu not SessionLobby since resume is automatic and the
+      lobby has no active character.)
 
 ## F. Housekeeping
 - F1 [NOT STARTED] Fix pytest-from-subdir failure OR document root-only rule in README

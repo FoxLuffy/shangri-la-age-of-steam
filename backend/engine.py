@@ -262,6 +262,7 @@ class NarrativeEngine:
                                 "traits": npc.traits or [],
                                 "disposition": npc.disposition,
                                 "hp": 0 if is_dead else 100,
+                                "location_id": npc.location_id,
                             }
                             events.append({"type": "npc_state_change", "npc": npc_dict})
                         except Exception as e:

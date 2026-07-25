@@ -35,6 +35,12 @@ export function WebSocketSync({ clientId, characterId, onOpenMinigame, loadState
             if (isDead) {
               return prev.filter((n) => n.id !== msg.npc.id);
             }
+            
+            const currentLoc = useGameStore.getState().currentLocationId;
+            if (msg.npc.location_id && msg.npc.location_id !== currentLoc) {
+              return prev; // ignore npc_state_change for npcs not in current location
+            }
+
             const exists = prev.find((n) => n.id === msg.npc.id);
             if (exists) {
               return prev.map((n) => n.id === msg.npc.id ? msg.npc : n);

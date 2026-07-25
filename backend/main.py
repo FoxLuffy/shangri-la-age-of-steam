@@ -36,7 +36,7 @@ from sqlmodel import select
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from backend.routers import gameplay, saves
+from backend.routers import crafting, gameplay, saves
 from backend.simulation import simulate_faction_wars, simulate_global_market, world_simulation_loop
 
 # Background task reference
@@ -69,6 +69,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Shangri-la: Age of Steam API", lifespan=lifespan)
 app.include_router(gameplay.router, prefix="/gameplay")
 app.include_router(saves.router)
+app.include_router(crafting.router)
 
 # Enable CORS for frontend integration
 app.add_middleware(
@@ -536,6 +537,20 @@ async def craft_item(character_id: int, recipe_id: int):
         recipe = session.exec(select(Recipe).where(Recipe.id == recipe_id)).first()
         if not recipe:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found")
+
+        # Discovery gate: recipes are not known by default (roadmap C3.1).
+        from backend.database import KnownRecipe
+
+        known = session.exec(
+            select(KnownRecipe).where(
+                KnownRecipe.character_id == character_id, KnownRecipe.recipe_id == recipe_id
+            )
+        ).first()
+        if not known:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You have not discovered this recipe.",
+            )
 
         # Faction check
         if recipe.required_faction_id:

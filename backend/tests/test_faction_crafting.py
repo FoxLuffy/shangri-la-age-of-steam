@@ -55,6 +55,9 @@ def test_faction_crafting():
         # Test API
         client = TestClient(app)
 
+        # Recipes must be discovered before crafting (C3.1 discovery gate).
+        client.post("/crafting/discover", json={"character_id": char.id, "recipe_id": recipe.id})
+
         # 1. Success in alchemist location
         res1 = client.post(f"/craft?character_id={char.id}&recipe_id={recipe.id}")
         if res1.status_code != 200:

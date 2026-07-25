@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, UniqueConstraint
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
 
 sqlite_file_name = os.getenv("DATABASE_PATH", "saos.db")
@@ -286,6 +286,16 @@ class Inventory(SQLModel, table=True):
     item_id: int = Field(foreign_key="item.id")
     quantity: int = Field(default=0)
     durability: Optional[int] = Field(default=100)
+
+
+class KnownRecipe(SQLModel, table=True):
+    __tablename__ = "known_recipe"
+    __table_args__ = (UniqueConstraint("character_id", "recipe_id"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    recipe_id: int = Field(foreign_key="recipe.id", index=True)
+    method: str = Field(default="discovery")  # dialogue | exploration | experimentation | purchase
+    discovered_at: str = Field(default="")
 
 
 class Quest(SQLModel, table=True):

@@ -30,7 +30,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - C1 [COMPLETE] Airship navigation & aerial encounters
 - C2 [COMPLETE] Body augmentation & cybernetics
 - C3 [NOT STARTED] Crafting Depth & Recipe Discovery
-      - C3.1 Recipe discovery system (known_recipes table, 4 discovery paths)
+      - C3.1 [COMPLETE] Recipe discovery: KnownRecipe table (unique char+recipe), router
+        backend/routers/crafting.py — GET /crafting/known, POST /crafting/discover
+        (generic grant for dialogue/exploration/purchase paths), POST /crafting/experiment
+        (materials → RNG discovery). /craft gated 403 until discovered; zero starter recipes.
+        Alembic migration d5b2c9f1a3e8. 7 tests in test_crafting_discovery.py.
       - C3.2 Crafting specialization trees (Metallurgy/Alchemy/Clockwork, 0–10 proficiency)
       - C3.3 CraftingPanel.tsx (drag-drop grid, recipe browser, success probability)
 - C4 [COMPLETE] Multiplayer social: trading, guilds, bulletin board

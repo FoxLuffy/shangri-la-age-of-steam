@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { fetchMessages, sendMessage } from '../api';
-import { useGameStore } from '../stores/gameStore';
 
 export default function BulletinBoard({ characterId, locationId, onClose }: { characterId: number, locationId: string, onClose: () => void }) {
   const [messages, setMessages] = useState<any[]>([]);

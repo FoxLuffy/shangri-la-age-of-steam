@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { fetchGuildTreasury, createGuild, inviteGuild } from '../api';
-import { useGameStore } from '../stores/gameStore';
+import { useState } from 'react';
+import { createGuild, inviteGuild } from '../api';
+
 
 export default function GuildPanel({ characterId, onClose }: { characterId: number, onClose: () => void }) {
-  const [guildData, setGuildData] = useState<any>(null);
+  const [guildData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');

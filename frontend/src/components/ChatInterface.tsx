@@ -434,14 +434,14 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         <WorldMap 
           locations={allLocations}
           currentLocationId={currentLocationId}
-          characterId={characterId}
+          characterId={characterId || 0}
           onLocationSelect={handleLocationSwitch}
           onClose={() => setIsMapOpen(false)}
         />
       )}
       {isGuildOpen && <GuildPanel characterId={characterId || 0} onClose={() => setIsGuildOpen(false)} />}
       {isBoardOpen && <BulletinBoard characterId={characterId || 0} locationId={currentLocationId} onClose={() => setIsBoardOpen(false)} />}
-      {isBountyBoardOpen && <BountyBoard characterId={characterId || 0} onClose={() => setIsBountyBoardOpen(false)} />}
+      {isBountyBoardOpen && <BountyBoard isOpen={isBountyBoardOpen} characterId={characterId || 0} onClose={() => setIsBountyBoardOpen(false)} />}
       {isJournalOpen && <ArtifactJournal characterId={characterId || 0} onClose={() => setIsJournalOpen(false)} />}
       <WebSocketSync clientId={clientId} characterId={characterId} onOpenMinigame={onOpenMinigame} loadState={() => loadState()} />
       <StateUpdateHandler />

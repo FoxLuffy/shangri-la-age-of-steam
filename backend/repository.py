@@ -581,7 +581,11 @@ class StateRepository:
                     completed_bounties = list(char.completed_bounties or [])
                     for b_id in active_bounties:
                         bounty = self.session.get(Bounty, b_id)
-                        if bounty and bounty.status == "active" and (bounty.target_npc_type.lower() == npc.name.lower() or (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower())):
+                        import re
+                        is_name_match = bool(re.search(r'\b' + re.escape(bounty.target_npc_type.lower()) + r'\b', npc.name.lower())) if bounty else False
+                        is_faction_match = (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower()) if bounty else False
+                        
+                        if bounty and bounty.status == "active" and (is_name_match or is_faction_match):
                             bounty.status = "completed"
                             char.brass_coins += bounty.reward_coins
                             completed_bounties.append(b_id)

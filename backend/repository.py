@@ -212,6 +212,7 @@ class StateRepository:
             time_period=state.time_period,
             weather=state.weather,
             season=state.season,
+            is_combat_active=state.is_combat_active,
         )
         self.session.add(db_state)
         self.session.commit()
@@ -300,10 +301,8 @@ class StateRepository:
         self.session.commit()
         return entry
 
-    def apply_inventory_update(self, update: Dict[str, Any]):
+    def apply_inventory_update(self, update: Dict[str, Any], char_id: int = 1):
         from backend.database import Inventory, Item
-
-        char_id = 1
         action = update.get("action", "add")
         item_name = update.get("item_name")
         qty = update.get("quantity", 1)
@@ -340,10 +339,8 @@ class StateRepository:
 
         self.session.commit()
 
-    def apply_tool_durability_update(self, update: Dict[str, Any]):
+    def apply_tool_durability_update(self, update: Dict[str, Any], char_id: int = 1):
         from backend.database import Inventory, Item
-
-        char_id = 1
         tool_name = update.get("tool_name")
         change = update.get("durability_change", 0)
 
@@ -365,10 +362,8 @@ class StateRepository:
                 self.session.add(inv)
             self.session.commit()
 
-    def apply_quest_update(self, update: Dict[str, Any]):
+    def apply_quest_update(self, update: Dict[str, Any], char_id: int = 1):
         from backend.database import Quest, QuestState, QuestStateEnum
-
-        char_id = 1
         action = update.get("action", "add")
         title = update.get("quest_title")
         if not title:
@@ -404,10 +399,8 @@ class StateRepository:
         self.session.add(q_state)
         self.session.commit()
 
-    def trigger_minigame(self, minigame_type: str):
+    def trigger_minigame(self, minigame_type: str, char_id: int = 1):
         from backend.database import Character, Minigame
-
-        char_id = 1
 
         # Check if already exists
         existing = self.session.exec(
@@ -465,10 +458,8 @@ class StateRepository:
         self.session.add(minigame)
         self.session.commit()
 
-    def apply_faction_update(self, update: Dict[str, Any]):
+    def apply_faction_update(self, update: Dict[str, Any], char_id: int = 1):
         from backend.database import FactionStanding
-
-        char_id = 1
         faction_id = update.get("faction_id")
         change = update.get("change", 0.0)
 
@@ -590,7 +581,7 @@ class StateRepository:
                     completed_bounties = list(char.completed_bounties or [])
                     for b_id in active_bounties:
                         bounty = self.session.get(Bounty, b_id)
-                        if bounty and bounty.status == "active" and (bounty.target_npc_type.lower() in npc.name.lower() or (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower())):
+                        if bounty and bounty.status == "active" and (bounty.target_npc_type.lower() == npc.name.lower() or (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower())):
                             bounty.status = "completed"
                             char.brass_coins += bounty.reward_coins
                             completed_bounties.append(b_id)

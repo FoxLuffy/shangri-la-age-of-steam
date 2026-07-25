@@ -39,7 +39,7 @@ async def simulate_global_market(manager):
 
                     # Rare global spike (thousands of players buy)
                     if random.random() < 0.05:
-                        m.current_price *= 1.5
+                        m.current_price = min(m.base_price * 5, m.current_price * 1.1)
 
                     session.add(m)
                 session.commit()
@@ -92,8 +92,9 @@ async def simulate_faction_wars(manager):
                                 select(FactionStanding).where(FactionStanding.faction_id == faction_id)
                             ).all()
                             for s in standings:
-                                s.standing = s.standing * 0.5
-                                session.add(s)
+                                if s.standing > 0:
+                                    s.standing = s.standing * 0.5
+                                    session.add(s)
                             session.commit()
 
         except Exception as e:

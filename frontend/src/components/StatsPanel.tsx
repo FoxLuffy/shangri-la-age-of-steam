@@ -1,6 +1,6 @@
 import type { Character } from '../api';
 
-export default function StatsPanel({ character, worldState, onReset, onOpenEmpire, onOpenSettings, onOpenMarket, onOpenWorkshop, onOpenClinic }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void, onOpenSettings?: () => void, onOpenMarket?: () => void, onOpenWorkshop?: () => void, onOpenClinic?: () => void }) {
+export default function StatsPanel({ character, worldState, onReset, onOpenEmpire, onOpenSettings, onOpenMarket, onOpenWorkshop, onOpenClinic, onOpenCrafting }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void, onOpenSettings?: () => void, onOpenMarket?: () => void, onOpenWorkshop?: () => void, onOpenClinic?: () => void, onOpenCrafting?: () => void }) {
   return (
     <div className="w-64 bg-slate-900 border-l border-amber-900/30 flex flex-col p-4 overflow-y-auto">
       <div className="text-xs font-mono text-amber-600/70 uppercase tracking-widest mb-4 border-b border-amber-900/30 pb-2">
@@ -27,6 +27,9 @@ export default function StatsPanel({ character, worldState, onReset, onOpenEmpir
             </button>
             <button onClick={onOpenClinic} className="text-[10px] px-2 py-1 bg-emerald-900/40 text-emerald-500 rounded border border-emerald-900 hover:bg-emerald-800/60 uppercase tracking-wider">
               Clinic
+            </button>
+            <button onClick={onOpenCrafting} className="text-[10px] px-2 py-1 bg-orange-900/40 text-orange-500 rounded border border-orange-900 hover:bg-orange-800/60 uppercase tracking-wider">
+              Workbench
             </button>
           </div>
         </div>

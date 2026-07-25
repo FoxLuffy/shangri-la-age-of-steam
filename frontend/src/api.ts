@@ -433,3 +433,65 @@ export const importSave = async (characterId: number, payload: SaveExport): Prom
   const { data } = await api.post(`/saves/${characterId}/import`, payload);
   return data;
 };
+
+// --- Crafting (C3.1–C3.3) ---
+
+export interface RecipeRequirement {
+  item_id: number;
+  name: string | null;
+  quantity: number;
+}
+
+export interface KnownRecipeInfo {
+  recipe_id: number;
+  name: string;
+  method: string;
+  branch: string | null;
+  tier: number;
+  result_item_id: number;
+  result_name: string | null;
+  requirements: RecipeRequirement[];
+}
+
+export interface CraftingMaterial {
+  item_id: number;
+  name: string | null;
+  quantity: number;
+}
+
+export interface CraftingProficiency {
+  branch: string;
+  level: number;
+  xp: number;
+}
+
+export const getKnownRecipes = async (characterId: number): Promise<KnownRecipeInfo[]> => {
+  const { data } = await api.get(`/crafting/known?character_id=${characterId}`);
+  return data;
+};
+
+export const getCraftingMaterials = async (characterId: number): Promise<CraftingMaterial[]> => {
+  const { data } = await api.get(`/crafting/materials?character_id=${characterId}`);
+  return data;
+};
+
+export const getProficiency = async (characterId: number): Promise<CraftingProficiency[]> => {
+  const { data } = await api.get(`/crafting/proficiency?character_id=${characterId}`);
+  return data;
+};
+
+export const craftItem = async (characterId: number, recipeId: number) => {
+  const { data } = await api.post(`/craft?character_id=${characterId}&recipe_id=${recipeId}`);
+  return data;
+};
+
+export const experimentCraft = async (characterId: number, itemIds: number[]) => {
+  const { data } = await api.post('/crafting/experiment', { character_id: characterId, item_ids: itemIds });
+  return data;
+};
+
+export function craftSuccessPct(level: number, tier: number, branch: string | null): number {
+  if (!branch) return 100;
+  const c = Math.max(0.05, Math.min(0.98, 0.5 + 0.1 * (level - tier)));
+  return Math.round(c * 100);
+}

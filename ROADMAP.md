@@ -29,7 +29,7 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 ## C. New Gameplay Features
 - C1 [COMPLETE] Airship navigation & aerial encounters
 - C2 [COMPLETE] Body augmentation & cybernetics
-- C3 [NOT STARTED] Crafting Depth & Recipe Discovery
+- C3 [COMPLETE] Crafting Depth & Recipe Discovery
       - C3.1 [COMPLETE] Recipe discovery: KnownRecipe table (unique char+recipe), router
         backend/routers/crafting.py — GET /crafting/known, POST /crafting/discover
         (generic grant for dialogue/exploration/purchase paths), POST /crafting/experiment
@@ -41,7 +41,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
         proficiency-scaled success roll (fail wastes materials), +1 XP on success;
         branchless recipes stay deterministic. Migration e7c4a2b9f1d0. 6 tests in
         test_crafting_specialization.py.
-      - C3.3 CraftingPanel.tsx (drag-drop grid, recipe browser, success probability)
+      - C3.3 [COMPLETE] CraftingPanel.tsx — modal (Workbench) with proficiency bars,
+        known-recipe browser (requirements have/need + success %), Craft, and a
+        click-select experimentation grid. Backend reads enriched: /crafting/known
+        (branch/tier/result_name/requirements) + new /crafting/materials. api.ts
+        helpers + craftSuccessPct. Wired via StatsPanel/App. 5 frontend + 2 backend tests.
 - C4 [COMPLETE] Multiplayer social: trading, guilds, bulletin board
 - C5 [COMPLETE] Dynamic weather & day/night + seasonal events
 - C6 [COMPLETE] Bounty board & procedural missions

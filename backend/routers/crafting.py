@@ -5,6 +5,8 @@ from typing import List, Optional
 from backend.database import (
     Character,
     CraftingProficiency,
+    Inventory,
+    Item,
     KnownRecipe,
     Recipe,
     RecipeRequirement,
@@ -38,6 +40,11 @@ def craft_success_chance(level: int, tier: int) -> float:
 
 def roll_success(chance: float) -> bool:
     return random.random() < chance
+
+
+def _item_name(session, item_id: int):
+    item = session.get(Item, item_id)
+    return item.name if item else None
 
 
 def get_or_create_proficiency(session, character_id: int, branch: str) -> CraftingProficiency:
@@ -110,15 +117,44 @@ async def list_known(character_id: int):
         result = []
         for row in rows:
             recipe = session.get(Recipe, row.recipe_id)
+            if not recipe:
+                continue
+            reqs = session.exec(
+                select(RecipeRequirement).where(RecipeRequirement.recipe_id == recipe.id)
+            ).all()
             result.append(
                 {
                     "recipe_id": row.recipe_id,
-                    "name": recipe.name if recipe else None,
+                    "name": recipe.name,
                     "method": row.method,
                     "discovered_at": row.discovered_at,
+                    "branch": recipe.branch,
+                    "tier": recipe.tier,
+                    "result_item_id": recipe.result_item_id,
+                    "result_name": _item_name(session, recipe.result_item_id),
+                    "requirements": [
+                        {
+                            "item_id": r.item_id,
+                            "name": _item_name(session, r.item_id),
+                            "quantity": r.quantity,
+                        }
+                        for r in reqs
+                    ],
                 }
             )
         return result
+
+
+@router.get("/materials")
+async def list_materials(character_id: int):
+    with get_session() as session:
+        rows = session.exec(
+            select(Inventory).where(Inventory.character_id == character_id)
+        ).all()
+        return [
+            {"item_id": inv.item_id, "name": _item_name(session, inv.item_id), "quantity": inv.quantity}
+            for inv in rows
+        ]
 
 
 @router.post("/discover")

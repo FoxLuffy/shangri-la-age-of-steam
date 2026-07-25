@@ -103,6 +103,14 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
                   <div key={s.id} className="border border-amber-900/50 p-4 hover:border-amber-500 cursor-pointer bg-slate-900" onClick={() => onComplete(s.id)}>
                     <div className="font-bold text-amber-400 text-xl">{s.name}</div>
                     <div className="text-xs text-amber-200/50 mt-1">Class: {s.character_class}</div>
+                    <div className="text-xs text-amber-200/40 mt-1 flex justify-between gap-2">
+                      {s.location_name && <span>📍 {s.location_name}</span>}
+                      <span className="ml-auto">
+                        {s.has_save && s.last_saved
+                          ? `Saved: ${new Date(s.last_saved).toLocaleString()}`
+                          : 'No save yet'}
+                      </span>
+                    </div>
                   </div>
                 ))}
                 <button 

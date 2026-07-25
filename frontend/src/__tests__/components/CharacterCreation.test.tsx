@@ -119,11 +119,43 @@ describe('CharacterCreation', () => {
     ;(fetchSessions as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: 1, name: 'Old Character', character_class: 'Scrapper' },
     ])
-    
+
     render(<CharacterCreation onComplete={mockOnComplete} userId={5} />)
-    
+
     await waitFor(() => {
       expect(screen.getByText('Create New Character')).toBeInTheDocument()
+    })
+  })
+
+  it('shows save metadata (location + last saved) on a session card', async () => {
+    ;(fetchSessions as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: 1,
+        name: 'Saved Hero',
+        character_class: 'Scrapper',
+        has_save: true,
+        last_saved: '2026-07-25T20:00:00Z',
+        location_name: 'The Grand Foundry',
+      },
+    ])
+
+    render(<CharacterCreation onComplete={mockOnComplete} userId={5} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/The Grand Foundry/)).toBeInTheDocument()
+      expect(screen.getByText(/Saved:/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows "No save yet" for a session without a save', async () => {
+    ;(fetchSessions as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 1, name: 'Fresh Hero', character_class: 'Scrapper', has_save: false, last_saved: null },
+    ])
+
+    render(<CharacterCreation onComplete={mockOnComplete} userId={5} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/No save yet/)).toBeInTheDocument()
     })
   })
 })

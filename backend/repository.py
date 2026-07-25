@@ -15,9 +15,19 @@ class StateRepository:
         self.session = session
 
     def get_sessions(self, user_id: int):
-        from backend.database import Character
+        from backend.database import Character, SaveState
 
-        return self.session.exec(select(Character).where(Character.user_id == user_id)).all()
+        characters = self.session.exec(select(Character).where(Character.user_id == user_id)).all()
+        result = []
+        for char in characters:
+            save = self.session.exec(select(SaveState).where(SaveState.character_id == char.id)).first()
+            location = self.session.get(DBLocation, char.location_id) if char.location_id else None
+            data = char.model_dump()
+            data["has_save"] = save is not None
+            data["last_saved"] = save.created_at if save else None
+            data["location_name"] = location.name if location else None
+            result.append(data)
+        return result
 
     def get_latest_state(self, character_id: Optional[int] = 1) -> WorldState:
         from backend.database import SystemSettings

@@ -56,8 +56,10 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 ## E. Save State Management (NEW)
 > Model: ONE save slot per character (single SaveState row, unique character_id).
 > Manual save and autosave both overwrite that one slot — no multi-slot per character.
-- E1 [PARTIAL] Character sessions: /sessions/{user_id} lists a user's characters —
-      add per-character save metadata (last-saved timestamp, location preview)
+- E1 [COMPLETE] Character sessions: GET /sessions/{user_id} enriched with per-character
+      save metadata — has_save, last_saved (SaveState.created_at), location_name (current
+      location resolved). Shown on CharacterCreation session cards (location + last-saved,
+      or "No save yet"). repository.get_sessions; 2 backend + 2 frontend tests.
 - E2 [COMPLETE] Manual save/load, single slot per character: POST /saves (create or
       overwrite), GET /saves/{character_id}, GET /saves/{character_id}/load,
       DELETE /saves/{character_id}. Snapshot = character + world + quest + inventory.

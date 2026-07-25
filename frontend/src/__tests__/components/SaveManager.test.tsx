@@ -7,10 +7,12 @@ vi.mock('../../api', () => ({
   getSave: vi.fn(),
   loadSave: vi.fn(),
   deleteSave: vi.fn(),
+  exportSave: vi.fn(),
+  importSave: vi.fn(),
   BACKEND_URL: 'http://localhost:8003',
 }))
 
-import { createSave, getSave, loadSave, deleteSave } from '../../api'
+import { createSave, getSave, loadSave, deleteSave, exportSave, importSave } from '../../api'
 
 const SAVE_META = { id: 7, character_id: 1, name: 'Before the vault', created_at: '2026-07-25T20:00:00Z' }
 
@@ -25,6 +27,13 @@ describe('SaveManager', () => {
     asMock(createSave).mockResolvedValue(SAVE_META)
     asMock(loadSave).mockResolvedValue({ status: 'loaded' })
     asMock(deleteSave).mockResolvedValue({ status: 'deleted' })
+    asMock(exportSave).mockResolvedValue({
+      schema_version: 1,
+      name: 'Before the vault',
+      created_at: SAVE_META.created_at,
+      snapshot: { character: {}, world: null, inventory: [], quests: [] },
+    })
+    asMock(importSave).mockResolvedValue(SAVE_META)
   })
 
   afterEach(() => {
@@ -91,5 +100,47 @@ describe('SaveManager', () => {
 
     expect(screen.getByRole('button', { name: /load/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
+  })
+
+  it('disables Export when there is no save', async () => {
+    asMock(getSave).mockRejectedValue({ response: { status: 404 } })
+    render(<SaveManager characterId={1} onLoad={onLoad} />)
+    await waitFor(() => expect(screen.getByText(/no save/i)).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /export/i })).toBeDisabled()
+  })
+
+  it('Export downloads the saved slot as JSON', async () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
+
+    render(<SaveManager characterId={1} onLoad={onLoad} />)
+    await waitFor(() => expect(screen.getByText(/Before the vault/)).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /export/i }))
+    await waitFor(() => expect(exportSave).toHaveBeenCalledWith(1))
+    await waitFor(() => expect(createObjectURL).toHaveBeenCalled())
+
+    vi.unstubAllGlobals()
+  })
+
+  it('Import reads a file, confirms, imports, and refetches', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<SaveManager characterId={1} onLoad={onLoad} />)
+    await waitFor(() => expect(screen.getByText(/Before the vault/)).toBeInTheDocument())
+
+    const exportPayload = {
+      schema_version: 1,
+      name: 'imported',
+      created_at: SAVE_META.created_at,
+      snapshot: { character: {}, world: null, inventory: [], quests: [] },
+    }
+    const file = new File([JSON.stringify(exportPayload)], 'save.json', { type: 'application/json' })
+    const input = document.getElementById('save-import-input') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [file] } })
+
+    await waitFor(() => expect(importSave).toHaveBeenCalledWith(1, exportPayload))
+    // getSave: once on mount, once after import.
+    await waitFor(() => expect(getSave).toHaveBeenCalledTimes(2))
   })
 })

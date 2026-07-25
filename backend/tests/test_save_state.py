@@ -219,3 +219,72 @@ def test_sessions_metadata_when_no_save():
     assert row["last_saved"] is None
     # Location still resolves from the character's current location.
     assert row["location_name"] == "The Grand Foundry"
+
+
+def test_export_returns_versioned_snapshot():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid, "name": "export me"})
+
+    resp = client.get(f"/saves/{cid}/export")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["schema_version"] == 1
+    assert payload["name"] == "export me"
+    assert payload["snapshot"]["character"]["brass_coins"] == 500
+    assert len(payload["snapshot"]["inventory"]) == 1
+    assert len(payload["snapshot"]["quests"]) == 1
+
+
+def test_export_404_when_no_save():
+    ids = setup_db()
+    resp = client.get(f"/saves/{ids['character_id']}/export")
+    assert resp.status_code == 404
+
+
+def test_import_fills_slot_from_valid_payload():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid})
+    payload = client.get(f"/saves/{cid}/export").json()
+
+    # Delete the slot, then re-populate it via import.
+    client.delete(f"/saves/{cid}")
+    assert client.get(f"/saves/{cid}").status_code == 404
+
+    resp = client.post(f"/saves/{cid}/import", json=payload)
+    assert resp.status_code == 200
+    assert resp.json()["character_id"] == cid
+
+    # Slot is back and loadable.
+    assert client.get(f"/saves/{cid}").status_code == 200
+    assert client.get(f"/saves/{cid}/load").status_code == 200
+
+
+def test_import_rejects_bad_schema_version():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid})
+    payload = client.get(f"/saves/{cid}/export").json()
+    payload["schema_version"] = 99
+
+    resp = client.post(f"/saves/{cid}/import", json=payload)
+    assert resp.status_code == 400
+
+
+def test_import_rejects_malformed_body():
+    ids = setup_db()
+    cid = ids["character_id"]
+    # Missing required 'snapshot' field.
+    resp = client.post(f"/saves/{cid}/import", json={"schema_version": 1, "name": "x", "created_at": "y"})
+    assert resp.status_code == 422
+
+
+def test_import_unknown_character_404():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid})
+    payload = client.get(f"/saves/{cid}/export").json()
+
+    resp = client.post("/saves/999999/import", json=payload)
+    assert resp.status_code == 404

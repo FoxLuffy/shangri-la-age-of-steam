@@ -411,3 +411,25 @@ export const deleteSave = async (characterId: number) => {
   const { data } = await api.delete(`/saves/${characterId}`);
   return data;
 };
+
+export interface SaveExport {
+  schema_version: number;
+  name: string;
+  created_at: string;
+  snapshot: {
+    character: Record<string, unknown>;
+    world: Record<string, unknown> | null;
+    inventory: { item_id: number; quantity: number; durability?: number | null }[];
+    quests: { quest_id: number; state: string }[];
+  };
+}
+
+export const exportSave = async (characterId: number): Promise<SaveExport> => {
+  const { data } = await api.get(`/saves/${characterId}/export`);
+  return data;
+};
+
+export const importSave = async (characterId: number, payload: SaveExport): Promise<SaveMeta> => {
+  const { data } = await api.post(`/saves/${characterId}/import`, payload);
+  return data;
+};

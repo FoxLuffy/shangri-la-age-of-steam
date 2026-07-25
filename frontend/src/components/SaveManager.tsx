@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createSave, getSave, loadSave, deleteSave } from '../api';
+import { createSave, getSave, loadSave, deleteSave, exportSave, importSave } from '../api';
 import type { SaveMeta } from '../api';
 
 interface SaveManagerProps {
@@ -73,6 +73,41 @@ export default function SaveManager({ characterId, onLoad }: SaveManagerProps) {
     }
   };
 
+  const handleExport = async () => {
+    if (!save) return;
+    setError(null);
+    try {
+      const payload = await exportSave(characterId);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `saos-save-char${characterId}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Failed to export.');
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!window.confirm('Import this save file? It overwrites your current save slot.')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = JSON.parse(await file.text());
+      await importSave(characterId, payload);
+      await refresh();
+    } catch {
+      setError('Failed to import — invalid or rejected save file.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const btnBase = 'flex-1 py-2 text-xs uppercase tracking-wider border transition-colors disabled:opacity-40 disabled:cursor-not-allowed';
 
   return (
@@ -119,6 +154,29 @@ export default function SaveManager({ characterId, onLoad }: SaveManagerProps) {
         >
           Delete
         </button>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={handleExport}
+          disabled={loading || !save}
+          className={`${btnBase} bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700`}
+        >
+          Export
+        </button>
+        <label
+          className={`${btnBase} text-center cursor-pointer bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 ${loading ? 'opacity-40 cursor-not-allowed' : ''}`}
+        >
+          Import
+          <input
+            id="save-import-input"
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            disabled={loading}
+            onChange={handleImportFile}
+          />
+        </label>
       </div>
     </div>
   );

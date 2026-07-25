@@ -21,6 +21,7 @@ import BulletinBoard from './BulletinBoard';
 import BountyBoard from './BountyBoard';
 import { audioManager } from '../utils/AudioManager';
 import { ArtifactJournal } from './ArtifactJournal';
+import { recordActionAndMaybeAutosave, autosaveBeforeTravel, resetAutosaveCounter } from '../utils/autosave';
 
 
 interface Message {
@@ -145,6 +146,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   // Load initial state on component mount
   useEffect(() => {
+    // New character/session: restart the periodic-autosave cadence.
+    resetAutosaveCounter();
     if (characterId) {
       const stored = localStorage.getItem(`saos_chat_history_${characterId}`);
       if (stored) {
@@ -311,6 +314,11 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       }
 
       await loadState();
+
+      // Periodic autosave on real player actions (best-effort; never blocks).
+      if (!isSystem && characterId) {
+        void recordActionAndMaybeAutosave(characterId);
+      }
     } catch (error: any) {
       console.error('Error sending message:', error);
       const errorMsg: Message = {
@@ -342,6 +350,12 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
 
   const handleLocationSwitch = async (newLocId: string) => {
     if (newLocId === currentLocationId) return;
+
+    // Pre-travel autosave checkpoint (best-effort; never blocks travel).
+    if (characterId) {
+      await autosaveBeforeTravel(characterId);
+    }
+
     setCurrentLocationId(newLocId);
     const locMatch = allLocations.find(l => l.id === newLocId);
     if (locMatch) setCurrentLocation(locMatch);

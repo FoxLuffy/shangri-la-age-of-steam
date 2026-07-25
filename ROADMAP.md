@@ -70,7 +70,12 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
       pre-combat (combat is emergent). Module frontend/src/utils/autosave.ts wired into
       ChatInterface (submitAction + handleLocationSwitch); best-effort, never blocks
       gameplay. 5 tests in autosave.test.ts.
-- E4 [NOT STARTED] Export/import save (JSON download/upload) with schema validation
+- E4 [COMPLETE] Export/import save (JSON) with schema validation. GET
+      /saves/{character_id}/export → versioned SaveExport (schema_version=1);
+      POST /saves/{character_id}/import validates via pydantic (422 malformed, 400 bad
+      version, 404 unknown char) then fills the slot (user Loads after). Export/Import
+      buttons in SaveManager (Blob download; file → parse → confirm → import). 6 backend
+      + 3 frontend tests.
 - E5 [COMPLETE] Save UI: SaveManager.tsx rendered inside the in-game SettingsMenu —
       Save (create/overwrite), Load, Delete, with window.confirm on Load + Delete.
       api.ts helpers (createSave/getSave/loadSave/deleteSave); Load reloads the app to

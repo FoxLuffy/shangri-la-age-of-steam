@@ -378,3 +378,32 @@ export const sendMessage = async (characterId: number, locationId: string, conte
   const { data } = await api.post(`/gameplay/messages/send?character_id=${characterId}`, { location_id: locationId, content });
   return data;
 };
+
+// --- Save State Management (single slot per character) ---
+
+export interface SaveMeta {
+  id: number;
+  character_id: number;
+  name: string;
+  created_at: string;
+}
+
+export const createSave = async (characterId: number, name?: string): Promise<SaveMeta> => {
+  const { data } = await api.post('/saves', { character_id: characterId, name });
+  return data;
+};
+
+export const getSave = async (characterId: number): Promise<SaveMeta> => {
+  const { data } = await api.get(`/saves/${characterId}`);
+  return data;
+};
+
+export const loadSave = async (characterId: number) => {
+  const { data } = await api.get(`/saves/${characterId}/load`);
+  return data;
+};
+
+export const deleteSave = async (characterId: number) => {
+  const { data } = await api.delete(`/saves/${characterId}`);
+  return data;
+};

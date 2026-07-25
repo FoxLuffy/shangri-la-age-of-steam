@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toggleTutorials, uploadModData } from '../api';
 import type { Character } from '../api';
+import SaveManager from './SaveManager';
 
 export default function SettingsMenu({ character, onClose, onUpdateCharacter }: { character: Character, onClose: () => void, onUpdateCharacter: (char: Character) => void }) {
   const [showTutorials, setShowTutorials] = useState(character.show_tutorials);
@@ -129,6 +130,8 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
             </button>
           </div>
           
+          <SaveManager characterId={character.id} onLoad={() => window.location.reload()} />
+
           <div className="flex flex-col gap-3 p-4 border border-amber-900/30 bg-slate-800/30">
             <div>
               <div className="text-sm uppercase text-amber-400">Modding (JSON Support)</div>

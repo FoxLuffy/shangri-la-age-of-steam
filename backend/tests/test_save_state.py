@@ -3,6 +3,7 @@ from backend.database import (
     Inventory,
     Item,
     ItemCategory,
+    Location,
     Quest,
     QuestState,
     QuestStateEnum,
@@ -25,6 +26,7 @@ def setup_db():
     with Session(engine) as session:
         user = User(username="saver", password_hash="hash")
         session.add(user)
+        session.add(Location(id="2", name="The Grand Foundry", description="A roaring foundry."))
         session.commit()
         session.refresh(user)
 
@@ -185,3 +187,35 @@ def test_delete_save():
     assert client.get(f"/saves/{cid}").status_code == 404
     assert client.get(f"/saves/{cid}/load").status_code == 404
     assert client.delete(f"/saves/{cid}").status_code == 404
+
+
+def _find_session(sessions, character_id):
+    return next(s for s in sessions if s["id"] == character_id)
+
+
+def test_sessions_include_save_metadata_when_saved():
+    ids = setup_db()
+    cid = ids["character_id"]
+    client.post("/saves", json={"character_id": cid})
+
+    resp = client.get(f"/sessions/{ids['user_id']}")
+    assert resp.status_code == 200
+    row = _find_session(resp.json(), cid)
+    assert row["has_save"] is True
+    assert row["last_saved"]
+    assert row["location_name"] == "The Grand Foundry"
+    # Existing keys stay intact.
+    assert row["name"] == "Snapshot Hero"
+
+
+def test_sessions_metadata_when_no_save():
+    ids = setup_db()
+    cid = ids["character_id"]
+
+    resp = client.get(f"/sessions/{ids['user_id']}")
+    assert resp.status_code == 200
+    row = _find_session(resp.json(), cid)
+    assert row["has_save"] is False
+    assert row["last_saved"] is None
+    # Location still resolves from the character's current location.
+    assert row["location_name"] == "The Grand Foundry"

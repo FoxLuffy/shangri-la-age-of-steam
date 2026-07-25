@@ -104,6 +104,10 @@ export interface Character {
   show_tutorials: boolean;
   active_bounties?: number[];
   completed_bounties?: number[];
+  // Save metadata (populated by GET /sessions/{user_id}).
+  has_save?: boolean;
+  last_saved?: string | null;
+  location_name?: string | null;
 }
 
 export const fetchCharacter = async (characterId: number): Promise<Character> => {

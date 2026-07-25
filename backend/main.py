@@ -563,6 +563,19 @@ async def craft_item(character_id: int, recipe_id: int):
                         detail=f"This recipe requires the '{recipe.required_faction_id}' faction facilities.",
                     )
 
+        # Specialization gate (C3.2): branched recipes need enough proficiency.
+        craft_level = None
+        if recipe.branch:
+            from backend.routers.crafting import get_or_create_proficiency, level_for_xp
+
+            prof = get_or_create_proficiency(session, character_id, recipe.branch)
+            craft_level = level_for_xp(prof.xp)
+            if craft_level < recipe.tier:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Requires {recipe.branch} proficiency {recipe.tier} (you are {craft_level}).",
+                )
+
         requirements = session.exec(select(RecipeRequirement).where(RecipeRequirement.recipe_id == recipe_id)).all()
 
         if not requirements:
@@ -594,6 +607,19 @@ async def craft_item(character_id: int, recipe_id: int):
                 else:
                     session.add(inv_item)
 
+            # Branched recipes can fail; failure still consumes the materials (C3.2).
+            if recipe.branch:
+                from backend.routers.crafting import craft_success_chance, roll_success
+
+                chance = craft_success_chance(craft_level, recipe.tier)
+                if not roll_success(chance):
+                    session.commit()
+                    return {
+                        "message": "Crafting failed — materials were consumed.",
+                        "crafted": False,
+                        "status": "failed",
+                    }
+
             # Add resulting item to inventory
             result_inv_item = session.exec(
                 select(Inventory)
@@ -610,6 +636,11 @@ async def craft_item(character_id: int, recipe_id: int):
                 )
                 session.add(new_inv_item)
 
+            if recipe.branch:
+                from backend.routers.crafting import add_craft_xp
+
+                add_craft_xp(session, character_id, recipe.branch)
+
             session.commit()
         except Exception:
             session.rollback()
@@ -617,6 +648,7 @@ async def craft_item(character_id: int, recipe_id: int):
 
         return {
             "message": "Crafting successful",
+            "crafted": True,
             "result_item_id": recipe.result_item_id,
             "quantity_added": recipe.result_quantity,
         }

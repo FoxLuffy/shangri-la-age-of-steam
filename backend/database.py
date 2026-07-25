@@ -278,6 +278,18 @@ class Recipe(SQLModel, table=True):
     result_item_id: int = Field(foreign_key="item.id")
     result_quantity: int = Field(default=1)
     required_faction_id: Optional[str] = None
+    # Crafting specialization (C3.2): branch + minimum proficiency level to craft.
+    branch: Optional[str] = None  # "metallurgy" | "alchemy" | "clockwork"
+    tier: int = Field(default=0)
+
+
+class CraftingProficiency(SQLModel, table=True):
+    __tablename__ = "crafting_proficiency"
+    __table_args__ = (UniqueConstraint("character_id", "branch"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    branch: str
+    xp: int = Field(default=0)
 
 
 class Inventory(SQLModel, table=True):

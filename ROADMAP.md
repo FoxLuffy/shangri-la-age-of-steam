@@ -35,7 +35,12 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
         (generic grant for dialogue/exploration/purchase paths), POST /crafting/experiment
         (materials → RNG discovery). /craft gated 403 until discovered; zero starter recipes.
         Alembic migration d5b2c9f1a3e8. 7 tests in test_crafting_discovery.py.
-      - C3.2 Crafting specialization trees (Metallurgy/Alchemy/Clockwork, 0–10 proficiency)
+      - C3.2 [COMPLETE] Specialization trees: Recipe.branch + Recipe.tier;
+        CraftingProficiency table (per char+branch, xp → level 0–10, cap). GET
+        /crafting/proficiency. /craft — branched recipes: tier-gate (400 if underleveled),
+        proficiency-scaled success roll (fail wastes materials), +1 XP on success;
+        branchless recipes stay deterministic. Migration e7c4a2b9f1d0. 6 tests in
+        test_crafting_specialization.py.
       - C3.3 CraftingPanel.tsx (drag-drop grid, recipe browser, success probability)
 - C4 [COMPLETE] Multiplayer social: trading, guilds, bulletin board
 - C5 [COMPLETE] Dynamic weather & day/night + seasonal events

@@ -15,6 +15,7 @@ import SessionLobby from './components/SessionLobby';
 import ReportModal from './components/ReportModal';
 import { WorkshopBrowser } from './components/WorkshopBrowser';
 import AugmentationPanel from './components/AugmentationPanel';
+import CraftingPanel from './components/CraftingPanel';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -64,6 +65,7 @@ function MainApp() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showWorkshop, setShowWorkshop] = useState(false);
+  const [showCrafting, setShowCrafting] = useState(false);
 
   useEffect(() => {
     import('./api').then(({ fetchHealth }) => {
@@ -213,6 +215,9 @@ function MainApp() {
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
         {showAdmin && authToken && <AdminPanel token={authToken} onClose={() => setShowAdmin(false)} />}
         {showReportModal && <ReportModal userId={userId} onClose={() => setShowReportModal(false)} />}
+        {showCrafting && (
+          <CraftingPanel characterId={character.id} onClose={() => setShowCrafting(false)} />
+        )}
         {showClinic && (
           <AugmentationPanel
             characterId={character.id}
@@ -262,6 +267,7 @@ function MainApp() {
         onOpenSettings={() => setShowSettings(true)}
         onOpenWorkshop={() => setShowWorkshop(true)}
         onOpenClinic={() => setShowClinic(true)}
+        onOpenCrafting={() => setShowCrafting(true)}
       />
     </div>
   );

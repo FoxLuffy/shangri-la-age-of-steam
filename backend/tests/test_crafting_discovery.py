@@ -106,6 +106,25 @@ def test_known_lists_discovered_recipes():
     assert data[0]["method"] == "purchase"
 
 
+def test_known_includes_requirements_and_result_name():
+    ids = setup_db()
+    cid, rid = ids["character_id"], ids["recipe_id"]
+    client.post("/crafting/discover", json={"character_id": cid, "recipe_id": rid})
+
+    row = client.get(f"/crafting/known?character_id={cid}").json()[0]
+    assert row["result_name"] == "Gadget"
+    assert "branch" in row and "tier" in row
+    req_names = {r["name"]: r["quantity"] for r in row["requirements"]}
+    assert req_names == {"Cog": 2, "Spring": 1}
+
+
+def test_materials_endpoint_lists_owned_items_with_names():
+    ids = setup_db()
+    cid = ids["character_id"]
+    mats = {m["name"]: m["quantity"] for m in client.get(f"/crafting/materials?character_id={cid}").json()}
+    assert mats == {"Cog": 5, "Spring": 5}
+
+
 def test_experiment_discovers_matching_recipe_on_success(monkeypatch):
     ids = setup_db()
     cid = ids["character_id"]

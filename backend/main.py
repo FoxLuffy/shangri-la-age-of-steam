@@ -383,12 +383,21 @@ async def import_save(file: UploadFile = File(...)):
 async def upload_mod(file: UploadFile = File(...)):
     """Upload a custom JSON file defining new Locations, NPCs, Items, and Factions."""
     from backend.database import NPC, Faction, Item
+    from backend.mod_validation import validate_mod
+
+    content = await file.read()
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=[f"Invalid JSON: {e}"])
 
     try:
-        content = await file.read()
-        data = json.loads(content)
-
         with get_session() as session:
+            # Validate the whole file first; reject atomically with all errors (C8.2).
+            errors = validate_mod(data, session)
+            if errors:
+                raise HTTPException(status_code=400, detail=errors)
+
             if "factions" in data:
                 for f_data in data["factions"]:
                     faction = session.exec(select(Faction).where(Faction.id == f_data["id"])).first()
@@ -432,6 +441,8 @@ async def upload_mod(file: UploadFile = File(...)):
             session.commit()
 
         return {"status": "success", "message": "Mod data uploaded and integrated successfully."}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process mod data: {str(e)}")
 

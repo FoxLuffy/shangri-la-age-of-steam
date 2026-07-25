@@ -66,6 +66,21 @@ function MainApp() {
   const [showWorkshop, setShowWorkshop] = useState(false);
 
   useEffect(() => {
+    import('./api').then(({ fetchHealth }) => {
+      fetchHealth().then(data => {
+        const storedInstanceId = localStorage.getItem('saos_instance_id');
+        if (storedInstanceId && data.instance_id && storedInstanceId !== data.instance_id) {
+           console.warn("Database wiped/recreated! Clearing session...");
+           localStorage.clear();
+           window.location.reload();
+        } else if (data.instance_id) {
+           localStorage.setItem('saos_instance_id', data.instance_id);
+        }
+      }).catch(console.error);
+    });
+  }, []);
+
+  useEffect(() => {
     if (characterId) {
       setLoading(true);
       fetchCharacter(characterId)

@@ -110,6 +110,12 @@ def migrate_db():
             conn.execute(text("ALTER TABLE location ADD COLUMN lore_text VARCHAR;"))
         except Exception:
             pass
+        try:
+            conn.execute(text("ALTER TABLE systemsettings ADD COLUMN instance_id VARCHAR;"))
+            import uuid
+            conn.execute(text(f"UPDATE systemsettings SET instance_id = '{uuid.uuid4()}' WHERE instance_id IS NULL;"))
+        except Exception:
+            pass
 
 
 def seed_data():

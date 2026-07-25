@@ -2,6 +2,7 @@ import os
 from contextlib import contextmanager
 from enum import Enum
 from typing import Any, Dict, List, Optional
+import uuid
 
 from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
@@ -221,6 +222,8 @@ class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     registration_open: bool = Field(default=True)
     global_system_prompt: Optional[str] = Field(default=None)
+    instance_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+
 
 
 class BugReport(SQLModel, table=True):

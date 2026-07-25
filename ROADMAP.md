@@ -51,7 +51,10 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - C6 [COMPLETE] Bounty board & procedural missions
 - C7 [COMPLETE] Artifact collection & journal
 - C8 [NOT STARTED] Expanded Modding Ecosystem
-      - C8.1 Mod SDK docs (docs/modding_guide.md + template mod)
+      - C8.1 [COMPLETE] Mod SDK docs: docs/modding_guide.md (upload, {factions,locations,
+        npcs,items} schema, per-field tables, upsert rules, ItemCategory enum, annotated
+        example, validation notes, Planned section) + runnable docs/mods/example_mod.json
+        guarded by test_modding_example.py (uploads → asserts entities created).
       - C8.2 Mod validation & sandboxing in /modding/upload
       - C8.3 Mod rating & curation (ModRating, sorted browser, featured carousel)
       - C8.4 Mod chains & dependencies (dependency resolution on install)

@@ -124,7 +124,16 @@ dummy_state = WorldState(current_location_id="1", active_npcs_ids=[], world_memo
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "vllm_api": VLLM_API_BASE}
+    from backend.database import SystemSettings
+    with get_session() as session:
+        settings = session.exec(select(SystemSettings)).first()
+        if not settings:
+            settings = SystemSettings()
+            session.add(settings)
+            session.commit()
+            session.refresh(settings)
+        instance_id = settings.instance_id
+    return {"status": "ok", "vllm_api": VLLM_API_BASE, "instance_id": instance_id}
 
 
 @app.get("/glossary")

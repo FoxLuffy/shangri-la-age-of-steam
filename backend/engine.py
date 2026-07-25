@@ -340,7 +340,7 @@ class NarrativeEngine:
                     idx = (idx + 1) % len(turn_order)
                     if idx == original_idx:
                         break
-                
+
                 from backend.database import CombatSession
                 from sqlmodel import select
 

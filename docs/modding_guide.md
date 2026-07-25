@@ -167,18 +167,23 @@ comments — strip these before use, or just upload the `.json` file directly):
 
 ---
 
-## Validation rules (current)
+## Validation rules
 
-The loader today performs light validation:
+The whole file is validated **before** anything is applied. If any check fails, the upload
+returns HTTP **400** with `detail` set to a **list of every problem found**, and nothing is
+committed. Checks:
 
-1. The file must be **valid JSON**.
-2. Each entity's keys must be **real fields** on its model — an unknown key or a wrong
-   type raises HTTP 400 and aborts the whole upload (nothing is committed).
-3. `item.category` must be one of the four enum values.
+1. The file must be **valid JSON** and a JSON object.
+2. **Schema**: each entity must have its required fields, correct types, and no unknown
+   fields; `item.category` must be a valid `ItemCategory`.
+3. **ID uniqueness**: no duplicate `id` across factions/locations/npcs (or duplicate
+   `name` across items) within one file.
+4. **References**: `location.faction_id`, `npc.location_id`, and `npc.faction_id` (when
+   provided) must reference an entity that already exists in the game **or** is defined in
+   the same file.
 
-Stricter, per-field validation with detailed error messages (required-field checks, ID
-uniqueness, referential checks, content-safety limits) is tracked as **C8.2 — Mod
-validation & sandboxing**.
+Content-safety limits (max lengths, prohibited terms) are not enforced yet; they are
+tracked alongside later modding work. See `ROADMAP.md` section C8.
 
 ## Planned (not yet loadable)
 

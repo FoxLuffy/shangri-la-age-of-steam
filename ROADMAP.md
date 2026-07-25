@@ -55,7 +55,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
         npcs,items} schema, per-field tables, upsert rules, ItemCategory enum, annotated
         example, validation notes, Planned section) + runnable docs/mods/example_mod.json
         guarded by test_modding_example.py (uploads → asserts entities created).
-      - C8.2 Mod validation & sandboxing in /modding/upload
+      - C8.2 [COMPLETE] Mod validation in /modding/upload: backend/mod_validation.py
+        (pydantic strict schemas per entity; required/type/unknown-field + ItemCategory
+        checks; in-file id/name uniqueness; referential existence in DB or same file).
+        Collect-all, atomic reject → 400 with detail=[messages]; valid mods still apply.
+        Guide validation section updated. 12 tests in test_mod_validation.py.
       - C8.3 Mod rating & curation (ModRating, sorted browser, featured carousel)
       - C8.4 Mod chains & dependencies (dependency resolution on install)
 

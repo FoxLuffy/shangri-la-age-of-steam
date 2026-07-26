@@ -102,6 +102,12 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 - None
 {% endfor %}
 
+{% if main_quest and main_quest.status == 'active' %}
+**MAIN QUEST — {{ main_quest.title }}** (objective {{ main_quest.current_stage }} of {{ main_quest.total_stages }})
+Current objective: {{ main_quest.current_objective }}
+(Weave the character toward this objective. When the player clearly completes THIS objective, emit `"main_quest_updates": { "advance_stage": true }` in the StateUpdates — do not advance more than one objective per turn, and do not advance until it is genuinely done.)
+{% endif %}
+
 **Player Action:** {{ action_text }}
 
 ### TASK:
@@ -164,6 +170,7 @@ the JSON in code fences.
       "change": 0.1
     }
   ],
+  "main_quest_updates": { "advance_stage": true },
   "minigame_trigger": "Only include this key with value 'hack' or 'lockpick' if the player attempts a complex sabotage, deciphering, or unlocking action.",
   "combat_updates": {
     "is_combat_active": true,

@@ -851,6 +851,18 @@ async def generate_npc_endpoint(flavor: str = "industrial"):
         return npc
 
 
+class MainQuestInput(BaseModel):
+    title: str
+    description: str = ""
+    stages: List[Any] = Field(default_factory=list)
+
+
+class MainQuestGenerateRequest(BaseModel):
+    preset: str = ""
+    origin: str = ""
+    backstory: str = ""
+
+
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
@@ -860,6 +872,7 @@ class CharacterCreateRequest(BaseModel):
     show_tutorials: bool = True
     gear: List[Dict[str, Any]] = Field(default_factory=list)
     user_id: Optional[int] = None
+    main_quest: Optional[MainQuestInput] = None
 
 
 class GenerateGearRequest(BaseModel):
@@ -1123,7 +1136,63 @@ async def create_character(req: CharacterCreateRequest):
         except Exception as e:
             print(f"Failed to generate long quest: {e}")
 
+        # Attach the player-selected / random / generated staged main quest (CR10).
+        if req.main_quest:
+            from backend.database import MainQuest
+            from backend.main_quests import normalize_input
+
+            mq = normalize_input(req.main_quest.title, req.main_quest.description, req.main_quest.stages)
+            session.add(
+                MainQuest(
+                    character_id=char.id,
+                    title=mq["title"],
+                    description=mq["description"],
+                    stages=mq["stages"],
+                    current_stage=0,
+                    status="active",
+                )
+            )
+            session.commit()
+            session.refresh(char)
+
         return char
+
+
+@app.get("/main-quests")
+async def list_main_quests():
+    from backend.main_quests import preset_list
+
+    return preset_list()
+
+
+@app.post("/main-quests/generate")
+async def generate_main_quest_endpoint(req: MainQuestGenerateRequest):
+    from backend.client import VLLMClient
+    from backend.main_quests import generate_main_quest
+
+    return generate_main_quest(VLLMClient(), req.preset, req.origin, req.backstory)
+
+
+@app.get("/main-quest/{character_id}")
+async def get_main_quest(character_id: int):
+    from backend.database import MainQuest
+
+    with get_session() as session:
+        mq = session.exec(select(MainQuest).where(MainQuest.character_id == character_id)).first()
+        if not mq:
+            raise HTTPException(status_code=404, detail="No main quest for this character")
+        stages = mq.stages or []
+        current = stages[mq.current_stage]["description"] if 0 <= mq.current_stage < len(stages) else None
+        return {
+            "id": mq.id,
+            "character_id": mq.character_id,
+            "title": mq.title,
+            "description": mq.description,
+            "stages": stages,
+            "current_stage": mq.current_stage,
+            "current_objective": current,
+            "status": mq.status,
+        }
 
 
 class MinigameActionRequest(BaseModel):

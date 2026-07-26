@@ -121,6 +121,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         time_period=getattr(state, "time_period", "Day"),
         weather=getattr(state, "weather", "Clear"),
         season=getattr(state, "season", "Brass Festival"),
+        main_quest=getattr(state, "main_quest", None),
     )
 
     if hasattr(action, "mood") and action.mood:

@@ -28,6 +28,18 @@ class MinigamePlayPayload(BaseModel):
     action: str
     data: Dict[str, Any]
 
+class MainQuestInput(BaseModel):
+    title: str
+    description: str = ""
+    stages: List[Any] = Field(default_factory=list)  # list of stage strings (or {description})
+
+
+class MainQuestGenerateRequest(BaseModel):
+    preset: str = ""
+    origin: str = ""
+    backstory: str = ""
+
+
 class CharacterCreateRequest(BaseModel):
     name: str
     preset: str = "Wanderer"
@@ -37,6 +49,7 @@ class CharacterCreateRequest(BaseModel):
     show_tutorials: bool = True
     gear: List[Dict[str, Any]] = Field(default_factory=list)
     user_id: Optional[int] = None
+    main_quest: Optional[MainQuestInput] = None
 
 class GenerateGearRequest(BaseModel):
     preset: str

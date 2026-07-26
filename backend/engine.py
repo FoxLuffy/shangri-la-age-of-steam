@@ -243,6 +243,11 @@ class NarrativeEngine:
         narration, state_updates, events = parse_vllm_response(full_raw_data)
 
         if repository and state_updates:
+            # Advance the staged main quest when the narrator completes the current objective (CR10).
+            mqu = state_updates.get("main_quest_updates")
+            if isinstance(mqu, dict) and mqu.get("advance_stage"):
+                repository.advance_main_quest(action.character_id or 1)
+
             loc_id = state_updates.get("location_id") or getattr(state, "current_location_id", "1")
             if "location_name" in state_updates or "location_description" in state_updates:
                 loc_data = {}

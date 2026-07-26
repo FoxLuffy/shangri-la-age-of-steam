@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { createCharacter, generateGear, fetchSessions } from '../api';
-import type { Character } from '../api';
+import { createCharacter, generateGear, fetchSessions, fetchMainQuests, generateMainQuest } from '../api';
+import type { Character, MainQuestInput, MainQuestPreset } from '../api';
 
 interface Preset {
   id: string;
@@ -40,6 +40,27 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
   const [fetchingSessions, setFetchingSessions] = useState(false);
   const [showCreationForm, setShowCreationForm] = useState(false);
 
+  // Main quest (CR10)
+  const [mqPresets, setMqPresets] = useState<MainQuestPreset[]>([]);
+  const [mainQuest, setMainQuest] = useState<MainQuestInput | null>(null);
+  const [generatingMQ, setGeneratingMQ] = useState(false);
+
+  useEffect(() => {
+    fetchMainQuests().then(setMqPresets).catch(console.error);
+  }, []);
+
+  const handleGenerateMainQuest = async () => {
+    setGeneratingMQ(true);
+    try {
+      setMainQuest(await generateMainQuest(preset, origin, backstory));
+    } catch (e) {
+      console.error(e);
+      alert('Failed to generate main quest');
+    } finally {
+      setGeneratingMQ(false);
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       setFetchingSessions(true);
@@ -77,7 +98,7 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const char = await createCharacter(name, preset, origin, backstory, gearPrompt, showTutorials, gearList, userId);
+      const char = await createCharacter(name, preset, origin, backstory, gearPrompt, showTutorials, gearList, userId, mainQuest);
       onComplete(char.id);
     } catch (e) {
       console.error(e);
@@ -170,6 +191,54 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-amber-600/70 uppercase mb-2">Main Quest</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => setMainQuest(null)}
+                className={`flex-1 py-2 text-xs uppercase border ${!mainQuest ? 'border-amber-500 bg-amber-900/20 text-amber-400' : 'border-amber-900/30 text-amber-200/60'}`}
+              >
+                None
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (mqPresets.length) setMainQuest(mqPresets[Math.floor(Math.random() * mqPresets.length)]); }}
+                className="flex-1 py-2 text-xs uppercase border border-amber-900/30 text-amber-200/80 hover:border-amber-700"
+              >
+                Random
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateMainQuest}
+                disabled={generatingMQ}
+                className="flex-1 py-2 text-xs uppercase border border-amber-700 text-amber-400 hover:bg-amber-900/30 disabled:opacity-50"
+              >
+                {generatingMQ ? '...' : 'Generate'}
+              </button>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {mqPresets.map(q => (
+                <div
+                  key={q.id}
+                  onClick={() => setMainQuest(q)}
+                  className={`p-3 border cursor-pointer transition-colors ${mainQuest?.title === q.title ? 'border-amber-500 bg-amber-900/20' : 'border-amber-900/30 hover:border-amber-700'}`}
+                >
+                  <div className="font-bold text-amber-400">{q.title}</div>
+                  <div className="text-xs text-amber-200/50">{q.description}</div>
+                </div>
+              ))}
+            </div>
+            {mainQuest && (
+              <div className="mt-2 text-xs text-amber-300 border border-amber-900/30 bg-slate-900/40 p-2">
+                <div className="font-bold">Chosen: {mainQuest.title}</div>
+                <ol className="list-decimal ml-4 mt-1 text-amber-200/70">
+                  {mainQuest.stages.map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+              </div>
+            )}
           </div>
 
           <div>

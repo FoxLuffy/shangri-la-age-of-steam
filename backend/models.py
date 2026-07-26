@@ -81,6 +81,7 @@ class WorldState(BaseModel):
     is_combat_active: bool = False
     combat_state: Optional[Dict[str, Any]] = None
     player_stats: Optional[Dict[str, Any]] = None
+    main_quest: Optional[Dict[str, Any]] = None
     properties: List[PropertyModel] = []
     brass_coins: int = 0
     world_time: int = 0

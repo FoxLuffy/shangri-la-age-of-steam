@@ -193,6 +193,26 @@ class StateRepository:
                 "is_active": combat_session.is_active,
             }
 
+        main_quest_ctx = None
+        if char:
+            from backend.database import MainQuest
+
+            mq = self.session.exec(select(MainQuest).where(MainQuest.character_id == char.id)).first()
+            if mq:
+                stages = mq.stages or []
+                objective = (
+                    stages[mq.current_stage]["description"]
+                    if 0 <= mq.current_stage < len(stages)
+                    else None
+                )
+                main_quest_ctx = {
+                    "title": mq.title,
+                    "current_objective": objective,
+                    "current_stage": mq.current_stage + 1,
+                    "total_stages": len(stages),
+                    "status": mq.status,
+                }
+
         return WorldState(
             current_location_id=current_location.id,
             active_npcs_ids=[npc.id for npc in active_npcs],
@@ -203,6 +223,7 @@ class StateRepository:
             active_npcs=active_npcs,
             inventory=inventory_list,
             quests=quests_list,
+            main_quest=main_quest_ctx,
             factions=factions_list,
             active_minigame=active_minigame,
             is_combat_active=db_state.is_combat_active if db_state else False,
@@ -290,6 +311,32 @@ class StateRepository:
             self.session.commit()
             self.session.refresh(npc)
         return npc
+
+    def advance_main_quest(self, character_id: int):
+        """Mark the current main-quest stage done and activate the next (CR10)."""
+        from backend.database import MainQuest
+
+        mq = self.session.exec(
+            select(MainQuest).where(MainQuest.character_id == character_id)
+        ).first()
+        if not mq or mq.status != "active":
+            return None
+        stages = [dict(s) for s in (mq.stages or [])]
+        i = mq.current_stage
+        if 0 <= i < len(stages):
+            stages[i]["status"] = "done"
+        nxt = i + 1
+        if nxt < len(stages):
+            stages[nxt]["status"] = "active"
+            mq.current_stage = nxt
+        else:
+            mq.current_stage = len(stages)
+            mq.status = "completed"
+        mq.stages = stages
+        self.session.add(mq)
+        self.session.commit()
+        self.session.refresh(mq)
+        return mq
 
     def create_or_update_npc(self, npc_data: Dict[str, Any], location_id: str) -> DBNPC:
         npc_id = npc_data.get("id") or npc_data.get("name", "npc_unknown").lower().replace(" ", "_")

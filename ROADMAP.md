@@ -126,4 +126,6 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - F2 [COMPLETE] Removed all datetime.utcnow() (deprecated) from backend source (19 sites,
       8 files). New backend/timeutils.py (utcnow/utcnow_naive/utc_iso) preserves exact
       timestamp formats ("...Z"). 3 tests in test_timeutils.py; suite 114 green, ruff clean.
-- F3 [NOT STARTED] Resolve SQLAlchemy character<->guild circular FK DROP warning (use_alter=True)
+- F3 [COMPLETE] Resolved the character<->guild circular FK DROP warning: Guild.leader_id
+      uses ForeignKey(use_alter=True) so DDL ordering works. 2 tests in test_fk_cycle.py
+      (no warning + relationship intact); suite 116 green, warning count 0.

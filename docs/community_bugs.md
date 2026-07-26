@@ -100,7 +100,7 @@ suppress noisy/raw fields.
 5 new reports (2 bugs, 3 features). To be validated/expanded during the `play-session`
 playtest, then prioritized for implementation. Highest priority first.
 
-## CR6 — [OPEN] Narrator lacks per-turn context → inaccurate narrative
+## CR6 — [RESOLVED via CR11] Narrator lacks per-turn context → inaccurate narrative
 **Reports:** #5 (bug) · **Severity:** High (core narrative quality)
 
 "It seems as if vLLM does not have the context of every turn. This makes it hard to create
@@ -178,14 +178,16 @@ inaccuracy = state desync) and CR3-in-practice (minigame_trigger never fires).
 **Acceptance:** representative actions (buy/earn/take/attack/hack) produce corresponding
 `state_updates` that the server applies (coins/inventory/quests/combat/minigame change).
 
-## CR12 — [OPEN] `[Narration]` tag leaks into streamed narration
+## CR12 — [FIXED] `[Narration]` tag leaks into streamed narration
 **Severity:** Low. The streaming path doesn't strip the `[Narration]` header (the
 non-streaming parse does). Players can see the raw tag. Fix in the SSE chunk handling
 (`engine`).
 
-## CR13 — [OPEN] SSE splits multibyte UTF-8 → mojibake
-**Severity:** Low. Occasional replacement chars (e.g. `They�re`) when a stream chunk
-boundary splits a UTF-8 sequence. Buffer bytes and decode on char boundaries.
+## CR13 — [RESOLVED — not a bug] SSE splits multibyte UTF-8 → mojibake
+**Severity:** Low. The mojibake seen during the playtest was a **harness artifact** (the
+Python playtest script decoded each SSE line independently). The frontend already decodes
+the stream correctly with `TextDecoder('utf-8')` + `decode(value, { stream: true })`, which
+handles multibyte characters split across chunks. No app change needed.
 
 ## Notes on existing items (from playtest)
 - **CR6** — continuity was actually good (turn-8 recall of a turn-1 task); the felt

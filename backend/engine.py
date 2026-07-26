@@ -80,6 +80,54 @@ def parse_vllm_response(raw_data: Any) -> Tuple[str, Dict[str, Any], List[Dict[s
     return narration, state_updates, events
 
 
+_NARR_TAG = "[Narration]"
+_SU_TAG = "[StateUpdates]"
+
+
+def _chunk_text(chunk) -> str:
+    """Extract the text delta from a raw vLLM stream chunk (dict or str)."""
+    if isinstance(chunk, dict):
+        if chunk.get("choices"):
+            choice = chunk["choices"][0]
+            return (
+                choice.get("text", "")
+                or choice.get("delta", {}).get("content", "")
+                or choice.get("message", {}).get("content", "")
+            )
+        return chunk.get("text", "") or ""
+    if isinstance(chunk, str):
+        return chunk
+    return ""
+
+
+def stream_narration(text_chunks):
+    """Yield cleaned narration text from a stream of raw model text chunks.
+
+    Strips the leading `[Narration]` header (even when split across chunks) and stops as
+    soon as `[StateUpdates]` begins, holding back any trailing fragment that could be the
+    start of either tag so a partial `[Narr…`/`[Stat…` never leaks to the client (CR12).
+    """
+    acc = ""
+    emitted = 0
+    for text in text_chunks:
+        if not text:
+            continue
+        acc += text
+        head = acc.split(_SU_TAG, 1)[0]
+        cleaned = head.replace(_NARR_TAG, "")
+        safe_len = len(cleaned)
+        bracket = cleaned.rfind("[")
+        if bracket != -1:
+            frag = cleaned[bracket:]
+            if any(t.startswith(frag) for t in (_NARR_TAG, _SU_TAG)):
+                safe_len = bracket
+        if safe_len > emitted:
+            yield cleaned[emitted:safe_len]
+            emitted = safe_len
+        if _SU_TAG in acc:
+            return
+
+
 class NarrativeEngine:
     def __init__(self, state_or_client: Any = None, vllm_client: Optional[VLLMClient] = None):
         if isinstance(state_or_client, VLLMClient):
@@ -179,53 +227,18 @@ class NarrativeEngine:
         system_prompt = getattr(state, "global_system_prompt", None)
 
         full_raw_data = ""
-        is_narrating = True
-        buffer = ""
-        for chunk in self.vllm_client.generate_stream(prompt_str, system_prompt=system_prompt):
-            text = ""
-            if isinstance(chunk, dict):
-                if "choices" in chunk and len(chunk["choices"]) > 0:
-                    choice = chunk["choices"][0]
-                    text = (
-                        choice.get("text", "")
-                        or choice.get("delta", {}).get("content", "")
-                        or choice.get("message", {}).get("content", "")
-                    )
-                elif "text" in chunk:
-                    text = chunk["text"]
-            elif isinstance(chunk, str):
-                text = chunk
+        def _texts():
+            nonlocal full_raw_data
+            for chunk in self.vllm_client.generate_stream(prompt_str, system_prompt=system_prompt):
+                t = _chunk_text(chunk)
+                if t:
+                    full_raw_data += t
+                    yield t
 
-            if text:
-                full_raw_data += text
-                if is_narrating:
-                    if "[StateUpdates]" in full_raw_data:
-                        is_narrating = False
-                        continue
-
-                    buffer += text.replace("[Narration]", "")
-                    # If buffer has a '[' but doesn't have the full '[StateUpdates]', we hold it.
-                    if "[" in buffer:
-                        # Find the first '['
-                        idx = buffer.find("[")
-                        # We can yield everything before '['
-                        if idx > 0:
-                            yield buffer[:idx]
-                            buffer = buffer[idx:]
-
-                        # If buffer is a prefix of "[StateUpdates]", we must wait to see more
-                        if "[StateUpdates]".startswith(buffer):
-                            pass
-                        else:
-                            # It's not the start of [StateUpdates], safe to yield
-                            yield buffer
-                            buffer = ""
-                    else:
-                        yield buffer
-                        buffer = ""
-
-        if is_narrating and buffer:
-            yield buffer
+        # Stream cleaned narration to the client (no [Narration]/[StateUpdates] tags leak).
+        for piece in stream_narration(_texts()):
+            if piece:
+                yield piece
 
         narration, state_updates, events = parse_vllm_response(full_raw_data)
 

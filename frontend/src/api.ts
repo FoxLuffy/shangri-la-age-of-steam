@@ -304,6 +304,7 @@ export interface WorkshopMod {
   avg_rating: number;
   rating_count: number;
   featured: boolean;
+  dependencies?: string[];
 }
 
 export interface ModReview {

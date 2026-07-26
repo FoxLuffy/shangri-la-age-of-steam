@@ -185,12 +185,19 @@ committed. Checks:
 Content-safety limits (max lengths, prohibited terms) are not enforced yet; they are
 tracked alongside later modding work. See `ROADMAP.md` section C8.
 
+## Workshop dependencies
+
+Registry mods may declare `dependencies: ["mod_id", ...]`. Installing a mod via
+`POST /workshop/mods/{id}/install` installs its dependencies first (topological order);
+missing dependencies or mods that fail to apply are returned as `warnings` rather than
+aborting, and a dependency cycle is rejected with 400. Preview the resolved order with
+`GET /workshop/mods/{id}/dependencies`.
+
 ## Planned (not yet loadable)
 
 These are on the roadmap but **not** handled by `/modding/upload` yet — including them in
 a mod file has no effect:
 
 - **Recipes** and **Bounties** as moddable entities.
-- Mod **ratings/reviews** (C8.3) and **dependencies/mod chains** (C8.4).
 
 See `ROADMAP.md` section C8 for status.

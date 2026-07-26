@@ -139,7 +139,7 @@ locations (random, or tied to origin/class) instead of a fixed default.
 **Area:** `create_character` initial `location_id`; optionally map to origin background.
 **Acceptance:** new characters can begin in different starting locations.
 
-## CR10 — [OPEN] Main quest at character creation (choose / random / generate)
+## CR10 — [FIXED] Main quest at character creation (choose / random / generate)
 **Reports:** #3 (feature) · **Severity:** Large arc (design + dev)
 
 During character creation, let the player pick a main quest, roll a random one, or request

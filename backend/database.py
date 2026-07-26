@@ -336,6 +336,19 @@ class Quest(SQLModel, table=True):
     reward_quantity: int = Field(default=0)
 
 
+class MainQuest(SQLModel, table=True):
+    __tablename__ = "main_quest"
+    __table_args__ = (UniqueConstraint("character_id"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    character_id: int = Field(foreign_key="character.id", index=True)
+    title: str
+    description: Optional[str] = None
+    # [{ "description": str, "status": "pending"|"active"|"done" }]
+    stages: List[Dict[str, Any]] = Field(default=[], sa_column=Column(JSON))
+    current_stage: int = Field(default=0)
+    status: str = Field(default="active")  # active | completed
+
+
 class QuestState(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     character_id: int = Field(foreign_key="character.id")

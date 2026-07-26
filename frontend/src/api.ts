@@ -121,6 +121,40 @@ export const fetchSessions = async (userId: number): Promise<Character[]> => {
   return data;
 };
 
+export interface MainQuestInput {
+  title: string;
+  description: string;
+  stages: string[];
+}
+
+export interface MainQuestPreset extends MainQuestInput {
+  id: string;
+}
+
+export interface MainQuestProgress {
+  title: string;
+  description: string;
+  stages: { description: string; status: string }[];
+  current_stage: number;
+  current_objective: string | null;
+  status: string;
+}
+
+export const fetchMainQuests = async (): Promise<MainQuestPreset[]> => {
+  const { data } = await api.get('/main-quests');
+  return data;
+};
+
+export const generateMainQuest = async (preset: string, origin: string, backstory: string): Promise<MainQuestInput> => {
+  const { data } = await api.post('/main-quests/generate', { preset, origin, backstory });
+  return data;
+};
+
+export const fetchMainQuest = async (characterId: number): Promise<MainQuestProgress> => {
+  const { data } = await api.get(`/main-quest/${characterId}`);
+  return data;
+};
+
 export const createCharacter = async (
   name: string,
   preset: string,
@@ -129,17 +163,19 @@ export const createCharacter = async (
   gearPrompt: string = "",
   showTutorials: boolean = true,
   gear: any[] = [],
-  userId?: number | null
+  userId?: number | null,
+  mainQuest?: MainQuestInput | null
 ): Promise<Character> => {
-  const { data } = await api.post('/characters', { 
-    name, 
-    preset, 
+  const { data } = await api.post('/characters', {
+    name,
+    preset,
     origin,
-    backstory, 
-    gear_prompt: gearPrompt, 
-    show_tutorials: showTutorials, 
+    backstory,
+    gear_prompt: gearPrompt,
+    show_tutorials: showTutorials,
     gear,
-    user_id: userId
+    user_id: userId,
+    main_quest: mainQuest || null
   });
   return data;
 };

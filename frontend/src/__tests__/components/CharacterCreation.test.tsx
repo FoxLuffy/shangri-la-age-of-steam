@@ -7,11 +7,13 @@ vi.mock('../../api', () => ({
   createCharacter: vi.fn(),
   generateGear: vi.fn(),
   fetchSessions: vi.fn(),
+  fetchMainQuests: vi.fn(),
+  generateMainQuest: vi.fn(),
   BACKEND_URL: 'http://localhost:8003',
   WS_URL: 'ws://localhost:8003/ws',
 }))
 
-import { createCharacter, generateGear, fetchSessions } from '../../api'
+import { createCharacter, generateGear, fetchSessions, fetchMainQuests } from '../../api'
 
 describe('CharacterCreation', () => {
   const mockOnComplete = vi.fn()
@@ -21,6 +23,9 @@ describe('CharacterCreation', () => {
     ;(fetchSessions as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(createCharacter as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 42 })
     ;(generateGear as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    ;(fetchMainQuests as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'aether_heart', title: 'The Aether Heart', description: 'Recover it.', stages: ['a', 'b', 'c'] },
+    ])
   })
 
   it('renders without crashing', () => {
@@ -73,7 +78,7 @@ describe('CharacterCreation', () => {
     
     await waitFor(() => {
       expect(createCharacter).toHaveBeenCalledWith(
-        'Gearsworth', 'Wanderer', 'Foundry Orphan', '', '', true, [], undefined
+        'Gearsworth', 'Wanderer', 'Foundry Orphan', '', '', true, [], undefined, null
       )
       expect(mockOnComplete).toHaveBeenCalledWith(42)
     })
@@ -125,6 +130,14 @@ describe('CharacterCreation', () => {
     await waitFor(() => {
       expect(screen.getByText('Create New Character')).toBeInTheDocument()
     })
+  })
+
+  it('offers main quest presets and selects one', async () => {
+    render(<CharacterCreation onComplete={mockOnComplete} />)
+    // Preset loaded from fetchMainQuests appears; clicking it marks it chosen.
+    const preset = await screen.findByText('The Aether Heart')
+    fireEvent.click(preset)
+    await waitFor(() => expect(screen.getByText(/Chosen: The Aether Heart/)).toBeInTheDocument())
   })
 
   it('shows save metadata (location + last saved) on a session card', async () => {

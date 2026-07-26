@@ -23,7 +23,7 @@ uvicorn can't accept the `/ws` upgrade and returns 404.
 **Acceptance:** `/ws` upgrades succeed (101, not 404); the frontend WebSocketSync connects;
 no "Unsupported upgrade request" warnings in logs.
 
-## CR2 — [OPEN] Bounty board crashes: `Unexpected token '<' … is not valid JSON`
+## CR2 — [FIXED] Bounty board crashes: `Unexpected token '<' … is not valid JSON`
 **Reports:** #4 · **Severity:** High (feature unusable)
 
 `BountyBoard.tsx` calls `fetch('/api/gameplay/bounties?...')` — a raw relative path with an
@@ -52,7 +52,7 @@ panel never opens.
 ensure a minigame is created and the panel opens.
 **Acceptance:** starting a minigame opens the MinigamePanel with a playable puzzle.
 
-## CR4 — [OPEN] NPCs missing from the Environment overview
+## CR4 — [FIXED] NPCs missing from the Environment overview
 **Reports:** #3, #6 (grouped — same panel) · **Severity:** Medium-High (core UX regression)
 
 - #3: after a dynamic world event, **all** NPCs disappear from the Environment overview.

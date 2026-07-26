@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import type { GlossaryData } from '../api';
 import { audioManager } from '../utils/AudioManager';
+import { formatEvent } from '../utils/formatEvent';
 
 interface Message {
   id: string;
@@ -145,14 +146,19 @@ export default function NarrativeStream({
                 msg.stateUpdates.combat_updates?.is_combat_active ||
                 msg.stateUpdates.minigame_trigger
               ) && (
-                <div className="mt-3 pt-2 border-t border-amber-900/40 flex flex-wrap gap-2 text-xs">
-                  <span className="font-semibold text-amber-400">⚡ Dynamic Events:</span>
-                  {msg.events.map((ev: any, idx: number) => (
-                    <span key={idx} className="bg-amber-900/60 text-amber-200 px-2 py-0.5 rounded border border-amber-700/50">
-                      {typeof ev === 'string' ? ev : JSON.stringify(ev)}
-                    </span>
-                  ))}
-                </div>
+                (() => {
+                  const lines = msg.events.map(formatEvent).filter((t): t is string => !!t);
+                  return lines.length > 0 ? (
+                    <div className="mt-3 pt-2 border-t border-amber-900/40 flex flex-wrap gap-2 text-xs">
+                      <span className="font-semibold text-amber-400">⚡ Dynamic Events:</span>
+                      {lines.map((text, idx) => (
+                        <span key={idx} className="bg-amber-900/60 text-amber-200 px-2 py-0.5 rounded border border-amber-700/50">
+                          {text}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null;
+                })()
               )}
 
               {msg.sender === 'narrator' && msg.stateUpdates && (

@@ -70,7 +70,7 @@ conversation/target NPCs in `active_npcs`.
 **Acceptance:** NPCs remain listed through world events; anyone the player is talking to
 shows in the Environment overview.
 
-## CR5 — [OPEN] Dynamic events dump raw/unclear data (immersion-breaking)
+## CR5 — [FIXED] Dynamic events dump raw/unclear data (immersion-breaking)
 **Reports:** #2 · **Severity:** Low-Medium (polish)
 
 The dynamic-events feed shows a lot of raw data whose meaning is unclear. It should surface

@@ -76,7 +76,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - D2 [COMPLETE] CI hardening: ruff + pytest + oxlint + tsc + vitest + Playwright, badge
 - D3 [COMPLETE] Backend refactor: routers/, simulation.py, Alembic migrations
 - D4 [COMPLETE] Frontend refactor: zustand store, ChatInterface decomposition, react-query
-- D5 [PARTIAL] E2E & QA: Playwright configured + specs + CI job; expand visual-regression
+- D5 [COMPLETE] E2E & QA: Playwright visual regression for the 3 named screens
+      (CharacterCreation, ChatInterface, MarketUI) via toHaveScreenshot, linux+win32
+      baselines, CI runs + uploads diff report if:failure(). Hardened: .gitattributes marks
+      baselines binary (autocrlf-safe); frontend/e2e/README.md documents the suite + per-
+      platform baseline regeneration. (Further screens need CI-generated linux baselines.)
 - D6 [COMPLETE] Interactive World Map: faction territory overlay (nodes colored by
       faction_id + HTML legend) and airship travel animation (dashed route, oriented
       airship glyph, progress/altitude readout). Pure helpers in utils/worldMapUtils.ts

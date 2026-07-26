@@ -1,0 +1,13 @@
+# Treat binary assets as binary so autocrlf / text filters never mangle them.
+# Critical for Playwright visual-regression baselines, which must be byte-identical
+# across platforms (win32 + linux) for screenshot comparison.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.db binary

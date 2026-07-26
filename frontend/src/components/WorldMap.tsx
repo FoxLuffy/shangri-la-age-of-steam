@@ -20,6 +20,9 @@ interface NodeData {
 
 import { fetchAirship, navigateAirship } from '../api';
 import AirshipPanel from './AirshipPanel';
+import { factionColor, travelPoint, altitudeForProgress, humanizeFactionId } from '../utils/worldMapUtils';
+
+const MAX_TRAVEL_ALTITUDE = 3000; // feet, for the flight readout
 
 export default function WorldMap({ locations, currentLocationId, characterId, onLocationSelect, onClose }: WorldMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,10 +55,17 @@ export default function WorldMap({ locations, currentLocationId, characterId, on
         // Calculate normalized positions with a bit of randomness or just a circle
         x: 0.5 + 0.35 * Math.cos(angle),
         y: 0.5 + 0.35 * Math.sin(angle),
-        radius: 20
+        radius: 20,
+        controllingFaction: loc.faction_id ?? undefined,
       };
     });
   }, [locations]);
+
+  // Distinct factions present, for the legend.
+  const legendFactions = useMemo(
+    () => Array.from(new Set(locations.map((l) => l.faction_id).filter(Boolean))) as string[],
+    [locations],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,6 +147,10 @@ export default function WorldMap({ locations, currentLocationId, characterId, on
           ctx.fillStyle = '#fbbf24'; // amber-400
           ctx.shadowColor = '#d97706'; // amber-600
           ctx.shadowBlur = 15;
+        } else if (node.controllingFaction) {
+          ctx.fillStyle = factionColor(node.controllingFaction);
+          ctx.shadowColor = '#000';
+          ctx.shadowBlur = 8;
         } else {
           ctx.fillStyle = '#1e293b'; // slate-800
           ctx.shadowBlur = 0;
@@ -165,26 +179,43 @@ export default function WorldMap({ locations, currentLocationId, characterId, on
         ctx.fillText(node.name, x, y + node.radius + 25);
       });
 
-      // Draw Airship if traveling
+      // Draw the airship travelling along a dashed route.
       if (travelState) {
         const fromNode = nodes.find(n => n.id === travelState.fromId);
         const toNode = nodes.find(n => n.id === travelState.toId);
-        
+
         if (fromNode && toNode) {
-          const startX = fromNode.x * width;
-          const startY = fromNode.y * height;
-          const endX = toNode.x * width;
-          const endY = toNode.y * height;
-          
-          const airshipX = startX + (endX - startX) * travelState.progress;
-          const airshipY = startY + (endY - startY) * travelState.progress;
-          
+          const start = { x: fromNode.x * width, y: fromNode.y * height };
+          const end = { x: toNode.x * width, y: toNode.y * height };
+
+          // Dashed route line.
+          ctx.save();
+          ctx.setLineDash([10, 8]);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#38bdf8'; // sky-400
+          ctx.shadowColor = '#0284c7';
+          ctx.shadowBlur = 6;
           ctx.beginPath();
-          ctx.arc(airshipX, airshipY, 8, 0, 2 * Math.PI);
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+          ctx.restore();
+
+          // Airship glyph (an elongated hull) oriented along the route.
+          const pos = travelPoint(start, end, travelState.progress);
+          const heading = Math.atan2(end.y - start.y, end.x - start.x);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.rotate(heading);
           ctx.fillStyle = '#10b981'; // emerald-500
-          ctx.shadowColor = '#059669'; // emerald-600
+          ctx.shadowColor = '#059669';
           ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 14, 6, 0, 0, 2 * Math.PI);
           ctx.fill();
+          ctx.fillStyle = '#065f46'; // emerald-800 fin
+          ctx.fillRect(-14, -2, 4, 4);
+          ctx.restore();
         }
       }
 
@@ -335,8 +366,32 @@ export default function WorldMap({ locations, currentLocationId, characterId, on
             );
           })()}
           {isTraveling && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-sky-900/90 border border-sky-500/50 px-6 py-2 rounded text-sky-200 text-sm shadow-xl pointer-events-none">
-              Traveling to destination...
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-sky-900/90 border border-sky-500/50 px-6 py-2 rounded text-sky-200 text-sm shadow-xl pointer-events-none text-center">
+              <div>Traveling to destination…</div>
+              {travelState && (
+                <div className="text-xs text-sky-300/80 mt-1">
+                  Progress {Math.round(travelState.progress * 100)}% · Altitude{' '}
+                  {Math.round(altitudeForProgress(travelState.progress, MAX_TRAVEL_ALTITUDE))} ft
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Faction territory legend */}
+          {legendFactions.length > 0 && (
+            <div className="absolute bottom-6 left-4 bg-slate-950/90 border border-amber-900/40 rounded-lg p-3 text-xs text-amber-100 shadow-xl pointer-events-none">
+              <div className="uppercase tracking-wider text-amber-500 mb-2">Territories</div>
+              <ul className="space-y-1">
+                {legendFactions.map((fid) => (
+                  <li key={fid} className="flex items-center gap-2">
+                    <span
+                      className="inline-block w-3 h-3 rounded-sm border border-black/40"
+                      style={{ backgroundColor: factionColor(fid) }}
+                    />
+                    {humanizeFactionId(fid)}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           {airship && (

@@ -92,3 +92,104 @@ suppress noisy/raw fields.
 | CR3 | #1 | bug | 2026-07-26 |
 | CR4 | #3, #6 | bug | 2026-07-26 |
 | CR5 | #2 | bug | 2026-07-26 |
+
+---
+
+# Round 2 — 2026-07-26 (fetched + cleared from prod)
+
+5 new reports (2 bugs, 3 features). To be validated/expanded during the `play-session`
+playtest, then prioritized for implementation. Highest priority first.
+
+## CR6 — [OPEN] Narrator lacks per-turn context → inaccurate narrative
+**Reports:** #5 (bug) · **Severity:** High (core narrative quality)
+
+"It seems as if vLLM does not have the context of every turn. This makes it hard to create
+an accurate narrative." The prompt likely doesn't include enough recent history
+(prior turns / world & NPC memories), so continuity breaks.
+**Area:** `narrative_prompt.j2`, `engine.process_action` context assembly, `world_memories`
+/ NPC `memories` inclusion, and the per-turn history window sent to the model.
+**Acceptance:** narration reflects recent turns (names, events, choices) consistently across
+a multi-turn session.
+
+## CR7 — [OPEN] Map accumulates duplicate locations
+**Reports:** #2 (bug) · **Severity:** High (world integrity)
+
+"The map is getting increasingly more duplicate locations." Something creates locations
+repeatedly (e.g. a state-update/exploration path or seed/migration re-running) without
+dedup by id/name.
+**Area:** `repository.update_location` / location creation on `state_updates`, exploration
+new-area handling, `seed_data`. Dedup by id/name; don't recreate existing.
+**Acceptance:** exploring/playing doesn't spawn duplicate locations; the map/all_locations
+stays clean.
+
+## CR8 — [OPEN] Narrator should steer/lead, not just describe
+**Reports:** #4 (feature) · **Severity:** Medium (prompt/design)
+
+"Narrator should try to steer the narrative more. Not just describe, but lead." Add
+prompt guidance to offer hooks, stakes, and forward momentum (goals, threats, choices)
+rather than passive description.
+**Area:** `narrative_prompt.j2` system/style guidance.
+**Acceptance:** narration proposes direction/stakes and nudges the player toward action.
+
+## CR9 — [OPEN] Vary the starting location
+**Reports:** #1 (feature) · **Severity:** Low-Medium
+
+"Not always the same starting location." New characters should start in one of several
+locations (random, or tied to origin/class) instead of a fixed default.
+**Area:** `create_character` initial `location_id`; optionally map to origin background.
+**Acceptance:** new characters can begin in different starting locations.
+
+## CR10 — [OPEN] Main quest at character creation (choose / random / generate)
+**Reports:** #3 (feature) · **Severity:** Large arc (design + dev)
+
+During character creation, let the player pick a main quest, roll a random one, or request
+a generated one. Explicitly a long development + story arc.
+**Area:** character-creation UI + a quest/main-arc model + generation; multi-phase.
+**Acceptance:** (to be scoped) a main quest can be selected/generated at creation and drives
+a longer narrative arc. Likely split into sub-items after playtest + design.
+
+### Round 2 source reports
+| CR | Report id | Type | Reported |
+|----|-----------|------|----------|
+| CR6 | #5 | bug | 2026-07-26 |
+| CR7 | #2 | bug | 2026-07-26 |
+| CR8 | #4 | feature | 2026-07-26 |
+| CR9 | #1 | feature | 2026-07-26 |
+| CR10 | #3 | feature | 2026-07-26 |
+
+---
+
+# Playtest findings — 2026-07-26 (prod, 9 turns)
+
+Full evaluation in `docs/playtest-2026-07-26.md`.
+
+## CR11 — [FIXED] Narrative→state bridge: chat actions never change mechanical state
+**Severity:** CRITICAL (top priority) · relates to CR6, CR3
+
+Across 9 prod turns, every `/chat` returned `state_updates: {}`. Buying, earning rewards,
+completing tasks, combat, and hacking were all pure narration — coins stayed 100, inventory
+unchanged, no quests/combat/minigame. The model emits only a `[Narration]` block and never
+the `[StateUpdates]`/`[Events]` sections the parser expects, so the working sim (economy,
+inventory, quests, combat, minigames) is unreachable from natural play.
+**Fix:** enforce structured output — `narrative_prompt.j2` must REQUIRE a `[StateUpdates]`
+JSON block every turn (explicit schema + few-shot + "emit `[StateUpdates] {}` if nothing
+changed"); validate and retry once when it's missing. Largely resolves CR6 (perceived
+inaccuracy = state desync) and CR3-in-practice (minigame_trigger never fires).
+**Acceptance:** representative actions (buy/earn/take/attack/hack) produce corresponding
+`state_updates` that the server applies (coins/inventory/quests/combat/minigame change).
+
+## CR12 — [OPEN] `[Narration]` tag leaks into streamed narration
+**Severity:** Low. The streaming path doesn't strip the `[Narration]` header (the
+non-streaming parse does). Players can see the raw tag. Fix in the SSE chunk handling
+(`engine`).
+
+## CR13 — [OPEN] SSE splits multibyte UTF-8 → mojibake
+**Severity:** Low. Occasional replacement chars (e.g. `They�re`) when a stream chunk
+boundary splits a UTF-8 sequence. Buffer bytes and decode on char boundaries.
+
+## Notes on existing items (from playtest)
+- **CR6** — continuity was actually good (turn-8 recall of a turn-1 task); the felt
+  "inaccuracy" is **state desync** → folds into CR11.
+- **CR7** — NOT reproduced (5 clean locations; exploration is narrative-only). Needs a
+  targeted repro after CR11 lands (watch for `location_name` updates creating near-dupes).
+- **CR8** — confirmed: narration is rich but rarely leads; prompt-tunable.

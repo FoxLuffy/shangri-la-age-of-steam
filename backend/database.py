@@ -218,6 +218,17 @@ class BulletinBoardMessage(SQLModel, table=True):
     content: str
     timestamp: str = Field(default="")
 
+class ModRating(SQLModel, table=True):
+    __tablename__ = "mod_rating"
+    __table_args__ = (UniqueConstraint("mod_id", "user_id"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    mod_id: str = Field(index=True)
+    user_id: int = Field(index=True)
+    stars: int = Field(default=5)
+    review: Optional[str] = Field(default=None)
+    created_at: str = Field(default="")
+
+
 class SystemSettings(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     registration_open: bool = Field(default=True)

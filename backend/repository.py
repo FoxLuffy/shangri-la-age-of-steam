@@ -140,7 +140,7 @@ class StateRepository:
                     )
 
             mg = self.session.exec(
-                select(Minigame).where(Minigame.character_id == char.id, not Minigame.solved)
+                select(Minigame).where(Minigame.character_id == char.id, ~Minigame.solved)
             ).first()
             if mg:
                 active_minigame = {"id": mg.id, "type": mg.type, "state": mg.state}
@@ -429,7 +429,7 @@ class StateRepository:
 
         # Check if already exists
         existing = self.session.exec(
-            select(Minigame).where(Minigame.character_id == char_id, not Minigame.solved)
+            select(Minigame).where(Minigame.character_id == char_id, ~Minigame.solved)
         ).first()
         if existing:
             return

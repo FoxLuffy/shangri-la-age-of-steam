@@ -38,7 +38,7 @@ then throws the reported error. Backend route exists at `GET /gameplay/bounties`
 **Acceptance:** bounty board loads real bounties (or a clean empty state) in prod; Accept
 works; no JSON-parse error.
 
-## CR3 — [OPEN] "Start minigame" does nothing
+## CR3 — [FIXED] "Start minigame" does nothing
 **Reports:** #1 · **Severity:** High (feature broken)
 
 Clicking start yields no visible effect. `MinigamePanel` only renders when

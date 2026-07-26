@@ -525,3 +525,30 @@ export function craftSuccessPct(level: number, tier: number, branch: string | nu
   const c = Math.max(0.05, Math.min(0.98, 0.5 + 0.1 * (level - tier)));
   return Math.round(c * 100);
 }
+
+// --- Bounties (CR2) ---
+
+export interface Bounty {
+  id: number;
+  title: string;
+  description: string;
+  target_npc_type: string;
+  reward_coins: number;
+  status: string;
+}
+
+export interface BountyBoardData {
+  available: Bounty[];
+  active_ids: number[];
+  completed_ids: number[];
+}
+
+export const fetchBounties = async (characterId: number): Promise<BountyBoardData> => {
+  const { data } = await api.get(`/gameplay/bounties?character_id=${characterId}`);
+  return data;
+};
+
+export const acceptBounty = async (characterId: number, bountyId: number) => {
+  const { data } = await api.post(`/gameplay/bounties/accept?character_id=${characterId}`, { bounty_id: bountyId });
+  return data;
+};

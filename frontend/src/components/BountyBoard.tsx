@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
-
-interface Bounty {
-  id: number;
-  title: string;
-  description: string;
-  target_npc_type: string;
-  reward_coins: number;
-  status: string;
-}
+import { fetchBounties, acceptBounty } from '../api';
+import type { Bounty } from '../api';
 
 interface BountyBoardProps {
   isOpen: boolean;
@@ -22,18 +15,16 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBounties = async () => {
+  const loadBounties = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/gameplay/bounties?character_id=${characterId}`);
-      if (!res.ok) throw new Error("Failed to fetch bounties");
-      const data = await res.json();
+      const data = await fetchBounties(characterId);
       setAvailable(data.available || []);
       setActiveIds(data.active_ids || []);
       setCompletedIds(data.completed_ids || []);
-    } catch (err: any) {
-      setError(err.message);
+    } catch {
+      setError("Failed to load bounties.");
     } finally {
       setIsLoading(false);
     }
@@ -41,24 +32,19 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
 
   useEffect(() => {
     if (isOpen && characterId) {
-      fetchBounties();
+      loadBounties();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, characterId]);
 
-  const acceptBounty = async (bountyId: number) => {
+  const handleAccept = async (bountyId: number) => {
     try {
-      const res = await fetch(`/api/gameplay/bounties/accept?character_id=${characterId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bounty_id: bountyId })
-      });
-      if (!res.ok) throw new Error("Failed to accept bounty");
-      
+      await acceptBounty(characterId, bountyId);
       // Optimistic update
       setActiveIds((prev) => [...prev, bountyId]);
       setAvailable((prev) => prev.filter(b => b.id !== bountyId));
-    } catch (err: any) {
-      alert(err.message);
+    } catch {
+      setError("Failed to accept contract.");
     }
   };
 
@@ -91,7 +77,7 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
                 <div className="text-center">
                   <p className="text-lg font-bold text-amber-700 mb-3">REWARD: {bounty.reward_coins} Coins</p>
                   <button
-                    onClick={() => acceptBounty(bounty.id)}
+                    onClick={() => handleAccept(bounty.id)}
                     className="w-full py-2 bg-red-900 hover:bg-red-800 text-[#f4e4c1] font-bold tracking-wider rounded uppercase text-sm border-2 border-red-950 transition-colors"
                   >
                     Accept Contract

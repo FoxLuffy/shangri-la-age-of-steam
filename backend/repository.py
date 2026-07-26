@@ -245,8 +245,21 @@ class StateRepository:
         self.session.refresh(db_state)
         return state
 
+    def _find_location_by_name(self, name: Optional[str]) -> Optional[DBLocation]:
+        if not name:
+            return None
+        target = name.strip().lower()
+        for loc in self.session.exec(select(DBLocation)).all():
+            if (loc.name or "").strip().lower() == target:
+                return loc
+        return None
+
     def update_location(self, location_id: str, data: Dict[str, Any]) -> Optional[DBLocation]:
         location = self.session.get(DBLocation, location_id)
+        # Dedup by name: don't create a near-duplicate location under a fresh invented id
+        # when one with the same name already exists (CR7).
+        if not location:
+            location = self._find_location_by_name(data.get("name"))
         if not location:
             location = DBLocation(
                 id=location_id,
@@ -680,11 +693,13 @@ class StateRepository:
                     )
                     self.session.add(npc)
             elif entity_type == "location":
-                loc_id = entity.get("id") or entity.get("name", "Unknown Location").lower().replace(" ", "_")
-                if not self.session.get(DBLocation, loc_id):
+                name = entity.get("name", "Unknown Location")
+                loc_id = entity.get("id") or name.lower().replace(" ", "_")
+                # Skip if a location with this id OR the same name already exists (CR7 dedup).
+                if not self.session.get(DBLocation, loc_id) and not self._find_location_by_name(name):
                     loc = DBLocation(
                         id=loc_id,
-                        name=entity.get("name", "Unknown Location"),
+                        name=name,
                         description=entity.get("description", ""),
                     )
                     self.session.add(loc)

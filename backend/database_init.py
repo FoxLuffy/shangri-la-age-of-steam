@@ -118,6 +118,33 @@ def migrate_db():
             pass
 
 
+def seed_demo_user():
+    """Ensure a normal (non-admin) 'demo' account always exists for playtesting.
+
+    Password comes from SAOS_DEMO_PASSWORD (default "demo"). Idempotent.
+    """
+    import hashlib
+    import os
+
+    from backend.database import User
+
+    password = os.environ.get("SAOS_DEMO_PASSWORD", "demo")
+    with Session(engine) as session:
+        existing = session.exec(select(User).where(User.username == "demo")).first()
+        if existing:
+            return existing
+        user = User(
+            username="demo",
+            password_hash=hashlib.sha256(password.encode()).hexdigest(),
+            is_admin=False,
+            created_at="",
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
 def seed_data():
     create_db_and_tables()
     migrate_db()

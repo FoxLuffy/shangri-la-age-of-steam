@@ -54,6 +54,7 @@ export interface Location {
   description: string;
   lore_text?: string;
   npcs: string[];
+  faction_id?: string | null;
 }
 
 export interface WorldStateData {

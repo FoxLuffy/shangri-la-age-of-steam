@@ -77,8 +77,12 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - D3 [COMPLETE] Backend refactor: routers/, simulation.py, Alembic migrations
 - D4 [COMPLETE] Frontend refactor: zustand store, ChatInterface decomposition, react-query
 - D5 [PARTIAL] E2E & QA: Playwright configured + specs + CI job; expand visual-regression
-- D6 [PARTIAL] Interactive World Map: WorldMap.tsx exists; verify/complete faction
-      territory overlay + airship travel animation
+- D6 [COMPLETE] Interactive World Map: faction territory overlay (nodes colored by
+      faction_id + HTML legend) and airship travel animation (dashed route, oriented
+      airship glyph, progress/altitude readout). Pure helpers in utils/worldMapUtils.ts
+      (factionColor/easeInOutQuad/travelPoint/altitudeForProgress/humanizeFactionId).
+      Location type gains faction_id. 9 util + 3 component tests. (Real-time war recolor,
+      emblems, weather FX intentionally deferred.)
 - D7 [COMPLETE] PWA/perf/DX: vite-plugin-pwa, react-virtuoso, .env.example, scripts/
 
 ## E. Save State Management (NEW)

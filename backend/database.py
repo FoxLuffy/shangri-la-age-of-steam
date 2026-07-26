@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlalchemy import JSON, Column, ForeignKey, Integer, UniqueConstraint
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
 
 sqlite_file_name = os.getenv("DATABASE_PATH", "saos.db")
@@ -194,7 +194,14 @@ class Guild(SQLModel, table=True):
     name: str = Field(unique=True, index=True)
     description: Optional[str] = None
     treasury: int = Field(default=0)
-    leader_id: int = Field(foreign_key="character.id")
+    # use_alter breaks the character<->guild circular FK so DDL can be ordered (F3).
+    leader_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("character.id", use_alter=True, name="fk_guild_leader_id"),
+            nullable=False,
+        )
+    )
 
 
 class TradeHistory(SQLModel, table=True):

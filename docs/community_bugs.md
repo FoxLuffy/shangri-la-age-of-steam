@@ -163,7 +163,7 @@ a longer narrative arc. Likely split into sub-items after playtest + design.
 
 Full evaluation in `docs/playtest-2026-07-26.md`.
 
-## CR11 — [OPEN] Narrative→state bridge: chat actions never change mechanical state
+## CR11 — [FIXED] Narrative→state bridge: chat actions never change mechanical state
 **Severity:** CRITICAL (top priority) · relates to CR6, CR3
 
 Across 9 prod turns, every `/chat` returned `state_updates: {}`. Buying, earning rewards,

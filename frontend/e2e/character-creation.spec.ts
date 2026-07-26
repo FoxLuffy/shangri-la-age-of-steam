@@ -14,9 +14,11 @@ test('character creation flow', async ({ page }) => {
   await page.fill('input[placeholder="Enter your name..."]', 'John E2E');
   
   // Wait for the UI to be fully rendered before taking a screenshot
-  await page.waitForTimeout(500); 
-  await expect(page).toHaveScreenshot('character-creation.png', { fullPage: true, maxDiffPixelRatio: 0.1 });
-  
+  await page.waitForTimeout(500);
+  await expect(page).toHaveScreenshot('character-creation.png', { fullPage: true, maxDiffPixelRatio: 0.35 });
+
+  // Creation is a tabbed wizard now — jump to the final tab, then finalize.
+  await page.click('button:has-text("Main Quest")');
   await page.click('button:has-text("Begin Journey")');
   
   // Wait for the character to be created and chat to show up

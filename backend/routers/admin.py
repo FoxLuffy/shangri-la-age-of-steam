@@ -1,4 +1,4 @@
-from datetime import datetime
+
 from typing import Optional
 
 from backend.client import VLLMClient
@@ -6,6 +6,7 @@ from backend.database import NPC as DBNPC
 from backend.database import BugReport, LedgerEntry, SystemSettings, User, UserSession, get_session
 from backend.routers.auth import hash_password
 from backend.schemas import BugReportRequest, NPCUpdate, RegisterRequest, SettingsUpdate
+from backend.timeutils import utc_iso
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlmodel import select
 
@@ -112,7 +113,7 @@ def get_logs(admin: User = Depends(get_admin_user)):
 def submit_bugreport(req: BugReportRequest):
     with get_session() as session:
         bug = BugReport(
-            user_id=req.user_id, type=req.type, original_text=req.text, created_at=datetime.utcnow().isoformat() + "Z"
+            user_id=req.user_id, type=req.type, original_text=req.text, created_at=utc_iso()
         )
         session.add(bug)
         session.commit()

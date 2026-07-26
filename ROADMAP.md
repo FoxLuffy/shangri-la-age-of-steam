@@ -123,5 +123,7 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - F1 [COMPLETE] Fixed pytest-from-subdir: backend/tests/conftest.py prepends the repo
       root to sys.path, so `pytest` works from the repo root OR backend/ (was
       ModuleNotFoundError: backend). README gains a "Running the tests" section.
-- F2 [NOT STARTED] Address datetime.utcnow() deprecation warnings (repository.py, gameplay.py)
+- F2 [COMPLETE] Removed all datetime.utcnow() (deprecated) from backend source (19 sites,
+      8 files). New backend/timeutils.py (utcnow/utcnow_naive/utc_iso) preserves exact
+      timestamp formats ("...Z"). 3 tests in test_timeutils.py; suite 114 green, ruff clean.
 - F3 [NOT STARTED] Resolve SQLAlchemy character<->guild circular FK DROP warning (use_alter=True)

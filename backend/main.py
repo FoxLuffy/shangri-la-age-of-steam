@@ -27,6 +27,7 @@ from backend.database_init import seed_data
 from backend.engine import NarrativeEngine
 from backend.models import PlayerAction, WorldState
 from backend.repository import StateRepository
+from backend.timeutils import utc_iso
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -582,7 +583,7 @@ async def rate_workshop_mod(mod_id: str, payload: ModRateRequest):
             rating = ModRating(mod_id=mod_id, user_id=payload.user_id)
         rating.stars = payload.stars
         rating.review = payload.review
-        rating.created_at = datetime.utcnow().isoformat() + "Z"
+        rating.created_at = utc_iso()
         session.add(rating)
         session.commit()
 
@@ -1263,7 +1264,6 @@ async def trade_market(character_id: int, req: MarketTradeRequest):
 # --- AUTHENTICATION & ACCOUNT MANAGEMENT ---
 import hashlib
 import secrets
-from datetime import datetime
 
 import fastapi
 from fastapi import Header
@@ -1297,7 +1297,7 @@ def register(req: RegisterRequest):
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
-            created_at=datetime.utcnow().isoformat() + "Z",
+            created_at=utc_iso(),
             is_admin=False,
         )
         session.add(user)
@@ -1305,7 +1305,7 @@ def register(req: RegisterRequest):
         session.refresh(user)
 
         token = secrets.token_hex(32)
-        user_session = UserSession(token=token, user_id=user.id, created_at=datetime.utcnow().isoformat() + "Z")
+        user_session = UserSession(token=token, user_id=user.id, created_at=utc_iso())
         session.add(user_session)
         session.commit()
 
@@ -1322,7 +1322,7 @@ def login(req: LoginRequest):
                 user = User(
                     username="admin",
                     password_hash=hash_password(req.password),
-                    created_at=datetime.utcnow().isoformat() + "Z",
+                    created_at=utc_iso(),
                     is_admin=True,
                 )
                 session.add(user)
@@ -1334,7 +1334,7 @@ def login(req: LoginRequest):
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
         token = secrets.token_hex(32)
-        user_session = UserSession(token=token, user_id=user.id, created_at=datetime.utcnow().isoformat() + "Z")
+        user_session = UserSession(token=token, user_id=user.id, created_at=utc_iso())
         session.add(user_session)
         session.commit()
 
@@ -1477,7 +1477,7 @@ def submit_bugreport(req: BugReportRequest):
 
     with get_session() as session:
         bug = BugReport(
-            user_id=req.user_id, type=req.type, original_text=req.text, created_at=datetime.utcnow().isoformat() + "Z"
+            user_id=req.user_id, type=req.type, original_text=req.text, created_at=utc_iso()
         )
         session.add(bug)
         session.commit()

@@ -1,4 +1,4 @@
-from datetime import datetime
+
 from typing import Any, Dict, List, Optional
 
 from backend.database import (
@@ -10,6 +10,7 @@ from backend.database import (
     WorldState,
     get_session,
 )
+from backend.timeutils import utc_iso, utcnow_naive
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
@@ -99,13 +100,13 @@ async def create_save(req: SaveCreateRequest):
         if is_new:
             save = SaveState(character_id=character.id)
 
-        default_name = f"{character.name} — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+        default_name = f"{character.name} — {utcnow_naive().strftime('%Y-%m-%d %H:%M')}"
         if req.name:
             save.name = req.name
         elif is_new:
             save.name = default_name
         # Otherwise keep the existing slot name on overwrite/autosave.
-        save.created_at = datetime.utcnow().isoformat() + "Z"
+        save.created_at = utc_iso()
         save.snapshot = _build_snapshot(session, character)
         session.add(save)
         session.commit()
@@ -252,7 +253,7 @@ async def import_save(character_id: int, payload: SaveExport):
             save = SaveState(character_id=character_id)
 
         save.name = payload.name or save.name or f"Imported — {character.name}"
-        save.created_at = datetime.utcnow().isoformat() + "Z"
+        save.created_at = utc_iso()
         save.snapshot = payload.snapshot.model_dump(mode="json")
         session.add(save)
         session.commit()

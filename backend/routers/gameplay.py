@@ -42,6 +42,7 @@ from backend.schemas import (
     TradeAcceptRequest,
     TradeOfferRequest,
 )
+from backend.timeutils import utcnow_naive
 from backend.websocket import manager
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
@@ -762,7 +763,6 @@ async def install_augmentation(req: AugmentationInstallRequest):
 
 @router.post("/trade/offer")
 async def trade_offer(initiator_id: int, req: TradeOfferRequest):
-    from datetime import datetime
     with get_session() as session:
         trade = TradeHistory(
             initiator_id=initiator_id,
@@ -772,7 +772,7 @@ async def trade_offer(initiator_id: int, req: TradeOfferRequest):
             receiver_item_id=req.receiver_item_id,
             receiver_coins=req.receiver_coins,
             status="pending",
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=utcnow_naive().isoformat()
         )
         session.add(trade)
         session.commit()
@@ -887,13 +887,12 @@ async def get_guild_treasury(guild_id: int):
 
 @router.post("/messages/send")
 async def send_message(character_id: int, req: BulletinMessageRequest):
-    from datetime import datetime
     with get_session() as session:
         msg = BulletinBoardMessage(
             location_id=req.location_id,
             author_id=character_id,
             content=req.content,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=utcnow_naive().isoformat()
         )
         session.add(msg)
         session.commit()

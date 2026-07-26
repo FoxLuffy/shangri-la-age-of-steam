@@ -1,5 +1,4 @@
 import random
-from datetime import datetime
 from typing import List, Optional
 
 from backend.database import (
@@ -12,6 +11,7 @@ from backend.database import (
     RecipeRequirement,
     get_session,
 )
+from backend.timeutils import utc_iso
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
@@ -92,7 +92,7 @@ def _grant(session, character_id: int, recipe_id: int, method: str) -> Optional[
         character_id=character_id,
         recipe_id=recipe_id,
         method=method,
-        discovered_at=datetime.utcnow().isoformat() + "Z",
+        discovered_at=utc_iso(),
     )
     session.add(known)
     return known

@@ -1,10 +1,10 @@
 import hashlib
 import os
 import secrets
-from datetime import datetime
 
 from backend.database import SystemSettings, User, UserSession, get_session
 from backend.schemas import LoginRequest, RegisterRequest
+from backend.timeutils import utc_iso
 from fastapi import APIRouter, HTTPException
 from sqlmodel import select
 
@@ -27,7 +27,7 @@ def register(req: RegisterRequest):
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
-            created_at=datetime.utcnow().isoformat() + "Z",
+            created_at=utc_iso(),
             is_admin=False,
         )
         session.add(user)
@@ -35,7 +35,7 @@ def register(req: RegisterRequest):
         session.refresh(user)
 
         token = secrets.token_hex(32)
-        user_session = UserSession(token=token, user_id=user.id, created_at=datetime.utcnow().isoformat() + "Z")
+        user_session = UserSession(token=token, user_id=user.id, created_at=utc_iso())
         session.add(user_session)
         session.commit()
 
@@ -51,7 +51,7 @@ def login(req: LoginRequest):
                 user = User(
                     username="admin",
                     password_hash=hash_password(req.password),
-                    created_at=datetime.utcnow().isoformat() + "Z",
+                    created_at=utc_iso(),
                     is_admin=True,
                 )
                 session.add(user)
@@ -63,7 +63,7 @@ def login(req: LoginRequest):
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
         token = secrets.token_hex(32)
-        user_session = UserSession(token=token, user_id=user.id, created_at=datetime.utcnow().isoformat() + "Z")
+        user_session = UserSession(token=token, user_id=user.id, created_at=utc_iso())
         session.add(user_session)
         session.commit()
 

@@ -6,6 +6,7 @@ from backend.database import Location as DBLocation
 from backend.database import WorldState as DBWorldState
 from backend.database_init import seed_data
 from backend.models import NPC, Location, WorldState
+from backend.timeutils import utc_iso
 from sqlmodel import Session as SQLModelSession
 from sqlmodel import select
 
@@ -294,13 +295,12 @@ class StateRepository:
         location_id: Optional[str] = None,
         character_id: Optional[int] = None,
     ):
-        from datetime import datetime
 
         from backend.database import LedgerEntry
 
         entry = LedgerEntry(
             character_id=character_id,
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=utc_iso(),
             action=action,
             narration=narration,
             state_updates=state_updates,

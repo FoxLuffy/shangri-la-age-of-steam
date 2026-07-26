@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
+from backend.timeutils import utcnow_naive
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column
 from sqlalchemy.orm import declarative_base
@@ -150,7 +151,7 @@ class DBNPC(SQLModel, base=Base):
 class DBLedgerEntry(SQLModel, base=Base):
     __tablename__ = "ledger_entry"
     id: Optional[int] = SQLModelField(default=None, primary_key=True)
-    timestamp: datetime = SQLModelField(default_factory=datetime.utcnow)
+    timestamp: datetime = SQLModelField(default_factory=utcnow_naive)
     action: str
     narration: str
     state_updates: Optional[Dict[str, Any]] = SQLModelField(default=None, sa_column=Column(JSON))

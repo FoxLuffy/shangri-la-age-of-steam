@@ -16,7 +16,7 @@ const asMock = (fn: unknown) => fn as ReturnType<typeof vi.fn>
 
 const MODS = [
   { id: 'mod_1', name: 'Expanded Locations', description: 'More places.', author: 'A', downloads: 1205, avg_rating: 4.8, rating_count: 3, featured: true },
-  { id: 'mod_2', name: 'New Factions', description: 'Sky pirates.', author: 'B', downloads: 842, avg_rating: 3.0, rating_count: 1, featured: false },
+  { id: 'mod_2', name: 'New Factions', description: 'Sky pirates.', author: 'B', downloads: 842, avg_rating: 3.0, rating_count: 1, featured: false, dependencies: ['mod_1'] },
 ]
 
 describe('WorkshopBrowser', () => {
@@ -48,6 +48,11 @@ describe('WorkshopBrowser', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /rate mod_2 5 stars/i }))
     await waitFor(() => expect(rateMod).toHaveBeenCalledWith('mod_2', 9, 5))
+  })
+
+  it('shows a Requires line for a mod with dependencies', async () => {
+    render(<WorkshopBrowser userId={1} />)
+    await waitFor(() => expect(screen.getByText(/Requires: mod_1/)).toBeInTheDocument())
   })
 
   it('installs a mod', async () => {

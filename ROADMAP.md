@@ -50,7 +50,7 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
 - C5 [COMPLETE] Dynamic weather & day/night + seasonal events
 - C6 [COMPLETE] Bounty board & procedural missions
 - C7 [COMPLETE] Artifact collection & journal
-- C8 [NOT STARTED] Expanded Modding Ecosystem
+- C8 [COMPLETE] Expanded Modding Ecosystem
       - C8.1 [COMPLETE] Mod SDK docs: docs/modding_guide.md (upload, {factions,locations,
         npcs,items} schema, per-field tables, upsert rules, ItemCategory enum, annotated
         example, validation notes, Planned section) + runnable docs/mods/example_mod.json
@@ -65,7 +65,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
         GET /workshop/mods enriched (avg_rating/rating_count/featured: avg≥4.5&≥1 or flag),
         GET /workshop/mods/{id}/ratings. WorkshopBrowser: star widget, sort (rating/downloads),
         featured carousel; userId wired from App. 6 backend + 4 frontend tests.
-      - C8.4 Mod chains & dependencies (dependency resolution on install)
+      - C8.4 [COMPLETE] Mod chains & dependencies: registry `dependencies` field;
+        resolve_install_order (topological, missing + cycle detection); install auto-installs
+        deps first with per-mod try/except → {installed, warnings}; GET
+        /workshop/mods/{id}/dependencies preview. Sample mod files repaired; apply_mod_data
+        helper. WorkshopBrowser shows "Requires". 7 backend + 1 frontend tests.
 
 ## D. Technical Quality (built — checkboxes were stale)
 - D1 [COMPLETE] Frontend testing: vitest + RTL + msw, 58 tests

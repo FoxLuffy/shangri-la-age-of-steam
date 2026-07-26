@@ -1,1 +1,1 @@
-{"locations": [{"id": 991, "name": "Sky Docks", "description": "High altitude docking for airships.", "flavor_text": "Wind howling through the rafters."}]}
+{"locations": [{"id": "mod_sky_docks", "name": "Sky Docks", "description": "High-altitude docking for airships, wind howling through the rafters."}]}

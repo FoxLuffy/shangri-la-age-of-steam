@@ -460,14 +460,94 @@ def _mod_rating_summary(session, mod_id: str):
     return avg, count
 
 
-@app.get("/workshop/mods")
-async def list_workshop_mods():
-    """List available mods from the mock registry, enriched with rating aggregates."""
+def _load_workshop_registry():
     registry_path = os.path.join(os.path.dirname(__file__), "workshop_mods", "registry.json")
     if not os.path.exists(registry_path):
         return []
     with open(registry_path, "r") as f:
-        mods = json.load(f)
+        return json.load(f)
+
+
+def resolve_install_order(registry, mod_id: str) -> dict:
+    """Resolve the install order for a mod and its dependencies.
+
+    Returns {"order": [...], "missing": [...], "cycle": bool}. Dependencies come before
+    the mods that depend on them; `order` ends with `mod_id` and includes only ids present
+    in the registry. `missing` lists declared dependency ids not found in the registry.
+    """
+    deps_by_id = {m["id"]: list(m.get("dependencies") or []) for m in registry}
+    order: list[str] = []
+    missing: list[str] = []
+    state: dict[str, int] = {}  # 0 = visiting, 1 = done
+    cycle = {"found": False}
+
+    def visit(mid: str):
+        if state.get(mid) == 1:
+            return
+        if state.get(mid) == 0:
+            cycle["found"] = True
+            return
+        if mid not in deps_by_id:
+            if mid not in missing:
+                missing.append(mid)
+            return
+        state[mid] = 0
+        for dep in deps_by_id[mid]:
+            visit(dep)
+        state[mid] = 1
+        order.append(mid)
+
+    visit(mod_id)
+    return {"order": order, "missing": missing, "cycle": cycle["found"]}
+
+
+def apply_mod_data(session, data: dict) -> None:
+    """Upsert factions/locations/npcs/items from a parsed mod payload."""
+    from backend.database import NPC, Faction, Item
+
+    if "factions" in data:
+        for f_data in data["factions"]:
+            faction = session.exec(select(Faction).where(Faction.id == f_data["id"])).first()
+            if faction:
+                for k, v in f_data.items():
+                    setattr(faction, k, v)
+            else:
+                session.add(Faction(**f_data))
+
+    if "locations" in data:
+        for l_data in data["locations"]:
+            loc = session.exec(select(Location).where(Location.id == l_data["id"])).first()
+            if loc:
+                for k, v in l_data.items():
+                    setattr(loc, k, v)
+            else:
+                session.add(Location(**l_data))
+
+    if "npcs" in data:
+        for n_data in data["npcs"]:
+            npc = session.exec(select(NPC).where(NPC.id == n_data["id"])).first()
+            if npc:
+                for k, v in n_data.items():
+                    setattr(npc, k, v)
+            else:
+                session.add(NPC(**n_data))
+
+    if "items" in data:
+        for i_data in data["items"]:
+            item = session.exec(select(Item).where(Item.name == i_data["name"])).first()
+            if item:
+                for k, v in i_data.items():
+                    setattr(item, k, v)
+            else:
+                session.add(Item(**i_data))
+
+
+@app.get("/workshop/mods")
+async def list_workshop_mods():
+    """List available mods from the mock registry, enriched with rating aggregates."""
+    mods = _load_workshop_registry()
+    if not mods:
+        return []
 
     with get_session() as session:
         for mod in mods:
@@ -524,65 +604,53 @@ async def list_workshop_mod_ratings(mod_id: str):
         ]
 
 
+@app.get("/workshop/mods/{mod_id}/dependencies")
+async def get_mod_dependencies(mod_id: str):
+    """Preview the resolved install order for a mod and its dependencies."""
+    registry = _load_workshop_registry()
+    if not any(m["id"] == mod_id for m in registry):
+        raise HTTPException(status_code=404, detail="Mod not found")
+    return resolve_install_order(registry, mod_id)
+
+
 @app.post("/workshop/mods/{mod_id}/install")
 async def install_workshop_mod(mod_id: str):
-    """Download and install a mod from the workshop."""
-    mod_path = os.path.join(os.path.dirname(__file__), "workshop_mods", f"{mod_id}.json")
-    if not os.path.exists(mod_path):
+    """Install a mod and its dependencies (dependencies first).
+
+    Missing dependencies and mods that fail to apply become warnings rather than aborting
+    the whole install. A dependency cycle is rejected with 400.
+    """
+    registry = _load_workshop_registry()
+    if not any(m["id"] == mod_id for m in registry):
         raise HTTPException(status_code=404, detail="Mod not found")
 
-    from backend.database import NPC, Faction, Item
+    resolution = resolve_install_order(registry, mod_id)
+    if resolution["cycle"]:
+        raise HTTPException(status_code=400, detail=f"Dependency cycle detected for mod {mod_id}")
 
-    try:
-        with open(mod_path, "r") as f:
-            data = json.load(f)
+    installed: list[str] = []
+    warnings: list[str] = [f"Missing dependency '{d}' — not found in the registry." for d in resolution["missing"]]
 
-        with get_session() as session:
-            if "factions" in data:
-                for f_data in data["factions"]:
-                    faction = session.exec(select(Faction).where(Faction.id == f_data["id"])).first()
-                    if faction:
-                        for k, v in f_data.items():
-                            setattr(faction, k, v)
-                    else:
-                        faction = Faction(**f_data)
-                        session.add(faction)
+    with get_session() as session:
+        for mid in resolution["order"]:
+            mod_path = os.path.join(os.path.dirname(__file__), "workshop_mods", f"{mid}.json")
+            if not os.path.exists(mod_path):
+                warnings.append(f"No mod file found for '{mid}'.")
+                continue
+            try:
+                with open(mod_path, "r") as f:
+                    data = json.load(f)
+                apply_mod_data(session, data)
+                installed.append(mid)
+            except Exception as e:
+                session.rollback()
+                warnings.append(f"Failed to apply '{mid}': {e}")
+        session.commit()
 
-            if "locations" in data:
-                for l_data in data["locations"]:
-                    loc = session.exec(select(Location).where(Location.id == l_data["id"])).first()
-                    if loc:
-                        for k, v in l_data.items():
-                            setattr(loc, k, v)
-                    else:
-                        loc = Location(**l_data)
-                        session.add(loc)
-
-            if "npcs" in data:
-                for n_data in data["npcs"]:
-                    npc = session.exec(select(NPC).where(NPC.id == n_data["id"])).first()
-                    if npc:
-                        for k, v in n_data.items():
-                            setattr(npc, k, v)
-                    else:
-                        npc = NPC(**n_data)
-                        session.add(npc)
-
-            if "items" in data:
-                for i_data in data["items"]:
-                    item = session.exec(select(Item).where(Item.name == i_data["name"])).first()
-                    if item:
-                        for k, v in i_data.items():
-                            setattr(item, k, v)
-                    else:
-                        item = Item(**i_data)
-                        session.add(item)
-
-            session.commit()
-
-        return {"status": "success", "message": f"Mod {mod_id} installed successfully."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to install mod {mod_id}: {str(e)}")
+    message = f"Installed: {', '.join(installed) or 'nothing'}."
+    if warnings:
+        message += " Warnings: " + " ".join(warnings)
+    return {"status": "success", "message": message, "installed": installed, "warnings": warnings}
 
 
 @app.get("/inventory")

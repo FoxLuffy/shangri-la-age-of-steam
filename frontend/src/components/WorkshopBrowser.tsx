@@ -81,6 +81,9 @@ export const WorkshopBrowser: React.FC<{ userId?: number | null }> = ({ userId }
         </h3>
         <p className="text-slate-300 mt-1">{mod.description}</p>
         {stars(mod)}
+        {mod.dependencies && mod.dependencies.length > 0 && (
+          <div className="mt-1 text-xs text-sky-400">Requires: {mod.dependencies.join(", ")}</div>
+        )}
         <div className="mt-2 text-xs text-slate-500">Downloads: {mod.downloads}</div>
       </div>
       <button

@@ -110,7 +110,13 @@ If the player acquires or loses an item, or a quest is given/progresses, reflect
 IMPORTANT: If you introduce or name a NEW character in your narration, you MUST include them in the `active_npcs` list in the StateUpdates so they are instantiated in the database.
 IMPORTANT: If you trigger a minigame (e.g. hack, lockpick), DO NOT narrate the outcome! Narrate only the attempt and end on a tense cliffhanger. The system will resolve the success or failure later.
 
-### OUTPUT FORMAT:
+### OUTPUT FORMAT (MANDATORY — BOTH sections, EVERY turn):
+Respond with EXACTLY two sections, in this order: a `[Narration]` block, then a
+`[StateUpdates]` block containing a single JSON object. You must NEVER omit the
+`[StateUpdates]` section — if nothing mechanical changed this turn, still output
+`[StateUpdates]` followed by `{}`. Only include the keys that actually changed. Do not wrap
+the JSON in code fences.
+
 [Narration]
 (Narrative text here)
 
@@ -206,7 +212,26 @@ IMPORTANT: If you trigger a minigame (e.g. hack, lockpick), DO NOT narrate the o
 }
 
 ### CRITICAL RULES:
-1. ONLY return the JSON. No other text.
-2. If the player is in combat, deduct their Steam when they use abilities, and reduce HP if they take hits. If combat ends, set `is_combat_active` to false.
-3. Wealth changes must be strictly numerical deltas in `empire_updates.brass_coins_change` (e.g. -50 for spending 50 coins, +100 for earning 100 coins). Do NOT output total coins, only the difference.
-4. For tools breaking or being used, deduct durability in `tool_durability_updates`.
+1. ALWAYS output BOTH the `[Narration]` and `[StateUpdates]` sections. The `[StateUpdates]` body must be a single valid JSON object — use `{}` if nothing changed. Never return narration without a `[StateUpdates]` block, and never wrap the JSON in code fences.
+2. Reflect the consequences of the player's action in `[StateUpdates]`: buying/selling and rewards go in `empire_updates.brass_coins_change`; gaining/losing items in `inventory_updates`; accepting/finishing tasks in `quest_updates`; fights in `combat_updates`.
+3. If the player is in combat, deduct their Steam when they use abilities, and reduce HP if they take hits. If combat ends, set `is_combat_active` to false.
+4. Wealth changes must be strictly numerical deltas in `empire_updates.brass_coins_change` (e.g. -50 for spending 50 coins, +100 for earning 100 coins). Do NOT output total coins, only the difference.
+5. For tools breaking or being used, deduct durability in `tool_durability_updates`.
+
+### EXAMPLES (follow this shape exactly):
+Example A — the player buys an item:
+[Narration]
+You slide three coins across the counter. The vendor grunts and presses a pouch of brass calibration gears into your palm.
+
+[StateUpdates]
+{
+  "empire_updates": { "brass_coins_change": -30 },
+  "inventory_updates": [ { "action": "add", "item_name": "Calibration Gears", "quantity": 1, "description": "High-grade brass gears for pressure valves." } ]
+}
+
+Example B — nothing mechanical changed (STILL include [StateUpdates]):
+[Narration]
+You scan the smoky tavern, but nothing stirs beyond the hiss of the overhead pipes.
+
+[StateUpdates]
+{}

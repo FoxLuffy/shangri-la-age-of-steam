@@ -60,7 +60,11 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
         checks; in-file id/name uniqueness; referential existence in DB or same file).
         Collect-all, atomic reject → 400 with detail=[messages]; valid mods still apply.
         Guide validation section updated. 12 tests in test_mod_validation.py.
-      - C8.3 Mod rating & curation (ModRating, sorted browser, featured carousel)
+      - C8.3 [COMPLETE] Mod rating & curation: ModRating model (unique mod+user, upsert)
+        + migration f1a8d3c6b2e9. POST /workshop/mods/{id}/rate (1–5, 400 otherwise),
+        GET /workshop/mods enriched (avg_rating/rating_count/featured: avg≥4.5&≥1 or flag),
+        GET /workshop/mods/{id}/ratings. WorkshopBrowser: star widget, sort (rating/downloads),
+        featured carousel; userId wired from App. 6 backend + 4 frontend tests.
       - C8.4 Mod chains & dependencies (dependency resolution on install)
 
 ## D. Technical Quality (built — checkboxes were stale)

@@ -447,14 +447,81 @@ async def upload_mod(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"Failed to process mod data: {str(e)}")
 
 
+FEATURED_MIN_AVG = 4.5
+FEATURED_MIN_COUNT = 1
+
+
+def _mod_rating_summary(session, mod_id: str):
+    from backend.database import ModRating
+
+    ratings = session.exec(select(ModRating).where(ModRating.mod_id == mod_id)).all()
+    count = len(ratings)
+    avg = round(sum(r.stars for r in ratings) / count, 2) if count else 0.0
+    return avg, count
+
+
 @app.get("/workshop/mods")
 async def list_workshop_mods():
-    """List available mods from the mock registry."""
+    """List available mods from the mock registry, enriched with rating aggregates."""
     registry_path = os.path.join(os.path.dirname(__file__), "workshop_mods", "registry.json")
     if not os.path.exists(registry_path):
         return []
     with open(registry_path, "r") as f:
-        return json.load(f)
+        mods = json.load(f)
+
+    with get_session() as session:
+        for mod in mods:
+            avg, count = _mod_rating_summary(session, mod["id"])
+            mod["avg_rating"] = avg
+            mod["rating_count"] = count
+            mod["featured"] = bool(mod.get("featured")) or (
+                avg >= FEATURED_MIN_AVG and count >= FEATURED_MIN_COUNT
+            )
+    return mods
+
+
+class ModRateRequest(BaseModel):
+    user_id: int
+    stars: int
+    review: Optional[str] = None
+
+
+@app.post("/workshop/mods/{mod_id}/rate")
+async def rate_workshop_mod(mod_id: str, payload: ModRateRequest):
+    """Create or update a user's 1–5 star rating (and optional review) for a mod."""
+    from backend.database import ModRating
+
+    if payload.stars < 1 or payload.stars > 5:
+        raise HTTPException(status_code=400, detail="stars must be between 1 and 5")
+
+    with get_session() as session:
+        rating = session.exec(
+            select(ModRating).where(ModRating.mod_id == mod_id, ModRating.user_id == payload.user_id)
+        ).first()
+        if rating is None:
+            rating = ModRating(mod_id=mod_id, user_id=payload.user_id)
+        rating.stars = payload.stars
+        rating.review = payload.review
+        rating.created_at = datetime.utcnow().isoformat() + "Z"
+        session.add(rating)
+        session.commit()
+
+        avg, count = _mod_rating_summary(session, mod_id)
+        return {"mod_id": mod_id, "avg_rating": avg, "rating_count": count}
+
+
+@app.get("/workshop/mods/{mod_id}/ratings")
+async def list_workshop_mod_ratings(mod_id: str):
+    from backend.database import ModRating
+
+    with get_session() as session:
+        rows = session.exec(
+            select(ModRating).where(ModRating.mod_id == mod_id).order_by(ModRating.id.desc())
+        ).all()
+        return [
+            {"user_id": r.user_id, "stars": r.stars, "review": r.review, "created_at": r.created_at}
+            for r in rows
+        ]
 
 
 @app.post("/workshop/mods/{mod_id}/install")

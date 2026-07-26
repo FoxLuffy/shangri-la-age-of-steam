@@ -295,13 +295,41 @@ export const uploadModData = async (file: File) => {
   return data;
 };
 
-export const fetchWorkshopMods = async () => {
+export interface WorkshopMod {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  downloads: number;
+  avg_rating: number;
+  rating_count: number;
+  featured: boolean;
+}
+
+export interface ModReview {
+  user_id: number;
+  stars: number;
+  review: string | null;
+  created_at: string;
+}
+
+export const fetchWorkshopMods = async (): Promise<WorkshopMod[]> => {
   const { data } = await api.get('/workshop/mods');
   return data;
 };
 
 export const installWorkshopMod = async (modId: string) => {
   const { data } = await api.post(`/workshop/mods/${modId}/install`);
+  return data;
+};
+
+export const rateMod = async (modId: string, userId: number, stars: number, review?: string) => {
+  const { data } = await api.post(`/workshop/mods/${modId}/rate`, { user_id: userId, stars, review });
+  return data;
+};
+
+export const fetchModRatings = async (modId: string): Promise<ModReview[]> => {
+  const { data } = await api.get(`/workshop/mods/${modId}/ratings`);
   return data;
 };
 export const useWorldStateQuery = (characterId?: number) => {

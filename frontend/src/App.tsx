@@ -234,7 +234,7 @@ function MainApp() {
           <div className="absolute inset-0 z-40 bg-slate-950/80 p-4 sm:p-12 flex flex-col items-center">
              <div className="w-full max-w-4xl relative">
                 <button onClick={() => setShowWorkshop(false)} className="absolute top-2 right-2 text-white bg-red-600 px-3 py-1 rounded">Close</button>
-                <WorkshopBrowser />
+                <WorkshopBrowser userId={userId} />
              </div>
           </div>
         )}

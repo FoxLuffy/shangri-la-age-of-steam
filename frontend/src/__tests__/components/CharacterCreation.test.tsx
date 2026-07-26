@@ -55,27 +55,27 @@ describe('CharacterCreation', () => {
     expect(screen.getByText(/High intellect/)).toBeInTheDocument()
   })
 
-  it('disables submit button when name is empty', () => {
+  const goTab = (n: number) => {
+    fireEvent.change(screen.getByPlaceholderText('Enter your name...'), { target: { value: 'Gearsworth' } })
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`${n}\\.`) }))
+  }
+
+  it('disables Next on the first tab when name is empty', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    const submitBtn = screen.getByText('Begin Journey')
-    expect(submitBtn).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled()
   })
 
-  it('enables submit button when name is entered', () => {
+  it('enables Next once a name is entered', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    const nameInput = screen.getByPlaceholderText('Enter your name...')
-    fireEvent.change(nameInput, { target: { value: 'Gearsworth' } })
-    const submitBtn = screen.getByText('Begin Journey')
-    expect(submitBtn).not.toBeDisabled()
+    fireEvent.change(screen.getByPlaceholderText('Enter your name...'), { target: { value: 'Gearsworth' } })
+    expect(screen.getByRole('button', { name: /^next$/i })).not.toBeDisabled()
   })
 
-  it('calls createCharacter and onComplete on submit', async () => {
+  it('calls createCharacter and onComplete on the final tab', async () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    
-    const nameInput = screen.getByPlaceholderText('Enter your name...')
-    fireEvent.change(nameInput, { target: { value: 'Gearsworth' } })
+    goTab(4) // to Main Quest tab
     fireEvent.click(screen.getByText('Begin Journey'))
-    
+
     await waitFor(() => {
       expect(createCharacter).toHaveBeenCalledWith(
         'Gearsworth', 'Wanderer', 'Foundry Orphan', '', '', true, [], undefined, null
@@ -84,27 +84,29 @@ describe('CharacterCreation', () => {
     })
   })
 
-  it('shows tutorials checkbox that is checked by default', () => {
+  it('shows tutorials checkbox on the final tab, checked by default', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    const checkbox = screen.getByLabelText(/Enable Interactive Tutorials/)
-    expect(checkbox).toBeChecked()
+    goTab(4)
+    expect(screen.getByLabelText(/Enable Interactive Tutorials/)).toBeChecked()
   })
 
-  it('shows backstory textarea', () => {
+  it('shows backstory textarea on the Backstory & Origin tab', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
+    goTab(2)
     expect(screen.getByPlaceholderText(/Leave blank to use the class preset/)).toBeInTheDocument()
   })
 
-  it('shows gear prompt textarea and generate button', () => {
+  it('shows gear prompt textarea and generate button on the Equipment tab', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
+    goTab(3)
     expect(screen.getByPlaceholderText(/Describe what gear/)).toBeInTheDocument()
     expect(screen.getByText('Generate Gear')).toBeInTheDocument()
   })
 
   it('disables generate gear button when gear prompt is empty', () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    const genBtn = screen.getByText('Generate Gear')
-    expect(genBtn).toBeDisabled()
+    goTab(3)
+    expect(screen.getByText('Generate Gear')).toBeDisabled()
   })
 
   it('shows session selector when userId is provided and sessions exist', async () => {
@@ -132,9 +134,9 @@ describe('CharacterCreation', () => {
     })
   })
 
-  it('offers main quest presets and selects one', async () => {
+  it('offers main quest presets and selects one on the Main Quest tab', async () => {
     render(<CharacterCreation onComplete={mockOnComplete} />)
-    // Preset loaded from fetchMainQuests appears; clicking it marks it chosen.
+    goTab(4)
     const preset = await screen.findByText('The Aether Heart')
     fireEvent.click(preset)
     await waitFor(() => expect(screen.getByText(/Chosen: The Aether Heart/)).toBeInTheDocument())

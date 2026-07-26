@@ -15,6 +15,7 @@ test('market trading flow', async ({ page }) => {
   
   await expect(page.locator('text=Manifest')).toBeVisible();
   await page.fill('input[placeholder="Enter your name..."]', 'Trader Joe');
+  await page.click('button:has-text("Main Quest")');
   await page.click('button:has-text("Begin Journey")');
   
   // Wait for game UI to load

@@ -122,7 +122,7 @@ new-area handling, `seed_data`. Dedup by id/name; don't recreate existing.
 **Acceptance:** exploring/playing doesn't spawn duplicate locations; the map/all_locations
 stays clean.
 
-## CR8 — [OPEN] Narrator should steer/lead, not just describe
+## CR8 — [FIXED] Narrator should steer/lead, not just describe
 **Reports:** #4 (feature) · **Severity:** Medium (prompt/design)
 
 "Narrator should try to steer the narrative more. Not just describe, but lead." Add

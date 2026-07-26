@@ -120,6 +120,8 @@ Status legend: [COMPLETE] [PARTIAL] [BROKEN] [NOT STARTED]
       lobby has no active character.)
 
 ## F. Housekeeping
-- F1 [NOT STARTED] Fix pytest-from-subdir failure OR document root-only rule in README
+- F1 [COMPLETE] Fixed pytest-from-subdir: backend/tests/conftest.py prepends the repo
+      root to sys.path, so `pytest` works from the repo root OR backend/ (was
+      ModuleNotFoundError: backend). README gains a "Running the tests" section.
 - F2 [NOT STARTED] Address datetime.utcnow() deprecation warnings (repository.py, gameplay.py)
 - F3 [NOT STARTED] Resolve SQLAlchemy character<->guild circular FK DROP warning (use_alter=True)

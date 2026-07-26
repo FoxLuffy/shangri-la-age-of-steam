@@ -142,6 +142,61 @@ class NarrativeEngine:
                 raise ValueError("VLLMClient must be provided explicitly if no initial state is given.")
             self.vllm_client = vllm_client
 
+    def _extract_state(self, action, state, narration: str) -> Dict[str, Any]:
+        """Focused JSON-only second pass: derive concrete state changes from the action +
+        narration. Returns {} on any failure so gameplay never breaks."""
+        inv = ", ".join(i.get("name", "") for i in (getattr(state, "inventory", []) or [])) or "empty"
+        coins = getattr(state, "brass_coins", 0)
+        mq = getattr(state, "main_quest", None)
+        mq_line = (
+            f'Main quest current objective: "{mq.get("current_objective")}".'
+            if isinstance(mq, dict) and mq.get("current_objective")
+            else "No active main quest."
+        )
+        prompt = (
+            "You are the STATE ENGINE for a steampunk RPG. Given the player's action and the "
+            "resulting narration, output ONLY a JSON object of the concrete mechanical changes. "
+            "Output {} if nothing mechanical changed. No prose, no code fences.\n\n"
+            f"Current wealth: {coins} brass coins. Inventory: {inv}. {mq_line} "
+            f"Combat active: {getattr(state, 'is_combat_active', False)}.\n\n"
+            f'Player action: "{action.action_text}"\n'
+            f"Narration: {narration}\n\n"
+            "Include ONLY keys that changed, from this schema:\n"
+            '{ "empire_updates": {"brass_coins_change": <int delta>}, '
+            '"inventory_updates": [{"action":"add|remove","item_name":<str>,"quantity":<int>,"description":<str>}], '
+            '"quest_updates": [{"action":"add|update|complete|fail","quest_title":<str>,"description":<str>}], '
+            '"combat_updates": {"is_combat_active":<bool>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
+            '"minigame_trigger": "hack|lockpick", '
+            '"main_quest_updates": {"advance_stage": true}, '
+            '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>]}] }\n'
+            "Advance the main quest only if the narration clearly completes the current objective. "
+            "Return ONLY the JSON object."
+        )
+        try:
+            resp = self.vllm_client.generate(
+                prompt=prompt,
+                max_tokens=1024,
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+            text = ""
+            if isinstance(resp, dict):
+                if resp.get("choices"):
+                    choice = resp["choices"][0]
+                    text = choice.get("message", {}).get("content", "") or choice.get("text", "")
+                else:
+                    text = resp.get("text", "")
+            elif isinstance(resp, str):
+                text = resp
+            match = re.search(r"\{.*\}", text, re.DOTALL)
+            if match:
+                data = json.loads(match.group(0))
+                if isinstance(data, dict):
+                    return data
+        except Exception as e:
+            logger.warning(f"State extraction pass failed: {e}")
+        return {}
+
     def process_action(self, action: PlayerAction, session: Optional[Session] = None):
         if session:
             from backend.database import Character
@@ -229,7 +284,9 @@ class NarrativeEngine:
         full_raw_data = ""
         def _texts():
             nonlocal full_raw_data
-            for chunk in self.vllm_client.generate_stream(prompt_str, system_prompt=system_prompt):
+            for chunk in self.vllm_client.generate_stream(
+                prompt_str, system_prompt=system_prompt, max_tokens=1500
+            ):
                 t = _chunk_text(chunk)
                 if t:
                     full_raw_data += t
@@ -241,6 +298,15 @@ class NarrativeEngine:
                 yield piece
 
         narration, state_updates, events = parse_vllm_response(full_raw_data)
+
+        # Second pass: many models won't reliably co-emit [StateUpdates] alongside rich prose.
+        # If the first pass yielded no structured state, run a focused JSON-only extraction call
+        # over the action + narration so the world actually reacts (CR11 in practice).
+        if not state_updates:
+            extracted = self._extract_state(action, state, narration)
+            if extracted:
+                state_updates = extracted
+                full_raw_data += "\n[StateUpdates]\n" + json.dumps(extracted)
 
         if repository and state_updates:
             # Advance the staged main quest when the narrator completes the current objective (CR10).

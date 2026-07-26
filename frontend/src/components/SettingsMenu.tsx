@@ -39,14 +39,14 @@ export default function SettingsMenu({ character, onClose, onUpdateCharacter }: 
 
 
   return (
-    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-8 font-mono">
-      <div className="bg-slate-900 border-2 border-amber-900/50 shadow-2xl shadow-amber-900/20 max-w-md w-full flex flex-col">
-        <div className="p-4 border-b border-amber-900/30 bg-slate-800/50 flex justify-between items-center">
+    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-8 font-mono">
+      <div className="bg-slate-900 border-2 border-amber-900/50 shadow-2xl shadow-amber-900/20 max-w-md w-full flex flex-col max-h-[90vh]">
+        <div className="p-4 border-b border-amber-900/30 bg-slate-800/50 flex justify-between items-center shrink-0">
           <h2 className="text-xl text-amber-500 uppercase tracking-widest font-serif">Settings</h2>
           <button onClick={onClose} className="text-amber-500 hover:text-amber-300 text-2xl px-2">✕</button>
         </div>
-        
-        <div className="p-6 space-y-6 text-amber-100">
+
+        <div className="p-6 space-y-6 text-amber-100 overflow-y-auto flex-1">
           <div className="flex items-center justify-between p-4 border border-amber-900/30 bg-slate-800/30">
             <div>
               <div className="text-sm uppercase text-amber-400">Interactive Tutorials</div>

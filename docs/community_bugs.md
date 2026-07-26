@@ -156,3 +156,40 @@ a longer narrative arc. Likely split into sub-items after playtest + design.
 | CR8 | #4 | feature | 2026-07-26 |
 | CR9 | #1 | feature | 2026-07-26 |
 | CR10 | #3 | feature | 2026-07-26 |
+
+---
+
+# Playtest findings — 2026-07-26 (prod, 9 turns)
+
+Full evaluation in `docs/playtest-2026-07-26.md`.
+
+## CR11 — [OPEN] Narrative→state bridge: chat actions never change mechanical state
+**Severity:** CRITICAL (top priority) · relates to CR6, CR3
+
+Across 9 prod turns, every `/chat` returned `state_updates: {}`. Buying, earning rewards,
+completing tasks, combat, and hacking were all pure narration — coins stayed 100, inventory
+unchanged, no quests/combat/minigame. The model emits only a `[Narration]` block and never
+the `[StateUpdates]`/`[Events]` sections the parser expects, so the working sim (economy,
+inventory, quests, combat, minigames) is unreachable from natural play.
+**Fix:** enforce structured output — `narrative_prompt.j2` must REQUIRE a `[StateUpdates]`
+JSON block every turn (explicit schema + few-shot + "emit `[StateUpdates] {}` if nothing
+changed"); validate and retry once when it's missing. Largely resolves CR6 (perceived
+inaccuracy = state desync) and CR3-in-practice (minigame_trigger never fires).
+**Acceptance:** representative actions (buy/earn/take/attack/hack) produce corresponding
+`state_updates` that the server applies (coins/inventory/quests/combat/minigame change).
+
+## CR12 — [OPEN] `[Narration]` tag leaks into streamed narration
+**Severity:** Low. The streaming path doesn't strip the `[Narration]` header (the
+non-streaming parse does). Players can see the raw tag. Fix in the SSE chunk handling
+(`engine`).
+
+## CR13 — [OPEN] SSE splits multibyte UTF-8 → mojibake
+**Severity:** Low. Occasional replacement chars (e.g. `They�re`) when a stream chunk
+boundary splits a UTF-8 sequence. Buffer bytes and decode on char boundaries.
+
+## Notes on existing items (from playtest)
+- **CR6** — continuity was actually good (turn-8 recall of a turn-1 task); the felt
+  "inaccuracy" is **state desync** → folds into CR11.
+- **CR7** — NOT reproduced (5 clean locations; exploration is narrative-only). Needs a
+  targeted repro after CR11 lands (watch for `location_name` updates creating near-dupes).
+- **CR8** — confirmed: narration is rich but rarely leads; prompt-tunable.

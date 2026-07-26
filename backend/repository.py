@@ -66,26 +66,41 @@ class StateRepository:
                 else (db_loc.npcs or []),
             )
 
+        def _to_npc(db_npc: DBNPC) -> NPC:
+            return NPC(
+                id=db_npc.id,
+                name=db_npc.name,
+                traits=db_npc.traits or [],
+                current_dialogue=db_npc.current_dialogue,
+                disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
+                memories=db_npc.memories or [],
+                faction_id=db_npc.faction_id,
+                hp=db_npc.hp,
+                max_hp=db_npc.max_hp,
+                armor=db_npc.armor,
+                status_effects=db_npc.status_effects or [],
+                is_hostile=db_npc.is_hostile,
+                custom_system_prompt=db_npc.custom_system_prompt,
+            )
+
         active_npcs: List[NPC] = []
+        seen_npc_ids: set = set()
         db_npcs_at_loc = self.session.exec(select(DBNPC).where(DBNPC.location_id == loc_id)).all()
         for db_npc in db_npcs_at_loc:
-            active_npcs.append(
-                NPC(
-                    id=db_npc.id,
-                    name=db_npc.name,
-                    traits=db_npc.traits or [],
-                    current_dialogue=db_npc.current_dialogue,
-                    disposition=db_npc.disposition if db_npc.disposition is not None else 0.0,
-                    memories=db_npc.memories or [],
-                    faction_id=db_npc.faction_id,
-                    hp=db_npc.hp,
-                    max_hp=db_npc.max_hp,
-                    armor=db_npc.armor,
-                    status_effects=db_npc.status_effects or [],
-                    is_hostile=db_npc.is_hostile,
-                    custom_system_prompt=db_npc.custom_system_prompt,
-                )
-            )
+            active_npcs.append(_to_npc(db_npc))
+            seen_npc_ids.add(db_npc.id)
+
+        # Also include NPCs the engine tracked as "in scene" (e.g. conversation partners),
+        # even if they aren't physically at loc_id — so they don't vanish from the
+        # Environment overview during dialogue or after a world event (CR4).
+        scene_ids = db_state.active_npcs_ids if db_state and isinstance(db_state.active_npcs_ids, list) else []
+        for nid in scene_ids:
+            if nid in seen_npc_ids:
+                continue
+            scene_npc = self.session.get(DBNPC, nid)
+            if scene_npc:
+                active_npcs.append(_to_npc(scene_npc))
+                seen_npc_ids.add(nid)
 
         from backend.database import Inventory, Item, Quest, QuestState
 

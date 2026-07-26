@@ -49,6 +49,9 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize DB and start the background tasks
     logger.info("Initializing database...")
     create_db_and_tables()
+    from backend.database_init import seed_demo_user
+
+    seed_demo_user()
     logger.info("Starting world simulation, market tasks, and faction wars...")
     global world_task
     world_task = asyncio.create_task(world_simulation_loop())

@@ -987,6 +987,33 @@ async def get_character(character_id: int):
         return char
 
 
+# Thematic starting location per origin background (CR9). Falls back to a random
+# existing location so new characters don't always begin in the same place.
+ORIGIN_START_LOCATION = {
+    "Foundry Orphan": "3",       # The Grand Foundry
+    "Aristocratic Heir": "2",    # Clockwork Plaza
+    "Guild Apprentice": "4",     # The Aetherium Observatory
+    "Smuggler's Ward": "5",      # Undercity Slums
+    "Automata Tinkerer": "3",    # The Grand Foundry
+}
+
+
+def pick_starting_location(session, origin: str) -> str:
+    """Choose a starting location id: the origin's thematic home if available,
+    otherwise a random existing location (default '1' if none seeded)."""
+    from backend.database import Location
+
+    loc_ids = [loc.id for loc in session.exec(select(Location)).all()]
+    if not loc_ids:
+        return "1"
+    mapped = ORIGIN_START_LOCATION.get(origin)
+    if mapped and mapped in loc_ids:
+        return mapped
+    import random
+
+    return random.choice(loc_ids)
+
+
 @app.post("/characters")
 async def create_character(req: CharacterCreateRequest):
     """Create a new character from a preset and their finalized gear."""
@@ -1002,6 +1029,7 @@ async def create_character(req: CharacterCreateRequest):
             stats=preset_data["stats"],
             show_tutorials=req.show_tutorials,
             user_id=req.user_id,
+            location_id=pick_starting_location(session, req.origin),
         )
         session.add(char)
         session.commit()

@@ -131,7 +131,7 @@ rather than passive description.
 **Area:** `narrative_prompt.j2` system/style guidance.
 **Acceptance:** narration proposes direction/stakes and nudges the player toward action.
 
-## CR9 — [OPEN] Vary the starting location
+## CR9 — [FIXED] Vary the starting location
 **Reports:** #1 (feature) · **Severity:** Low-Medium
 
 "Not always the same starting location." New characters should start in one of several

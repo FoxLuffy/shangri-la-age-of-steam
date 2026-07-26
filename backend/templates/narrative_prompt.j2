@@ -127,7 +127,7 @@ the JSON in code fences.
 
 [StateUpdates]
 {
-  "location_id": "Keep current unless moving. If moving to a new location, create a new unique ID (e.g., 'sewers_01')",
+  "location_id": "Keep the current location_id whenever the player stays in, or returns to, a place that already exists. Only invent a NEW unique id (e.g. 'sewers_01') for a genuinely new area that does not exist yet. Never mint a new id for a place that already has one — reuse it to avoid duplicating locations.",
   "location_name": "Keep current unless changed",
   "location_description": "Update if location changed",
   "active_npcs": [

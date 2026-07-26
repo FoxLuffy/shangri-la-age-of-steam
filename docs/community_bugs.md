@@ -111,7 +111,7 @@ an accurate narrative." The prompt likely doesn't include enough recent history
 **Acceptance:** narration reflects recent turns (names, events, choices) consistently across
 a multi-turn session.
 
-## CR7 — [OPEN] Map accumulates duplicate locations
+## CR7 — [FIXED] Map accumulates duplicate locations
 **Reports:** #2 (bug) · **Severity:** High (world integrity)
 
 "The map is getting increasingly more duplicate locations." Something creates locations

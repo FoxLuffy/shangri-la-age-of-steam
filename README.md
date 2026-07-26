@@ -38,6 +38,24 @@ Build commands must be executed from the root repository directory (`.`):
 docker-compose up --build
 ```
 
+## Running the tests
+
+**Backend (pytest)** — runs from the repo root or `backend/` (a `conftest.py` puts the repo
+root on `sys.path`, so `from backend...` imports resolve either way):
+```bash
+pytest                     # from the repo root (recommended)
+cd backend && pytest       # also works
+```
+
+**Frontend (Vitest + Playwright)** — from `frontend/`:
+```bash
+cd frontend
+npm test                   # unit/component tests (Vitest)
+npx tsc --noEmit           # type-check
+npm run lint               # oxlint
+npx playwright test        # end-to-end + visual regression (see frontend/e2e/README.md)
+```
+
 ## Deployment (TrueNAS SCALE)
 
 To deploy this project on TrueNAS SCALE as a Custom App, create a `dataset` for your config and use the following structure in the "Deployment Configuration":

@@ -1,5 +1,11 @@
 import os
+import sys
 import tempfile
+from pathlib import Path
+
+# Ensure the repo root is importable so `from backend...` works regardless of the
+# directory pytest is invoked from (root or backend/).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pytest
 

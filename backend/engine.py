@@ -173,7 +173,7 @@ class NarrativeEngine:
             '"combat_updates": {"is_combat_active":<bool>,"enemy":<str full name of who the player is fighting>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
             '"minigame_trigger": "hack|lockpick", '
             '"main_quest_updates": {"advance_stage": true}, '
-            '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>]}] }\n'
+            '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>],"location_id":<str id of where they physically are — omit for the current location>}] }\n'
             "Brass coins / currency changes go ONLY in empire_updates.brass_coins_change (a "
             "signed integer delta) — NEVER as an inventory_updates item. "
             "Only add to active_npcs a BRAND-NEW named character introduced this turn who is "
@@ -346,18 +346,21 @@ class NarrativeEngine:
             if "active_npcs" in state_updates and isinstance(state_updates["active_npcs"], list):
                 for npc_info in state_updates["active_npcs"]:
                     if isinstance(npc_info, dict):
-                        npc = repository.create_or_update_npc(npc_info, loc_id)
+                        # Situate the NPC where the narration places them — honor an explicit
+                        # location_id, else default to the player's current location (report #4).
+                        npc_loc = npc_info.get("location_id") or loc_id
+                        npc = repository.create_or_update_npc(npc_info, npc_loc)
 
                         is_dead = False
                         if npc.traits:
                             is_dead = any(t.lower() == "dead" for t in npc.traits)
 
+                        # A dead NPC leaves the earshot scene set. New NPCs are NOT auto-added
+                        # to it — earshot is reserved for NPCs the player actively engages
+                        # (engage_named_npcs); a freshly-introduced NPC surfaces as "nearby".
                         if is_dead:
                             if isinstance(state.active_npcs_ids, list) and npc.id in state.active_npcs_ids:
                                 state.active_npcs_ids.remove(npc.id)
-                        else:
-                            if isinstance(state.active_npcs_ids, list) and npc.id not in state.active_npcs_ids:
-                                state.active_npcs_ids.append(npc.id)
 
                         try:
                             npc_dict = {

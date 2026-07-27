@@ -153,11 +153,13 @@ class NarrativeEngine:
             if isinstance(mq, dict) and mq.get("current_objective")
             else "No active main quest."
         )
+        present_npcs = ", ".join(n.name for n in (getattr(state, "active_npcs", []) or [])) or "none"
         prompt = (
             "You are the STATE ENGINE for a steampunk RPG. Given the player's action and the "
             "resulting narration, output ONLY a JSON object of the concrete mechanical changes. "
             "Output {} if nothing mechanical changed. No prose, no code fences.\n\n"
             f"Current wealth: {coins} brass coins. Inventory: {inv}. {mq_line} "
+            f"NPCs already present here: {present_npcs}. "
             f"Combat active: {getattr(state, 'is_combat_active', False)}.\n\n"
             f'Player action: "{action.action_text}"\n'
             f"Narration: {narration}\n\n"
@@ -171,6 +173,9 @@ class NarrativeEngine:
             '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>]}] }\n'
             "Brass coins / currency changes go ONLY in empire_updates.brass_coins_change (a "
             "signed integer delta) — NEVER as an inventory_updates item. "
+            "Only add to active_npcs a BRAND-NEW named character introduced this turn who is "
+            "NOT already present (see the list above); never re-list an existing NPC, and "
+            "always use their full name. "
             "Advance the main quest only if the narration clearly completes the current objective. "
             "Return ONLY the JSON object."
         )

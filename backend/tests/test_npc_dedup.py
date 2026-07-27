@@ -21,3 +21,16 @@ def test_create_or_update_npc_dedups_by_name():
         assert npc.id == "silas"  # reused the existing row
         rows = session.exec(select(DBNPC).where(DBNPC.name == "Silas the Smuggler")).all()
         assert len(rows) == 1
+
+
+def test_dedups_when_name_is_a_shortened_form():
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add(DBNPC(id="barnaby", name="Barnaby the Chief Engineer", location_id="3"))
+        session.commit()
+        repo = StateRepository(session)
+        # Model emits the shortened name under a new id.
+        npc = repo.create_or_update_npc({"id": "barnaby_engineer", "name": "Barnaby"}, "3")
+        assert npc.id == "barnaby"  # merged with the full-name row
+        assert len(session.exec(select(DBNPC)).all()) == 1

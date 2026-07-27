@@ -20,22 +20,32 @@ def setup_db():
         session.add(Location(id="B", name="Docks", description=""))
         char = Character(name="Hero", location_id="A")
         session.add(char)
-        # One NPC physically at the character's location, one elsewhere but "in scene".
+        # present_npc: at the location. convo_npc: in scene AND at the location.
+        # follower_npc: in scene but at a DIFFERENT location (must NOT follow).
         session.add(DBNPC(id="present_npc", name="Gearsmith", location_id="A"))
-        session.add(DBNPC(id="convo_npc", name="Sly the Fox", location_id="B"))
-        session.add(WorldState(current_location_id="A", active_npcs_ids=["convo_npc"]))
+        session.add(DBNPC(id="convo_npc", name="Sly the Fox", location_id="A"))
+        session.add(DBNPC(id="follower_npc", name="Kaelen", location_id="B"))
+        session.add(WorldState(current_location_id="A", active_npcs_ids=["convo_npc", "follower_npc"]))
         session.commit()
         session.refresh(char)
         return char.id
 
 
-def test_active_npcs_include_location_and_tracked_scene():
+def test_active_npcs_include_location_and_in_scene_here():
     cid = setup_db()
     with Session(engine) as session:
         state = StateRepository(session).get_latest_state(cid)
     ids = {npc.id for npc in state.active_npcs}
-    assert "present_npc" in ids            # at the location
-    assert "convo_npc" in ids              # tracked in active_npcs_ids (conversation)
+    assert "present_npc" in ids     # at the location
+    assert "convo_npc" in ids       # in scene AND at this location
+
+
+def test_scene_npc_at_other_location_does_not_follow():
+    cid = setup_db()
+    with Session(engine) as session:
+        state = StateRepository(session).get_latest_state(cid)
+    ids = {npc.id for npc in state.active_npcs}
+    assert "follower_npc" not in ids  # in active_npcs_ids but stored at location B
 
 
 def test_active_npcs_not_duplicated_when_both():

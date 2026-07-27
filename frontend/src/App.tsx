@@ -16,7 +16,6 @@ import ReportModal from './components/ReportModal';
 import { WorkshopBrowser } from './components/WorkshopBrowser';
 import AugmentationPanel from './components/AugmentationPanel';
 import CraftingPanel from './components/CraftingPanel';
-import MainQuestTracker from './components/MainQuestTracker';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
@@ -239,9 +238,6 @@ function MainApp() {
              </div>
           </div>
         )}
-        <div className="absolute top-2 left-2 z-40 max-w-xs pointer-events-none">
-          <MainQuestTracker characterId={character.id} />
-        </div>
         <ChatInterface
           characterId={character.id}
           onStateUpdate={setWorldState}

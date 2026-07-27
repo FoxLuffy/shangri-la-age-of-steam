@@ -68,7 +68,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
 
 ## Chunk C — Side content visibility (P1) · reports #7, #8, #9
 
-- **C1 [NOT STARTED] (P1) Bounty system: single active bounty + visible + LLM-aware.**
+- **C1 [COMPLETE] (P1) Bounty system: single active bounty + visible + LLM-aware.**
   Goal: the player can view their active bounty; only ONE bounty active at a time; the narrative
   prompt weaves hints/references to it. Report #8 (bounties invisible; today they leak into the
   QUESTS list). Acceptance: a Bounties view shows the one active bounty and its progress;

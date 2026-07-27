@@ -10,8 +10,7 @@ interface BountyBoardProps {
 
 export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoardProps) {
   const [available, setAvailable] = useState<Bounty[]>([]);
-  const [_activeIds, setActiveIds] = useState<number[]>([]);
-  const [_completedIds, setCompletedIds] = useState<number[]>([]);
+  const [active, setActive] = useState<Bounty[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +20,7 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
     try {
       const data = await fetchBounties(characterId);
       setAvailable(data.available || []);
-      setActiveIds(data.active_ids || []);
-      setCompletedIds(data.completed_ids || []);
+      setActive(data.active || []);
     } catch {
       setError("Failed to load bounties.");
     } finally {
@@ -40,9 +38,9 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
   const handleAccept = async (bountyId: number) => {
     try {
       await acceptBounty(characterId, bountyId);
-      // Optimistic update
-      setActiveIds((prev) => [...prev, bountyId]);
-      setAvailable((prev) => prev.filter(b => b.id !== bountyId));
+      // Reload so the active bounty + replace-semantics (a prior active returns to the
+      // pool) are reflected accurately.
+      await loadBounties();
     } catch {
       setError("Failed to accept contract.");
     }
@@ -66,6 +64,23 @@ export default function BountyBoard({ isOpen, onClose, characterId }: BountyBoar
         <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
           {isLoading && <p className="text-center text-xl animate-pulse">Checking postings...</p>}
           {error && <p className="text-red-400 text-center font-sans">{error}</p>}
+
+          {!isLoading && active.length > 0 && (
+            <div className="border-2 border-[#d4af37] bg-[#1f1a14]/60 rounded p-4">
+              <h3 className="text-lg font-bold tracking-widest text-[#d4af37] mb-3 uppercase">Your Active Contract</h3>
+              {active.map(bounty => (
+                <div key={bounty.id} className="bg-[#f4e4c1] text-[#2c1e0b] p-4 border border-[#c4a97a] shadow-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-lg font-black uppercase">{bounty.title}</h4>
+                    <span className="text-[10px] font-bold uppercase bg-green-800 text-[#f4e4c1] px-2 py-0.5 rounded">Active</span>
+                  </div>
+                  <p className="text-sm font-semibold text-red-900 mb-1">TARGET: {bounty.target_npc_type}</p>
+                  <p className="text-sm mb-2 leading-relaxed font-sans">{bounty.description}</p>
+                  <p className="text-sm font-bold text-amber-700">REWARD: {bounty.reward_coins} Coins — defeat the target to claim it.</p>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {!isLoading && available.map(bounty => (

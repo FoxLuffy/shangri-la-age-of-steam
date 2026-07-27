@@ -576,6 +576,7 @@ export interface Bounty {
 
 export interface BountyBoardData {
   available: Bounty[];
+  active: Bounty[];
   active_ids: number[];
   completed_ids: number[];
 }

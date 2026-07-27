@@ -122,6 +122,12 @@ Current objective: {{ main_quest.current_objective }}
 (Weave the character toward this objective. When the player clearly completes THIS objective, emit `"main_quest_updates": { "advance_stage": true }` in the StateUpdates — do not advance more than one objective per turn, and do not advance until it is genuinely done.)
 {% endif %}
 
+{% if active_bounty %}
+**ACTIVE BOUNTY — {{ active_bounty.title }}** (target: {{ active_bounty.target_npc_type }}, reward: {{ active_bounty.reward_coins }} brass coins)
+{{ active_bounty.description }}
+(Occasionally weave subtle leads, rumors, or references toward this bounty into the world — an NPC overhearing something, a wanted poster, a nervous mention of the target. Do NOT resolve the bounty through narration alone; it completes only when the target is actually defeated. Keep the hints light and diegetic.)
+{% endif %}
+
 **Player Action:** {{ action_text }}
 
 ### TASK:

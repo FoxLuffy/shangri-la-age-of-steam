@@ -104,6 +104,12 @@ class StateRepository:
                 active_npcs.append(_to_npc(scene_npc))
                 seen_npc_ids.add(nid)
 
+        # Earshot: NPCs in the scene set (active_npcs_ids) are actively engaged / within
+        # earshot; NPCs merely present at the location are background.
+        scene_set = set(scene_ids)
+        for npc in active_npcs:
+            npc.in_earshot = npc.id in scene_set
+
         from backend.database import Inventory, Item, Quest, QuestState
 
         inventory_list = []
@@ -251,6 +257,31 @@ class StateRepository:
             season=db_state.season if db_state and hasattr(db_state, 'season') else "Brass Festival",
         )
 
+    def engage_named_npcs(self, action_text: str, state: WorldState) -> set:
+        """Mark present NPCs the player names in their action as in-earshot / engaged,
+        persisting them to the scene set (active_npcs_ids). Returns the engaged ids."""
+        if not action_text:
+            return set()
+        text = action_text.lower()
+        engaged = set()
+        for npc in getattr(state, "active_npcs", []) or []:
+            name = (npc.name or "").strip().lower()
+            first = name.split()[0] if name else ""
+            if name and (name in text or (len(first) >= 3 and first in text)):
+                engaged.add(npc.id)
+                npc.in_earshot = True
+        if engaged:
+            db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
+            if db_state:
+                ids = list(db_state.active_npcs_ids or [])
+                for e in engaged:
+                    if e not in ids:
+                        ids.append(e)
+                db_state.active_npcs_ids = ids
+                self.session.add(db_state)
+                self.session.commit()
+        return engaged
+
     def save_state(self, state: WorldState) -> WorldState:
         db_state = DBWorldState(
             current_location_id=state.current_location_id,
@@ -359,6 +390,7 @@ class StateRepository:
                 name=npc_data.get("name", "Unknown NPC"),
                 traits=npc_data.get("traits", []),
                 disposition=npc_data.get("disposition", 0.0),
+                is_hostile=npc_data.get("is_hostile", False),
                 location_id=location_id,
             )
         else:
@@ -368,6 +400,8 @@ class StateRepository:
                 npc.traits = npc_data["traits"]
             if "disposition" in npc_data:
                 npc.disposition = npc_data["disposition"]
+            if "is_hostile" in npc_data:
+                npc.is_hostile = npc_data["is_hostile"]
         self.session.add(npc)
         self.session.commit()
         self.session.refresh(npc)
@@ -627,12 +661,37 @@ class StateRepository:
                             }
                         )
 
+                    added_npc_ids = set()
                     for npc_id in active_npc_ids:
                         n = self.session.get(NPC, npc_id)
                         if n:
                             participants.append(
                                 {"id": f"npc_{n.id}", "type": "npc", "name": n.name, "speed": getattr(n, "speed", 5)}
                             )
+                            added_npc_ids.add(n.id)
+
+                    # Combat fidelity: honor the antagonist(s) the narration actually names.
+                    # `enemy` (str) or `enemies` (list) let the model tie combat to the fought
+                    # character instead of whatever NPCs happen to be in the scene set.
+                    enemy_names = []
+                    if update.get("enemy"):
+                        enemy_names.append(update["enemy"])
+                    enemy_names.extend(update.get("enemies", []) or [])
+                    for ename in enemy_names:
+                        name = ename.get("name") if isinstance(ename, dict) else ename
+                        if not name or not str(name).strip():
+                            continue
+                        enemy = self.create_or_update_npc({"name": str(name).strip(), "is_hostile": True}, loc_id)
+                        if enemy and enemy.id not in added_npc_ids:
+                            participants.append(
+                                {
+                                    "id": f"npc_{enemy.id}",
+                                    "type": "npc",
+                                    "name": enemy.name,
+                                    "speed": getattr(enemy, "speed", 5),
+                                }
+                            )
+                            added_npc_ids.add(enemy.id)
 
                     # Sort by speed descending
                     participants.sort(key=lambda x: x["speed"], reverse=True)

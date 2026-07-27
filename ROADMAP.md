@@ -60,7 +60,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   Acceptance: no world-time/NPC mutation occurs without a `/chat` turn; a tick may fire at most
   once per turn and never adds NPCs absent from the current location; backend test.
 
-- **B3 [NOT STARTED] (P1) Location-aware NPC instantiation + de-clutter.**
+- **B3 [COMPLETE] (P1) Location-aware NPC instantiation + de-clutter.**
   Goal: when the narration names a character, instantiate them at the correct location and only
   surface NPCs actually at the player's location; cap runaway `active_npcs` growth (playtest saw
   5+ pile up). Ties into #4. Acceptance: mentioning a character adds them to that location's NPCs

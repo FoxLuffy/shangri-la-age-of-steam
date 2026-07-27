@@ -17,6 +17,9 @@ _PLACEHOLDER_ENEMY_NAMES = {
     "unknown", "unknown enemy", "enemy", "the enemy", "unseen enemy",
 }
 
+# Max NPCs surfaced at a location before de-cluttering (engaged NPCs are always kept).
+_MAX_SURFACED_NPCS = 6
+
 
 class StateRepository:
     def __init__(self, session: SQLModelSession):
@@ -116,6 +119,14 @@ class StateRepository:
         scene_set = set(scene_ids)
         for npc in active_npcs:
             npc.in_earshot = npc.id in scene_set
+
+        # De-clutter: cap how many NPCs we surface so a location doesn't drown in every
+        # character ever mentioned there (reported pile-up). Engaged (in-earshot) NPCs are
+        # always kept; remaining slots go to background NPCs. All NPCs stay in the DB.
+        if len(active_npcs) > _MAX_SURFACED_NPCS:
+            engaged = [n for n in active_npcs if n.in_earshot]
+            others = [n for n in active_npcs if not n.in_earshot]
+            active_npcs = engaged + others[: max(0, _MAX_SURFACED_NPCS - len(engaged))]
 
         from backend.database import Inventory, Item, Quest, QuestState
 

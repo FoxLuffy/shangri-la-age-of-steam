@@ -70,6 +70,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
                 "armor": getattr(npc, "armor", 0),
                 "status_effects": getattr(npc, "status_effects", []) or [],
                 "custom_system_prompt": custom_prompt if custom_prompt else None,
+                "in_earshot": bool(getattr(npc, "in_earshot", False)),
             }
         )
 

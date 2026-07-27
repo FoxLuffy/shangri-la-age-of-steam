@@ -30,6 +30,9 @@ class NPC(BaseModel):
     memories: List[Dict[str, str]] = []  # List of { "key": "...", "value": "..." }
     faction_id: Optional[str] = None
     custom_system_prompt: Optional[str] = None
+    # True when the player is actively engaged with / within earshot of this NPC
+    # (derived per request; not persisted on the DB row).
+    in_earshot: bool = False
 
     # Combat
     speed: int = 5

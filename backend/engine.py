@@ -167,7 +167,7 @@ class NarrativeEngine:
             '{ "empire_updates": {"brass_coins_change": <int delta>}, '
             '"inventory_updates": [{"action":"add|remove","item_name":<str>,"quantity":<int>,"description":<str>}], '
             '"quest_updates": [{"action":"add|update|complete|fail","quest_title":<str>,"description":<str>}], '
-            '"combat_updates": {"is_combat_active":<bool>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
+            '"combat_updates": {"is_combat_active":<bool>,"enemy":<str full name of who the player is fighting>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
             '"minigame_trigger": "hack|lockpick", '
             '"main_quest_updates": {"advance_stage": true}, '
             '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>]}] }\n'
@@ -177,9 +177,10 @@ class NarrativeEngine:
             "NOT already present (see the list above); never re-list an existing NPC, and "
             "always use their full name. "
             "COMBAT: if the player attacks, is attacked, or a fight breaks out, you MUST set "
-            "combat_updates.is_combat_active=true and include player_updates hp_change/"
-            "steam_change for any blows taken or abilities used. Set is_combat_active=false "
-            "only once the fight is clearly over. "
+            "combat_updates.is_combat_active=true, set combat_updates.enemy to the full name "
+            "of the character or creature being fought (as named in the narration), and include "
+            "player_updates hp_change/steam_change for any blows taken or abilities used. Set "
+            "is_combat_active=false only once the fight is clearly over. "
             "Advance the main quest only if the narration clearly completes the current objective. "
             "Return ONLY the JSON object."
         )
@@ -226,6 +227,8 @@ class NarrativeEngine:
                 db_state = session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
                 if db_state and db_state.current_location_id != action.current_location_id:
                     db_state.current_location_id = action.current_location_id
+                    # Leaving a location leaves earshot of everyone there.
+                    db_state.active_npcs_ids = []
                     session.add(db_state)
                     loc_changed = True
 
@@ -234,6 +237,8 @@ class NarrativeEngine:
 
             repository = StateRepository(session)
             state = repository.get_latest_state(action.character_id)
+            # NPCs the player names this turn come within earshot / into active engagement.
+            repository.engage_named_npcs(action.action_text, state)
         elif self.initial_state:
             repository = None
             state = self.initial_state

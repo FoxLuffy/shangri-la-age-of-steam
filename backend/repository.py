@@ -10,6 +10,13 @@ from backend.timeutils import utc_iso
 from sqlmodel import Session as SQLModelSession
 from sqlmodel import select
 
+# Enemy names the model emits when there is no real antagonist — never instantiate an NPC
+# from these (prod bug: a hostile NPC literally named "none").
+_PLACEHOLDER_ENEMY_NAMES = {
+    "", "none", "no one", "nobody", "n/a", "na", "null",
+    "unknown", "unknown enemy", "enemy", "the enemy", "unseen enemy",
+}
+
 
 class StateRepository:
     def __init__(self, session: SQLModelSession):
@@ -234,7 +241,10 @@ class StateRepository:
             main_quest=main_quest_ctx,
             factions=factions_list,
             active_minigame=active_minigame,
-            is_combat_active=db_state.is_combat_active if db_state else False,
+            # Combat is location-scoped via CombatSession — derive it from an active session
+            # at the character's current location, NOT the shared global WorldState flag
+            # (which leaks combat into freshly-created characters and other locations).
+            is_combat_active=bool(combat_session),
             combat_state=combat_state,
             player_stats={
                 "id": char.id if char else 1,
@@ -680,9 +690,12 @@ class StateRepository:
                     enemy_names.extend(update.get("enemies", []) or [])
                     for ename in enemy_names:
                         name = ename.get("name") if isinstance(ename, dict) else ename
-                        if not name or not str(name).strip():
+                        name = str(name).strip() if name else ""
+                        # Reject placeholder / non-name enemies so we never instantiate a junk
+                        # hostile NPC (observed in prod: an NPC literally named "none").
+                        if name.lower() in _PLACEHOLDER_ENEMY_NAMES:
                             continue
-                        enemy = self.create_or_update_npc({"name": str(name).strip(), "is_hostile": True}, loc_id)
+                        enemy = self.create_or_update_npc({"name": name, "is_hostile": True}, loc_id)
                         if enemy and enemy.id not in added_npc_ids:
                             participants.append(
                                 {

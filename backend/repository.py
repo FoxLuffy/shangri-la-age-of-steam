@@ -400,7 +400,29 @@ class StateRepository:
         if not item_name:
             return
 
-        # Find or create item
+        if action == "remove":
+            # Match the CHARACTER's inventory row by item name — duplicate Item rows can
+            # share a name, so a global Item.first() may point at an item the character
+            # doesn't actually hold (which made removes silently no-op).
+            name_l = item_name.strip().lower()
+            inv_row = None
+            for inv in self.session.exec(
+                select(Inventory).where(Inventory.character_id == char_id)
+            ).all():
+                it = self.session.get(Item, inv.item_id)
+                if it and (it.name or "").strip().lower() == name_l:
+                    inv_row = inv
+                    break
+            if inv_row:
+                inv_row.quantity -= qty
+                if inv_row.quantity <= 0:
+                    self.session.delete(inv_row)
+                else:
+                    self.session.add(inv_row)
+                self.session.commit()
+            return
+
+        # action == "add": find or create the item, then add to the character's inventory.
         item = self.session.exec(select(Item).where(Item.name == item_name)).first()
         if not item:
             item = Item(
@@ -413,21 +435,11 @@ class StateRepository:
         inv = self.session.exec(
             select(Inventory).where(Inventory.character_id == char_id, Inventory.item_id == item.id)
         ).first()
-
-        if action == "add":
-            if inv:
-                inv.quantity += qty
-            else:
-                inv = Inventory(character_id=char_id, item_id=item.id, quantity=qty)
-            self.session.add(inv)
-        elif action == "remove":
-            if inv:
-                inv.quantity -= qty
-                if inv.quantity <= 0:
-                    self.session.delete(inv)
-                else:
-                    self.session.add(inv)
-
+        if inv:
+            inv.quantity += qty
+        else:
+            inv = Inventory(character_id=char_id, item_id=item.id, quantity=qty)
+        self.session.add(inv)
         self.session.commit()
 
     def apply_tool_durability_update(self, update: Dict[str, Any], char_id: int = 1):

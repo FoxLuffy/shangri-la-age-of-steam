@@ -172,6 +172,7 @@ class NarrativeEngine:
             '"quest_updates": [{"action":"add|update|complete|fail","quest_title":<str>,"description":<str>}], '
             '"combat_updates": {"is_combat_active":<bool>,"enemy":<str full name of who the player is fighting>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
             '"minigame_trigger": "hack|lockpick", '
+            '"artifact_discovered": <full name of a legendary artifact the player just found, if any>, '
             '"main_quest_updates": {"advance_stage": true}, '
             '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>],"location_id":<str id of where they physically are — omit for the current location>}] }\n'
             "Brass coins / currency changes go ONLY in empire_updates.brass_coins_change (a "
@@ -243,6 +244,12 @@ class NarrativeEngine:
             state = repository.get_latest_state(action.character_id)
             # NPCs the player names this turn come within earshot / into active engagement.
             repository.engage_named_npcs(action.action_text, state)
+            # Explorer's Journal: log the visited location + NPCs met (C2).
+            repository.record_discoveries(
+                action.character_id,
+                getattr(state, "current_location_id", None),
+                [n.id for n in (getattr(state, "active_npcs", []) or [])],
+            )
         elif self.initial_state:
             repository = None
             state = self.initial_state
@@ -374,6 +381,9 @@ class NarrativeEngine:
                             events.append({"type": "npc_state_change", "npc": npc_dict})
                         except Exception as e:
                             logger.error(f"Failed to append NPC state change event: {e}")
+
+            if state_updates.get("artifact_discovered"):
+                repository.discover_artifact_by_name(action.character_id, state_updates["artifact_discovered"])
 
             if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
                 for inv_update in state_updates["inventory_updates"]:

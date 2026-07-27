@@ -306,8 +306,19 @@ def seed_data():
             )
             session.add_all([prop1, prop2, prop3])
 
+            # Seed Artifacts (Explorer's Journal codex)
+            from backend.database import Artifact
+
+            session.add_all([
+                Artifact(name="Aether Compass", description="A brass compass whose needle points toward concentrations of raw aether.", stat_bonus={"intellect": 2}, rarity="Rare"),
+                Artifact(name="Chronovic Monocle", description="A ticking monocle that lets its bearer glimpse a heartbeat into the future.", stat_bonus={"speed": 2}, rarity="Rare"),
+                Artifact(name="Ironheart Locket", description="A soot-blackened locket said to still the fear of those who carry it.", stat_bonus={"strength": 1, "charm": 1}, rarity="Uncommon"),
+                Artifact(name="Whisperbrass Key", description="An ornate key that hums faintly near locks it was never cut for.", stat_bonus={"intellect": 1}, rarity="Uncommon"),
+                Artifact(name="The Aether Heart", description="A legendary core rumored to power — or level — an entire city.", stat_bonus={"strength": 3, "intellect": 3}, rarity="Legendary"),
+            ])
+
             session.commit()
-            print("Database seeded with initial locations, NPCs, WorldState, Properties, and ResourceMarket.")
+            print("Database seeded with initial locations, NPCs, WorldState, Properties, ResourceMarket, and Artifacts.")
         else:
             print("Database already contains data.")
 

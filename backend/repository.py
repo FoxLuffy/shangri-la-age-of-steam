@@ -318,6 +318,56 @@ class StateRepository:
                 npc.in_earshot = npc.id in engaged
         return engaged
 
+    def record_discoveries(self, character_id, location_id=None, npc_ids=None):
+        """Explorer's Journal (C2): log the character's current location and any NPCs they've
+        met. Idempotent — each id is stored once."""
+        char = self.session.get(Character, character_id) if character_id else None
+        if not char:
+            return
+        changed = False
+        if location_id:
+            visited = list(char.visited_locations or [])
+            if location_id not in visited:
+                visited.append(location_id)
+                char.visited_locations = visited
+                changed = True
+        if npc_ids:
+            met = list(char.met_npcs or [])
+            for nid in npc_ids:
+                if nid and nid not in met:
+                    met.append(nid)
+                    changed = True
+            char.met_npcs = met
+        if changed:
+            self.session.add(char)
+            self.session.commit()
+
+    def discover_artifact_by_name(self, character_id, name):
+        """Mark an artifact discovered by (case-insensitive) name. Returns the Artifact or None."""
+        from backend.database import Artifact
+
+        if not name or not str(name).strip():
+            return None
+        char = self.session.get(Character, character_id) if character_id else None
+        if not char:
+            return None
+        target = str(name).strip().lower()
+        artifact = None
+        for a in self.session.exec(select(Artifact)).all():
+            an = (a.name or "").strip().lower()
+            if an and (an == target or an in target or target in an):
+                artifact = a
+                break
+        if not artifact:
+            return None
+        discovered = list(char.discovered_artifacts or [])
+        if artifact.id not in discovered:
+            discovered.append(artifact.id)
+            char.discovered_artifacts = discovered
+            self.session.add(char)
+            self.session.commit()
+        return artifact
+
     def save_state(self, state: WorldState) -> WorldState:
         db_state = DBWorldState(
             current_location_id=state.current_location_id,

@@ -90,15 +90,17 @@ class StateRepository:
             active_npcs.append(_to_npc(db_npc))
             seen_npc_ids.add(db_npc.id)
 
-        # Also include NPCs the engine tracked as "in scene" (e.g. conversation partners),
-        # even if they aren't physically at loc_id — so they don't vanish from the
-        # Environment overview during dialogue or after a world event (CR4).
+        # Also include NPCs the engine tracked as "in scene" (e.g. conversation partners)
+        # — but ONLY if they are actually at the current location. The scene set
+        # (active_npcs_ids) is global, so without this check a lingering NPC would follow
+        # the player to every location/character (reported: "Kaelen is always there"). A
+        # true conversation partner is placed at loc_id by the engine, so they still show.
         scene_ids = db_state.active_npcs_ids if db_state and isinstance(db_state.active_npcs_ids, list) else []
         for nid in scene_ids:
             if nid in seen_npc_ids:
                 continue
             scene_npc = self.session.get(DBNPC, nid)
-            if scene_npc:
+            if scene_npc and scene_npc.location_id == loc_id:
                 active_npcs.append(_to_npc(scene_npc))
                 seen_npc_ids.add(nid)
 

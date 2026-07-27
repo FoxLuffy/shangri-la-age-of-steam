@@ -18,14 +18,14 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
 
 ## Chunk A — Combat (P0/P1) · reports #11 + playtest
 
-- **A1 [NOT STARTED] (P0) Stop combat leaking into new characters.**
+- **A1 [COMPLETE] (P0) Stop combat leaking into new characters.**
   Goal: a freshly created character never spawns with `is_combat_active=True`.
   Root cause: global `WorldState.is_combat_active` is read for a new character instead of
   per-character combat state. Acceptance: create a character while another world row has
   combat active → new character's `/state.is_combat_active` is False and no `CombatSession`
   is attached; backend test.
 
-- **A2 [NOT STARTED] (P0) Reject placeholder enemy names in combat.**
+- **A2 [COMPLETE] (P0) Reject placeholder enemy names in combat.**
   Goal: `combat_updates.enemy` values like `"none"`, `"unknown"`, `"unknown enemy"`, `""`
   never instantiate an NPC. Root cause: #179 combat-fidelity creates a hostile NPC from any
   `enemy` string (observed: an NPC literally named "none"). Acceptance: `apply_combat_update`

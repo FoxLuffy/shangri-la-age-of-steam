@@ -176,6 +176,10 @@ class NarrativeEngine:
             "Only add to active_npcs a BRAND-NEW named character introduced this turn who is "
             "NOT already present (see the list above); never re-list an existing NPC, and "
             "always use their full name. "
+            "COMBAT: if the player attacks, is attacked, or a fight breaks out, you MUST set "
+            "combat_updates.is_combat_active=true and include player_updates hp_change/"
+            "steam_change for any blows taken or abilities used. Set is_combat_active=false "
+            "only once the fight is clearly over. "
             "Advance the main quest only if the narration clearly completes the current objective. "
             "Return ONLY the JSON object."
         )

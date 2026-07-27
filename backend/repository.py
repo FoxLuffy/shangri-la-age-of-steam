@@ -343,6 +343,10 @@ class StateRepository:
     def create_or_update_npc(self, npc_data: Dict[str, Any], location_id: str) -> DBNPC:
         npc_id = npc_data.get("id") or npc_data.get("name", "npc_unknown").lower().replace(" ", "_")
         npc = self.session.get(DBNPC, npc_id)
+        # Dedup by name: avoid a second NPC row when the model invents a new id for an
+        # existing character (e.g. seeded "Silas the Smuggler" vs a fresh "silas_smuggler").
+        if not npc and npc_data.get("name"):
+            npc = self.session.exec(select(DBNPC).where(DBNPC.name == npc_data["name"])).first()
         if not npc:
             npc = DBNPC(
                 id=npc_id,

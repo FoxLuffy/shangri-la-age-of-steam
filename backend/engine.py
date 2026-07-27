@@ -169,6 +169,8 @@ class NarrativeEngine:
             '"minigame_trigger": "hack|lockpick", '
             '"main_quest_updates": {"advance_stage": true}, '
             '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>]}] }\n'
+            "Brass coins / currency changes go ONLY in empire_updates.brass_coins_change (a "
+            "signed integer delta) — NEVER as an inventory_updates item. "
             "Advance the main quest only if the narration clearly completes the current objective. "
             "Return ONLY the JSON object."
         )

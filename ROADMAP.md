@@ -54,7 +54,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   the UI changes the displayed location + NPC list to match `/state`; frontend test asserting
   the pane re-renders on `current_location_id` change.
 
-- **B2 [NOT STARTED] (P1) World ticks are turn-gated.**
+- **B2 [COMPLETE] (P1) World ticks are turn-gated.**
   Goal: the world only ticks as a possible consequence of a chat turn — never on a background
   timer. Report #10: random ticks inject phantom "overheard" NPCs that aren't present.
   Acceptance: no world-time/NPC mutation occurs without a `/chat` turn; a tick may fire at most

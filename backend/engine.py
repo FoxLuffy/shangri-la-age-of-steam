@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.client import VLLMClient
-from backend.models import NPC, Location, PlayerAction, WorldState
+from backend.models import Location, PlayerAction, WorldState
 from backend.prompt_utils import build_narrative_prompt
 from backend.repository import StateRepository
 from sqlalchemy.orm import Session
@@ -469,91 +469,8 @@ class NarrativeEngine:
 import random
 
 from backend.client import VLLMClient
-from backend.database import ResourceMarket, WorldEvent, get_session
+from backend.database import ResourceMarket, WorldEvent
 from sqlmodel import select
-
-
-async def trigger_npc_interaction(location: Location, npc1: NPC, npc2: NPC):
-    """
-    Generate dialogue between two NPCs in the same location and record it.
-    """
-    logger.info(f"Interaction resolving for {npc1.name} and {npc2.name} at {location.name}.")
-
-    faction1 = getattr(npc1, "faction_id", None)
-    faction2 = getattr(npc2, "faction_id", None)
-
-    rivalry_context = ""
-    if faction1 and faction2 and faction1 != faction2:
-        if (faction1 == "Iron Syndicate" and faction2 == "Alchemists Guild") or (faction1 == "Alchemists Guild" and faction2 == "Iron Syndicate"):
-            rivalry_context = "There is deep tension and suspicion between the Iron Syndicate and the Alchemists Guild. They should act guarded and perhaps negotiate cautiously or exchange veiled insults."
-        else:
-            rivalry_context = f"They belong to rival factions ({faction1} and {faction2}), leading to potential suspicion or tense negotiation patterns."
-
-    prompt = (
-        f"You are the world engine for Shangri-la: Age of Steam. "
-        f"Two NPCs are interacting at {location.name}: {location.description}.\n"
-        f"NPC 1: {npc1.name}, Traits: {npc1.traits}, Faction: {faction1 or 'None'}\n"
-        f"NPC 2: {npc2.name}, Traits: {npc2.traits}, Faction: {faction2 or 'None'}\n"
-        f"{rivalry_context}\n"
-        f"Write a short, engaging 2-3 line dialogue between them reflecting their traits, factions, and the location."
-    )
-
-    client = VLLMClient()
-    try:
-        response = client.generate(prompt=prompt, max_tokens=150, temperature=0.8)
-        dialogue = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-
-        if dialogue:
-            with get_session() as session:
-                repo = StateRepository(session)
-                repo.record_ledger_entry(
-                    action=f"Overheard interaction between {npc1.name} and {npc2.name}",
-                    narration=dialogue,
-                    state_updates={},
-                    events=[],
-                    location_id=location.id,
-                )
-            logger.info(f"Recorded NPC interaction at {location.name}")
-
-            # Broadcast to clients
-            try:
-                import json
-
-                from backend.main import manager
-
-                await manager.broadcast(
-                    json.dumps(
-                        {
-                            "type": "narrative_event",
-                            "data": {"narration": f"[NPC Interaction] {dialogue}", "state_updates": {}, "events": []},
-                            "action": {"action_text": f"Overheard {npc1.name} and {npc2.name}", "client_id": "system"},
-                        }
-                    )
-                )
-            except Exception as e:
-                logger.error(f"Failed to broadcast NPC interaction: {e}")
-
-    except Exception as e:
-        logger.error(f"Failed to generate NPC interaction: {e}")
-
-
-async def scan_locations_and_trigger_interactions():
-    """
-    Background logic to scan locations and trigger NPC-to-NPC interactions.
-    """
-    logger.info("Scanning locations for NPC interactions...")
-    from backend.database import NPC as DBNPC
-    from backend.database import Location as DBLocation
-    with get_session() as session:
-        locations = session.exec(select(DBLocation)).all()
-        for loc in locations:
-            npcs_in_loc = session.exec(select(DBNPC).where(DBNPC.location_id == loc.id)).all()
-            if len(npcs_in_loc) > 1:
-                # 30% chance for an interaction to happen if there are multiple NPCs
-                if random.random() < 0.3:
-                    npc1, npc2 = random.sample(npcs_in_loc, 2)
-                    logger.info(f"Triggering interaction at location {loc.id} between {npc1.name} and {npc2.name}")
-                    await trigger_npc_interaction(loc, npc1, npc2)
 
 
 def simulate_economy_tick(session: Session):
@@ -619,27 +536,76 @@ def simulate_weather_time(session: Session):
         session.add(db_state)
         session.commit()
 
-async def world_tick():
-    """
-    Runs the world simulation tick.
-    """
-    logger.info("World tick started.")
-    await scan_locations_and_trigger_interactions()
+def _tick_property_income(session: Session):
+    from backend.database import Character, Property
 
-    from backend.database import Character, Property, get_session
+    chars = session.exec(select(Character)).all()
+    for char in chars:
+        properties = session.exec(select(Property).where(Property.owner_id == char.id)).all()
+        total_income = sum(p.income_per_tick for p in properties)
+        if total_income > 0:
+            char.brass_coins += total_income
+            session.add(char)
+    session.commit()
 
-    with get_session() as session:
-        simulate_weather_time(session)
-        simulate_economy_tick(session)
 
-        # Passive Income Generation
-        chars = session.exec(select(Character)).all()
-        for char in chars:
-            properties = session.exec(select(Property).where(Property.owner_id == char.id)).all()
-            total_income = sum(p.income_per_tick for p in properties)
-            if total_income > 0:
-                char.brass_coins += total_income
-                session.add(char)
-        session.commit()
+def tick_market(session: Session):
+    """One market-drift step (formerly the 10s background loop body). DB-only."""
+    from backend.database import ResourceMarket as _RM
 
-    logger.info("World tick completed.")
+    markets = session.exec(select(_RM)).all()
+    for m in markets:
+        drift = random.uniform(-m.volatility, m.volatility)
+        m.current_price = max(1.0, m.current_price * (1.0 + drift))
+        if random.random() < 0.05:
+            m.current_price = min(m.base_price * 5, m.current_price * 1.1)
+        session.add(m)
+    session.commit()
+
+
+def tick_faction_wars(session: Session):
+    """One faction-war step (formerly the 20s background loop body). DB-only; returns an
+    optional global-event message when a faction annexes a location."""
+    from backend.database import Faction, FactionStanding, Location
+    from backend.database import WorldState as _WS
+    from sqlalchemy import func
+
+    event_msg = None
+    results = session.exec(
+        select(FactionStanding.faction_id, func.sum(FactionStanding.standing)).group_by(FactionStanding.faction_id)
+    ).all()
+    for faction_id, total_standing in results:
+        if total_standing and total_standing > 10.0:
+            target_locs = session.exec(select(Location).where(Location.faction_id != faction_id)).all()
+            if not target_locs:
+                continue
+            target = random.choice(target_locs)
+            target.faction_id = faction_id
+            session.add(target)
+            faction = session.exec(select(Faction).where(Faction.id == faction_id)).first()
+            fact_name = faction.name if faction else faction_id
+            event_msg = (
+                f"GLOBAL WAR ALERT: Due to overwhelming player support, the {fact_name} "
+                f"has permanently annexed {target.name}!"
+            )
+            for state in session.exec(select(_WS)).all():
+                state.global_event = event_msg
+                session.add(state)
+            for s in session.exec(select(FactionStanding).where(FactionStanding.faction_id == faction_id)).all():
+                if s.standing > 0:
+                    s.standing = s.standing * 0.5
+                    session.add(s)
+            session.commit()
+    return event_msg
+
+
+def run_world_turn(session: Session):
+    """One world tick, gated to a chat turn (no background timer — report #10). Advances
+    time/weather, economy prices, property income, market drift, and faction wars. NPC-to-NPC
+    'overheard' interactions were removed (they injected phantom NPCs from other locations).
+    Returns an optional global-event message to surface."""
+    simulate_weather_time(session)
+    simulate_economy_tick(session)
+    _tick_property_income(session)
+    tick_market(session)
+    return tick_faction_wars(session)

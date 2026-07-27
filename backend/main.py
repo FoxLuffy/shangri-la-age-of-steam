@@ -37,11 +37,8 @@ from sqlmodel import select
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from backend.engine import run_world_turn
 from backend.routers import crafting, gameplay, saves
-from backend.simulation import simulate_faction_wars, simulate_global_market, world_simulation_loop
-
-# Background task reference
-world_task = None
 
 
 @asynccontextmanager
@@ -52,22 +49,11 @@ async def lifespan(app: FastAPI):
     from backend.database_init import seed_demo_user
 
     seed_demo_user()
-    logger.info("Starting world simulation, market tasks, and faction wars...")
-    global world_task
-    world_task = asyncio.create_task(world_simulation_loop())
-    asyncio.create_task(simulate_global_market(manager))
-    asyncio.create_task(simulate_faction_wars(manager))
+    # World simulation is turn-gated (report #10): the world only ticks as a consequence of a
+    # chat turn (see run_world_turn in /chat) — no background timers.
+    logger.info("World simulation is turn-gated; no background loops started.")
 
     yield
-
-    # Shutdown: Cancel the background task
-    logger.info("Stopping world simulation background task...")
-    if world_task:
-        world_task.cancel()
-        try:
-            await world_task
-        except asyncio.CancelledError:
-            pass
 
 
 app = FastAPI(title="Shangri-la: Age of Steam API", lifespan=lifespan)
@@ -332,6 +318,17 @@ async def chat(action: PlayerAction):
                             asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps(event)), loop)
 
                     yield f"data: {json.dumps({'result': item})}\n\n"
+
+            # Turn-gated world simulation (report #10): one tick per chat turn, no timers.
+            try:
+                world_event = run_world_turn(session)
+                if world_event:
+                    asyncio.run_coroutine_threadsafe(
+                        manager.broadcast(json.dumps({"type": "global_event", "event": world_event})),
+                        loop,
+                    )
+            except Exception as e:
+                logger.error(f"World turn failed: {e}")
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

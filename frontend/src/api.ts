@@ -145,8 +145,8 @@ export const fetchMainQuests = async (): Promise<MainQuestPreset[]> => {
   return data;
 };
 
-export const generateMainQuest = async (preset: string, origin: string, backstory: string): Promise<MainQuestInput> => {
-  const { data } = await api.post('/main-quests/generate', { preset, origin, backstory });
+export const generateMainQuest = async (preset: string, origin: string, backstory: string, theme = ''): Promise<MainQuestInput> => {
+  const { data } = await api.post('/main-quests/generate', { preset, origin, backstory, theme });
   return data;
 };
 

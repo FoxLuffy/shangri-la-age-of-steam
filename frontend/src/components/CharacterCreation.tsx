@@ -46,6 +46,7 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
   const [mqPresets, setMqPresets] = useState<MainQuestPreset[]>([]);
   const [mainQuest, setMainQuest] = useState<MainQuestInput | null>(null);
   const [generatingMQ, setGeneratingMQ] = useState(false);
+  const [mqTheme, setMqTheme] = useState('');
 
   useEffect(() => {
     fetchMainQuests().then(setMqPresets).catch(console.error);
@@ -54,7 +55,7 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
   const handleGenerateMainQuest = async () => {
     setGeneratingMQ(true);
     try {
-      setMainQuest(await generateMainQuest(preset, origin, backstory));
+      setMainQuest(await generateMainQuest(preset, origin, backstory, mqTheme));
     } catch (e) {
       console.error(e);
       alert('Failed to generate main quest');
@@ -265,6 +266,13 @@ export default function CharacterCreation({ onComplete, userId }: { onComplete: 
                 <>
                   <div>
                     <label className="block text-sm text-amber-600/70 uppercase mb-2">Main Quest</label>
+                    <input
+                      type="text"
+                      value={mqTheme}
+                      onChange={(e) => setMqTheme(e.target.value)}
+                      className="w-full bg-slate-900 border border-amber-900/50 p-2 mb-2 text-amber-100 text-sm focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600"
+                      placeholder="Optional: describe a theme for Generate (e.g. 'revenge against the Syndicate')"
+                    />
                     <div className="flex gap-2 mb-3">
                       <button
                         type="button"

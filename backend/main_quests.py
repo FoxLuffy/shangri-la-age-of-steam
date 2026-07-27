@@ -102,12 +102,16 @@ def _parse_generated(text: str) -> Optional[Dict[str, Any]]:
     return {"title": title, "description": data.get("description", ""), "stages": stages}
 
 
-def generate_main_quest(client, preset: str = "", origin: str = "", backstory: str = "") -> Dict[str, Any]:
+def generate_main_quest(
+    client, preset: str = "", origin: str = "", backstory: str = "", theme: str = ""
+) -> Dict[str, Any]:
     """Generate a staged main quest via the LLM; fall back to a random preset on failure."""
+    theme_line = f'The player requested this theme/premise: "{theme}". Honor it closely.\n' if theme.strip() else ""
     prompt = (
         "Create a staged main quest for a steampunk RPG character. "
         f"Class/preset: {preset or 'unknown'}. Origin: {origin or 'unknown'}. "
         f"Backstory: {backstory or 'none'}.\n"
+        f"{theme_line}"
         "Return ONLY JSON: {\"title\": str, \"description\": str, "
         "\"stages\": [4 short objective strings]}."
     )

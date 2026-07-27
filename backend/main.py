@@ -861,6 +861,7 @@ class MainQuestGenerateRequest(BaseModel):
     preset: str = ""
     origin: str = ""
     backstory: str = ""
+    theme: str = ""
 
 
 class CharacterCreateRequest(BaseModel):
@@ -1170,7 +1171,7 @@ async def generate_main_quest_endpoint(req: MainQuestGenerateRequest):
     from backend.client import VLLMClient
     from backend.main_quests import generate_main_quest
 
-    return generate_main_quest(VLLMClient(), req.preset, req.origin, req.backstory)
+    return generate_main_quest(VLLMClient(), req.preset, req.origin, req.backstory, req.theme)
 
 
 @app.get("/main-quest/{character_id}")

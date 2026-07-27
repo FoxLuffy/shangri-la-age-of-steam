@@ -1,6 +1,17 @@
-import type { Character } from '../api';
+import { useEffect, useState } from 'react';
+import type { Character, MainQuestProgress } from '../api';
+import { fetchMainQuest } from '../api';
 
 export default function StatsPanel({ character, worldState, onReset, onOpenEmpire, onOpenSettings, onOpenMarket, onOpenWorkshop, onOpenClinic, onOpenCrafting }: { character: Character, worldState?: any, onReset: () => void, onOpenEmpire?: () => void, onOpenSettings?: () => void, onOpenMarket?: () => void, onOpenWorkshop?: () => void, onOpenClinic?: () => void, onOpenCrafting?: () => void }) {
+  const [mainQuest, setMainQuest] = useState<MainQuestProgress | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchMainQuest(character.id)
+      .then((d) => { if (alive) setMainQuest(d); })
+      .catch(() => { if (alive) setMainQuest(null); });
+    return () => { alive = false; };
+  }, [character.id, worldState]);
+
   return (
     <div className="w-64 bg-slate-900 border-l border-amber-900/30 flex flex-col p-4 overflow-y-auto">
       <div className="text-xs font-mono text-amber-600/70 uppercase tracking-widest mb-4 border-b border-amber-900/30 pb-2">
@@ -11,6 +22,25 @@ export default function StatsPanel({ character, worldState, onReset, onOpenEmpir
         <h2 className="text-xl font-serif text-amber-500 mb-1">{character.name}</h2>
         <div className="text-sm text-amber-400 font-mono uppercase">{character.character_class}</div>
       </div>
+
+      {mainQuest && (
+        <div className="mb-4 p-2 bg-slate-800/40 border border-amber-900/40 rounded">
+          <div className="text-[10px] text-amber-600/70 uppercase font-mono flex justify-between">
+            <span>★ Main Quest</span>
+            {mainQuest.status !== 'completed' && (
+              <span>{Math.min(mainQuest.current_stage + 1, mainQuest.stages.length)}/{mainQuest.stages.length}</span>
+            )}
+          </div>
+          <div className="text-sm font-serif text-amber-400 mt-0.5">{mainQuest.title}</div>
+          {mainQuest.status === 'completed' ? (
+            <div className="text-xs text-emerald-400 mt-1">Complete</div>
+          ) : (
+            mainQuest.current_objective && (
+              <div className="text-xs text-amber-200/70 mt-1 leading-snug">{mainQuest.current_objective}</div>
+            )
+          )}
+        </div>
+      )}
 
       {worldState && (
         <div className="mb-6 p-2 bg-slate-800/50 border border-amber-900/30 rounded flex justify-between items-center transition-colors">

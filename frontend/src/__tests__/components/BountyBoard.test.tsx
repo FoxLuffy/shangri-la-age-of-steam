@@ -12,11 +12,20 @@ import { fetchBounties, acceptBounty } from '../../api'
 
 const asMock = (fn: unknown) => fn as ReturnType<typeof vi.fn>
 
+const BOUNTY = { id: 1, title: 'Rogue Automata', description: 'Track it down.', target_npc_type: 'Automata', reward_coins: 120, status: 'available' }
+
 const BOARD = {
-  available: [
-    { id: 1, title: 'Rogue Automata', description: 'Track it down.', target_npc_type: 'Automata', reward_coins: 120, status: 'available' },
-  ],
+  available: [BOUNTY],
+  active: [],
   active_ids: [],
+  completed_ids: [],
+}
+
+// After accepting, the reload returns the bounty as the single active contract.
+const BOARD_AFTER_ACCEPT = {
+  available: [],
+  active: [{ ...BOUNTY, status: 'active' }],
+  active_ids: [1],
   completed_ids: [],
 }
 
@@ -35,14 +44,17 @@ describe('BountyBoard', () => {
     expect(await screen.findByText('Rogue Automata')).toBeInTheDocument()
   })
 
-  it('accepts a contract through the api client', async () => {
+  it('accepts a contract and shows it as the active contract', async () => {
+    asMock(fetchBounties).mockResolvedValueOnce(BOARD).mockResolvedValueOnce(BOARD_AFTER_ACCEPT)
     render(<BountyBoard isOpen characterId={7} onClose={onClose} />)
     await screen.findByText('Rogue Automata')
 
     fireEvent.click(screen.getByRole('button', { name: /accept contract/i }))
     await waitFor(() => expect(acceptBounty).toHaveBeenCalledWith(7, 1))
-    // Optimistically removed from the available list.
-    await waitFor(() => expect(screen.queryByText('Rogue Automata')).not.toBeInTheDocument())
+    // Reloads and surfaces the accepted bounty as the active contract.
+    await waitFor(() => expect(screen.getByText(/Your Active Contract/i)).toBeInTheDocument())
+    // No longer offered as an available contract to accept.
+    await waitFor(() => expect(screen.queryByRole('button', { name: /accept contract/i })).not.toBeInTheDocument())
   })
 
   it('renders nothing when closed', () => {

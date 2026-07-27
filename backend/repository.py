@@ -239,6 +239,19 @@ class StateRepository:
                     "status": mq.status,
                 }
 
+        active_bounty_ctx = None
+        if char and char.active_bounties:
+            from backend.database import Bounty
+
+            b = self.session.get(Bounty, char.active_bounties[0])
+            if b and b.status == "active":
+                active_bounty_ctx = {
+                    "title": b.title,
+                    "description": b.description,
+                    "target_npc_type": b.target_npc_type,
+                    "reward_coins": b.reward_coins,
+                }
+
         return WorldState(
             current_location_id=current_location.id,
             active_npcs_ids=[npc.id for npc in active_npcs],
@@ -250,6 +263,7 @@ class StateRepository:
             inventory=inventory_list,
             quests=quests_list,
             main_quest=main_quest_ctx,
+            active_bounty=active_bounty_ctx,
             factions=factions_list,
             active_minigame=active_minigame,
             # Combat is location-scoped via CombatSession — derive it from an active session

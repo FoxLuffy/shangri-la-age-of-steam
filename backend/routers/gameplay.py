@@ -353,8 +353,11 @@ async def get_bounties(character_id: int):
             session.commit()
             available = session.exec(select(Bounty).where(Bounty.status == "available")).all()
 
+        active = [b for b in (session.get(Bounty, bid) for bid in (char.active_bounties or [])) if b]
+
         return {
             "available": available,
+            "active": active,
             "active_ids": char.active_bounties or [],
             "completed_ids": char.completed_bounties or []
         }
@@ -374,11 +377,18 @@ async def accept_bounty(character_id: int, req: BountyAcceptRequest):
         if bounty.status != "available":
             raise HTTPException(status_code=400, detail="Bounty is not available")
 
-        bounty.status = "active"
+        # One active bounty at a time: accepting a new one abandons any current active
+        # bounty (returned to the pool) and replaces it.
+        for old_id in list(char.active_bounties or []):
+            if old_id == bounty.id:
+                continue
+            old = session.get(Bounty, old_id)
+            if old and old.status == "active":
+                old.status = "available"
+                session.add(old)
 
-        active_bounties = list(char.active_bounties or [])
-        active_bounties.append(bounty.id)
-        char.active_bounties = active_bounties
+        bounty.status = "active"
+        char.active_bounties = [bounty.id]
 
         session.add(bounty)
         session.add(char)

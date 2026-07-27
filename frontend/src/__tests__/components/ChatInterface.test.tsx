@@ -129,4 +129,24 @@ describe('ChatInterface', () => {
     render(<ChatInterface />)
     expect(screen.getByPlaceholderText(/Type your action/i)).toBeInTheDocument()
   })
+
+  // Report #3: travel/actions left the panes stale because the state refetch lived inside the
+  // try and was skipped when the stream handler threw. The refresh now runs in a finally.
+  it('refreshes world state even when the action stream throws', async () => {
+    const refetch = vi.fn().mockResolvedValue({})
+    ;(useWorldStateQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: mockWorldState,
+      refetch,
+    })
+    ;(sendAction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('stream boom'))
+
+    render(<ChatInterface characterId={1} />)
+    const input = (await screen.findByPlaceholderText(/Type your action/i)) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Look around' } })
+    fireEvent.submit(input.closest('form')!)
+
+    await waitFor(() => expect(sendAction).toHaveBeenCalled())
+    // finally-block refresh fired despite the rejection.
+    await waitFor(() => expect(refetch).toHaveBeenCalled())
+  })
 })

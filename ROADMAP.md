@@ -75,7 +75,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   accepting a second is blocked while one is active; the prompt includes the active bounty;
   backend test for the single-active rule + frontend view test.
 
-- **C2 [NOT STARTED] (P1) Populate the Explorer's Journal.**
+- **C2 [COMPLETE] (P1) Populate the Explorer's Journal.**
   Goal: the journal accumulates discoveries (locations visited, NPCs met, lore found) instead of
   staying empty (#7). Acceptance: after visiting a location / meeting an NPC, `/state` (or a
   journal endpoint) returns non-empty journal entries and the UI renders them; backend + frontend test.

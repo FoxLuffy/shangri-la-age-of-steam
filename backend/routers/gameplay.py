@@ -467,6 +467,44 @@ async def get_artifacts(session: Session = Depends(get_session)):
     artifacts = session.exec(select(Artifact)).all()
     return artifacts
 
+
+@router.get("/journal")
+async def get_journal(character_id: int, session: Session = Depends(get_session)):
+    """Explorer's Journal (C2): the character's discovery log — places visited, people met,
+    and the artifact codex (discovered vs undiscovered)."""
+    from backend.database import Location as DBLocation
+
+    char = session.get(Character, character_id)
+    if not char:
+        raise HTTPException(status_code=404, detail="Character not found")
+
+    places = []
+    for loc_id in char.visited_locations or []:
+        loc = session.get(DBLocation, loc_id)
+        if loc:
+            places.append({"id": loc.id, "name": loc.name, "description": loc.description})
+
+    people = []
+    for nid in char.met_npcs or []:
+        npc = session.get(DBNPC, nid)
+        if npc:
+            people.append({"id": npc.id, "name": npc.name, "traits": npc.traits or []})
+
+    discovered = set(char.discovered_artifacts or [])
+    artifacts = [
+        {
+            "id": a.id,
+            "name": a.name,
+            "description": a.description,
+            "rarity": a.rarity,
+            "stat_bonus": a.stat_bonus,
+            "discovered": a.id in discovered,
+        }
+        for a in session.exec(select(Artifact)).all()
+    ]
+
+    return {"places": places, "people": people, "artifacts": artifacts}
+
 @router.post("/artifacts/discover")
 async def discover_artifact(character_id: int, artifact_id: int, session: Session = Depends(get_session)):
     char = session.get(Character, character_id)

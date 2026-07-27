@@ -586,6 +586,26 @@ export const fetchBounties = async (characterId: number): Promise<BountyBoardDat
   return data;
 };
 
+export interface JournalArtifact {
+  id: number;
+  name: string;
+  description: string;
+  rarity: string;
+  stat_bonus: Record<string, number>;
+  discovered: boolean;
+}
+
+export interface JournalData {
+  places: { id: string; name: string; description: string }[];
+  people: { id: string; name: string; traits: string[] }[];
+  artifacts: JournalArtifact[];
+}
+
+export const fetchJournal = async (characterId: number): Promise<JournalData> => {
+  const { data } = await api.get(`/gameplay/journal?character_id=${characterId}`);
+  return data;
+};
+
 export const acceptBounty = async (characterId: number, bountyId: number) => {
   const { data } = await api.post(`/gameplay/bounties/accept?character_id=${characterId}`, { bounty_id: bountyId });
   return data;

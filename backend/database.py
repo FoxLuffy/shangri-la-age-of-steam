@@ -178,6 +178,9 @@ class Character(SQLModel, table=True):
     active_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
     completed_bounties: List[int] = Field(default=[], sa_column=Column(JSON))
     discovered_artifacts: List[int] = Field(default=[], sa_column=Column(JSON))
+    # Explorer's Journal discovery log (C2): locations visited + NPCs met.
+    visited_locations: List[str] = Field(default=[], sa_column=Column(JSON))
+    met_npcs: List[str] = Field(default=[], sa_column=Column(JSON))
 
 
 class Artifact(SQLModel, table=True):

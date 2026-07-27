@@ -258,8 +258,10 @@ class StateRepository:
         )
 
     def engage_named_npcs(self, action_text: str, state: WorldState) -> set:
-        """Mark present NPCs the player names in their action as in-earshot / engaged,
-        persisting them to the scene set (active_npcs_ids). Returns the engaged ids."""
+        """Focus-shift engagement: when the player names one or more present NPCs, focus
+        moves to exactly those NPCs — they become the in-earshot scene set and any
+        previously-engaged NPC drops to merely nearby. If the player names no present NPC,
+        the current engagement is left untouched. Returns the newly-engaged ids."""
         if not action_text:
             return set()
         text = action_text.lower()
@@ -269,17 +271,16 @@ class StateRepository:
             first = name.split()[0] if name else ""
             if name and (name in text or (len(first) >= 3 and first in text)):
                 engaged.add(npc.id)
-                npc.in_earshot = True
         if engaged:
+            # Focus shifts to exactly the named NPCs.
             db_state = self.session.exec(select(DBWorldState).order_by(DBWorldState.id.desc())).first()
             if db_state:
-                ids = list(db_state.active_npcs_ids or [])
-                for e in engaged:
-                    if e not in ids:
-                        ids.append(e)
-                db_state.active_npcs_ids = ids
+                db_state.active_npcs_ids = list(engaged)
                 self.session.add(db_state)
                 self.session.commit()
+            # Reflect the new focus on the in-memory state for this turn's prompt/extraction.
+            for npc in getattr(state, "active_npcs", []) or []:
+                npc.in_earshot = npc.id in engaged
         return engaged
 
     def save_state(self, state: WorldState) -> WorldState:

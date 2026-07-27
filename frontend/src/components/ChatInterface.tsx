@@ -7,6 +7,7 @@ import {
   useWorldStateQuery,
   useGlossaryQuery
 } from '../api';
+import type { NPC } from '../api';
 
 import AudioManager from './AudioManager';
 import WorldHistory from './WorldHistory';
@@ -425,6 +426,60 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     return 'bg-amber-500 text-amber-100';
   };
 
+  const renderNpcCard = (npc: NPC, engaged: boolean) => (
+    <div
+      key={npc.id}
+      className={`bg-slate-900/90 rounded-xl p-3 shadow-md flex flex-col gap-2 border ${
+        engaged ? 'border-amber-500/70 ring-1 ring-amber-500/30' : 'border-slate-700/80 opacity-80'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-sm text-slate-100">{npc.name}</span>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${getDispositionColor(npc.disposition)}`}>
+          {npc.disposition > 0.2 ? 'Friendly' : npc.disposition < -0.2 ? 'Hostile' : 'Neutral'}
+        </span>
+      </div>
+
+      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-500 ${
+            npc.disposition > 0 ? 'bg-emerald-500' : 'bg-rose-500'
+          }`}
+          style={{ width: `${Math.min(100, Math.max(10, ((npc.disposition + 1) / 2) * 100))}%` }}
+        ></div>
+      </div>
+
+      <div className="flex flex-wrap gap-1 mt-1">
+        {npc.traits && npc.traits.map((trait, i) => (
+          <span key={i} className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded">
+            #{trait}
+          </span>
+        ))}
+      </div>
+
+      {expandedNpcId === npc.id ? (
+        <div className="mt-2 text-xs text-amber-200/80 bg-slate-950/50 p-2 rounded italic">
+          {npc.current_dialogue || 'No current dialogue.'}
+        </div>
+      ) : (
+        <button
+          onClick={() => setExpandedNpcId(npc.id)}
+          className="mt-2 text-[10px] text-sky-400 hover:text-sky-300 text-left"
+        >
+          Show Dialogue...
+        </button>
+      )}
+      {expandedNpcId === npc.id && (
+        <button
+          onClick={() => setExpandedNpcId(null)}
+          className="mt-1 text-[10px] text-slate-500 hover:text-slate-400 text-left"
+        >
+          Hide Dialogue
+        </button>
+      )}
+    </div>
+  );
+
   const steamOpacity = currentLocationId === '1' ? 0.4 : currentLocationId === '2' ? 0.1 : 0.2;
 
   const timePeriod = worldStateData?.state?.time_period || 'Day';
@@ -639,57 +694,19 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
                   <span>👥</span>
                 </h3>
 
-                {activeNpcs.map((npc) => (
-                <div
-                  key={npc.id}
-                  className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 shadow-md flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-100">{npc.name}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${getDispositionColor(npc.disposition)}`}>
-                      {npc.disposition > 0.2 ? 'Friendly' : npc.disposition < -0.2 ? 'Hostile' : 'Neutral'}
-                    </span>
+                {activeNpcs.some((n) => n.in_earshot) && (
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-500/90 flex items-center gap-1">
+                    <span>🔊</span> In earshot — actively engaged
                   </div>
+                )}
+                {activeNpcs.filter((n) => n.in_earshot).map((npc) => renderNpcCard(npc, true))}
 
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        npc.disposition > 0 ? 'bg-emerald-500' : 'bg-rose-500'
-                      }`}
-                      style={{ width: `${Math.min(100, Math.max(10, ((npc.disposition + 1) / 2) * 100))}%` }}
-                    ></div>
+                {activeNpcs.some((n) => !n.in_earshot) && (
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 mt-1">
+                    <span>👤</span> Nearby
                   </div>
-
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {npc.traits && npc.traits.map((trait, i) => (
-                      <span key={i} className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded">
-                        #{trait}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  {expandedNpcId === npc.id ? (
-                    <div className="mt-2 text-xs text-amber-200/80 bg-slate-950/50 p-2 rounded italic">
-                      {npc.current_dialogue || 'No current dialogue.'}
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => setExpandedNpcId(npc.id)}
-                      className="mt-2 text-[10px] text-sky-400 hover:text-sky-300 text-left"
-                    >
-                      Show Dialogue...
-                    </button>
-                  )}
-                  {expandedNpcId === npc.id && (
-                    <button 
-                      onClick={() => setExpandedNpcId(null)}
-                      className="mt-1 text-[10px] text-slate-500 hover:text-slate-400 text-left"
-                    >
-                      Hide Dialogue
-                    </button>
-                  )}
-                </div>
-              ))}
+                )}
+                {activeNpcs.filter((n) => !n.in_earshot).map((npc) => renderNpcCard(npc, false))}
               </div>
             )}
           </aside>

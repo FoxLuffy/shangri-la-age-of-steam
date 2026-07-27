@@ -13,7 +13,7 @@ vi.mock('../../api', () => ({
   WS_URL: 'ws://localhost:8003/ws',
 }))
 
-import { createCharacter, generateGear, fetchSessions, fetchMainQuests } from '../../api'
+import { createCharacter, generateGear, fetchSessions, fetchMainQuests, generateMainQuest } from '../../api'
 
 describe('CharacterCreation', () => {
   const mockOnComplete = vi.fn()
@@ -132,6 +132,17 @@ describe('CharacterCreation', () => {
     await waitFor(() => {
       expect(screen.getByText('Create New Character')).toBeInTheDocument()
     })
+  })
+
+  it('passes a custom theme to generate main quest', async () => {
+    ;(generateMainQuest as ReturnType<typeof vi.fn>).mockResolvedValue({ title: 'X', description: 'd', stages: ['a'] })
+    render(<CharacterCreation onComplete={mockOnComplete} />)
+    goTab(4)
+    fireEvent.change(screen.getByPlaceholderText(/describe a theme/i), { target: { value: 'revenge on the Syndicate' } })
+    fireEvent.click(screen.getByRole('button', { name: /generate/i }))
+    await waitFor(() =>
+      expect(generateMainQuest).toHaveBeenCalledWith('Wanderer', 'Foundry Orphan', '', 'revenge on the Syndicate')
+    )
   })
 
   it('offers main quest presets and selects one on the Main Quest tab', async () => {

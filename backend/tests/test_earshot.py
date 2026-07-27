@@ -55,6 +55,30 @@ def test_naming_a_present_npc_brings_them_into_earshot():
         assert "mara" in db_state.active_npcs_ids
 
 
+def test_focus_shift_moves_engagement_to_newly_named_npc():
+    _fresh()
+    with Session(engine) as session:
+        char = Character(name="Ada", location_id="1")
+        session.add(char)
+        session.add(DBNPC(id="silas", name="Silas", location_id="1"))
+        session.add(DBNPC(id="mara", name="Mara", location_id="1"))
+        # Silas is currently engaged.
+        session.add(WorldState(current_location_id="1", active_npcs_ids=["silas"]))
+        session.commit()
+        session.refresh(char)
+
+        repo = StateRepository(session)
+        state = repo.get_latest_state(char.id)
+        # Player turns to Mara — focus shifts to her, Silas drops to nearby.
+        repo.engage_named_npcs("I turn to Mara and ask about the docks", state)
+
+        by_name = {n.name: n for n in state.active_npcs}
+        assert by_name["Mara"].in_earshot is True
+        assert by_name["Silas"].in_earshot is False
+        db_state = session.exec(select(WorldState).order_by(WorldState.id.desc())).first()
+        assert db_state.active_npcs_ids == ["mara"]
+
+
 def test_prompt_splits_engaged_from_nearby():
     engaged = NPCModel(id="silas", name="Silas", in_earshot=True)
     nearby = NPCModel(id="mara", name="Mara", in_earshot=False)

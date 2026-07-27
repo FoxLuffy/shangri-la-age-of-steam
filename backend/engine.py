@@ -153,13 +153,16 @@ class NarrativeEngine:
             if isinstance(mq, dict) and mq.get("current_objective")
             else "No active main quest."
         )
-        present_npcs = ", ".join(n.name for n in (getattr(state, "active_npcs", []) or [])) or "none"
+        _npcs = getattr(state, "active_npcs", []) or []
+        engaged_npcs = ", ".join(n.name for n in _npcs if getattr(n, "in_earshot", False)) or "none"
+        nearby_npcs = ", ".join(n.name for n in _npcs if not getattr(n, "in_earshot", False)) or "none"
         prompt = (
             "You are the STATE ENGINE for a steampunk RPG. Given the player's action and the "
             "resulting narration, output ONLY a JSON object of the concrete mechanical changes. "
             "Output {} if nothing mechanical changed. No prose, no code fences.\n\n"
             f"Current wealth: {coins} brass coins. Inventory: {inv}. {mq_line} "
-            f"NPCs already present here: {present_npcs}. "
+            f"Engaged NPCs (in earshot, actively interacting): {engaged_npcs}. "
+            f"Other NPCs present nearby (not engaged): {nearby_npcs}. "
             f"Combat active: {getattr(state, 'is_combat_active', False)}.\n\n"
             f'Player action: "{action.action_text}"\n'
             f"Narration: {narration}\n\n"
@@ -178,7 +181,8 @@ class NarrativeEngine:
             "always use their full name. "
             "COMBAT: if the player attacks, is attacked, or a fight breaks out, you MUST set "
             "combat_updates.is_combat_active=true, set combat_updates.enemy to the full name "
-            "of the character or creature being fought (as named in the narration), and include "
+            "of the character or creature being fought (as named in the narration — normally "
+            "the engaged/in-earshot NPC when the fight is with someone already present), and include "
             "player_updates hp_change/steam_change for any blows taken or abilities used. Set "
             "is_combat_active=false only once the fight is clearly over. "
             "Advance the main quest only if the narration clearly completes the current objective. "

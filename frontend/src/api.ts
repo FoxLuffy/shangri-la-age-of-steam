@@ -46,6 +46,7 @@ export interface NPC {
   disposition: number;
   memories: { key: string; value: string }[];
   location_id?: string;
+  in_earshot?: boolean;
 }
 
 export interface Location {

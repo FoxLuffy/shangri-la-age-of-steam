@@ -67,12 +67,14 @@ dialogue focus ("who can hear and respond to me right now?") and downstream logi
   vs background.
 
 ### Phasing
-- **P1 (backend, testable now):** `in_earshot` field + derivation in `get_latest_state`;
+- **P1 (DONE, #179):** `in_earshot` field + derivation in `get_latest_state`;
   engagement-on-name-mention; clear-on-travel. Prompt split. Tests: name-mention marks
   in-earshot; travel clears; background NPC has `in_earshot: False`.
-- **P2:** feed earshot into `_extract_state` + combat targeting (ties into the combat
-  fidelity fix); optional decay.
-- **P3:** frontend indicator in the Environment overview.
+- **P2 (DONE, #180):** `_extract_state` splits engaged vs nearby NPCs and hints combat
+  targeting toward the engaged NPC; **focus-shift decay** — naming a different NPC moves
+  focus to them and drops the previously-engaged to nearby.
+- **P3 (DONE, #180):** Active NPCs panel splits into "In earshot — actively engaged"
+  (highlighted) vs "Nearby" (dimmed) groups.
 
 ### Acceptance
 - Addressing an NPC by name marks them `in_earshot: True`; unaddressed present NPCs are
@@ -82,10 +84,11 @@ dialogue focus ("who can hear and respond to me right now?") and downstream logi
 ---
 
 ## Prioritized backlog
-1. **Earshot P1** (feature above) — highest value, unblocks dialogue focus + combat targeting.
-2. **Combat opponent fidelity** — instantiate the narrated antagonist as the combatant
-   (pairs naturally with earshot P2).
-3. **Earshot P2/P3** — extractor + combat integration, then the frontend indicator.
+1. **Earshot P1** (#179) — DONE. Dialogue focus + combat targeting foundation.
+2. **Combat opponent fidelity** (#179) — DONE. Narrated antagonist instantiated as combatant.
+3. **Earshot P2/P3** (#180) — DONE. Extractor split + focus-shift decay + frontend groups.
+
+All planned items shipped.
 
 ## Verified test baseline
 Backend 160, frontend 107 (green). Two-pass state extraction + all prior playtest fixes

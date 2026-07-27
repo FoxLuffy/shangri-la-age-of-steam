@@ -47,7 +47,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
 
 ## Chunk B — Movement & world simulation (P0/P1) · reports #3, #10, #4
 
-- **B1 [NOT STARTED] (P0) Travel reflects in the UI.**
+- **B1 [COMPLETE] (P0) Travel reflects in the UI.**
   Goal: travelling (map/travel control) updates the top bar location AND the Environment pane,
   and swaps the location's NPCs — no NPC "stuck" from the previous location. Backend travel is
   correct (verified 4→1); this is a frontend state-sync bug. Acceptance: driving a travel in

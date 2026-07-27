@@ -83,6 +83,17 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
   const { data: worldStateData, refetch: loadState } = useWorldStateQuery(characterId);
   const { data: glossaryData } = useGlossaryQuery();
 
+  // Guaranteed world-state refresh — runs in a finally so the panes reflect post-action
+  // state even if the stream handler threw first. Panes read from the store, which is synced
+  // from this query; without it a travel leaves stale location/NPCs (report #3).
+  const refreshWorldState = async () => {
+    try {
+      await loadState();
+    } catch (e) {
+      console.error('worldState refetch failed', e);
+    }
+  };
+
   // Sync state to gameStore on worldStateData update
   useEffect(() => {
     if (worldStateData) {
@@ -314,8 +325,6 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         );
       }
 
-      await loadState();
-
       // Periodic autosave on real player actions (best-effort; never blocks).
       if (!isSystem && characterId) {
         void recordActionAndMaybeAutosave(characterId);
@@ -330,6 +339,9 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
+      // Defense-in-depth: guarantee the panes reflect post-action state even if the stream
+      // handler threw before the in-try loadState().
+      await refreshWorldState();
       setIsLoading(false);
     }
   };
@@ -412,10 +424,12 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         );
       }
 
-      await loadState();
     } catch (err) {
       console.error('Travel failed:', err);
     } finally {
+      // Always refresh — even if the stream handler above threw, the panes must reflect the
+      // new location and its NPCs (report #3: travel not reflected, old NPC stuck).
+      await refreshWorldState();
       setIsLoading(false);
     }
   };

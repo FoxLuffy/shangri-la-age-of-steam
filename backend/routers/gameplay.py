@@ -884,6 +884,34 @@ async def trade_accept(character_id: int, req: TradeAcceptRequest):
         session.commit()
         return {"status": "accepted"}
 
+@router.get("/guilds/mine")
+async def get_my_guild(character_id: int):
+    """The character's guild (with members + leader flag), or {guild: None} if unaffiliated."""
+    with get_session() as session:
+        char = session.get(Character, character_id)
+        if not char:
+            raise HTTPException(status_code=404, detail="Character not found")
+        if not char.guild_id:
+            return {"guild": None, "members": [], "is_leader": False}
+
+        guild = session.get(Guild, char.guild_id)
+        if not guild:
+            return {"guild": None, "members": [], "is_leader": False}
+
+        members = session.exec(select(Character).where(Character.guild_id == guild.id)).all()
+        return {
+            "guild": {
+                "id": guild.id,
+                "name": guild.name,
+                "description": guild.description,
+                "treasury": guild.treasury,
+                "leader_id": guild.leader_id,
+            },
+            "members": [{"id": m.id, "name": m.name, "is_leader": m.id == guild.leader_id} for m in members],
+            "is_leader": guild.leader_id == character_id,
+        }
+
+
 @router.post("/guilds/create")
 async def create_guild(character_id: int, req: GuildCreateRequest):
     with get_session() as session:

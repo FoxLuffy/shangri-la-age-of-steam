@@ -80,7 +80,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   staying empty (#7). Acceptance: after visiting a location / meeting an NPC, `/state` (or a
   journal endpoint) returns non-empty journal entries and the UI renders them; backend + frontend test.
 
-- **C3 [NOT STARTED] (P2) Guild view refresh after creation.**
+- **C3 [COMPLETE] (P2) Guild view refresh after creation.**
   Goal: creating a guild immediately shows it — no "close and reopen" that shows the same screen
   (#9). Acceptance: after guild creation the guild view reflects the new guild without a manual
   reload; frontend test.

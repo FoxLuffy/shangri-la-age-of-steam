@@ -430,6 +430,25 @@ export const fetchGuildTreasury = async (guildId: number) => {
   return data;
 };
 
+export interface GuildInfo {
+  id: number;
+  name: string;
+  description?: string;
+  treasury: number;
+  leader_id: number;
+}
+
+export interface MyGuildData {
+  guild: GuildInfo | null;
+  members: { id: number; name: string; is_leader: boolean }[];
+  is_leader: boolean;
+}
+
+export const fetchMyGuild = async (characterId: number): Promise<MyGuildData> => {
+  const { data } = await api.get(`/gameplay/guilds/mine?character_id=${characterId}`);
+  return data;
+};
+
 export const createGuild = async (characterId: number, name: string, description: string) => {
   const { data } = await api.post(`/gameplay/guilds/create?character_id=${characterId}`, { name, description });
   return data;

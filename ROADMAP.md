@@ -32,7 +32,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   with `enemy` in the placeholder set adds no NPC/participant; existing junk NPCs named
   "none"/"Unknown Enemy" are cleaned up (migration or guard on read); backend test.
 
-- **A3 [NOT STARTED] (P1) Give combat real mechanical stakes.**
+- **A3 [COMPLETE] (P1) Give combat real mechanical stakes.**
   Goal: attacks change HP. Currently `player_updates.hp_change` is always 0 and enemies have
   no HP resolution. Acceptance: the extraction/combat path applies non-zero `hp_change` to
   player and/or enemy per exchange, enemy HP reaches 0 to end the fight, and defeat/victory is

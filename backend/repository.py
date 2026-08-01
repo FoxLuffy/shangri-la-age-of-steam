@@ -711,8 +711,72 @@ class StateRepository:
         self.session.add(fs)
         self.session.commit()
 
+    def _complete_matching_bounties(self, char, npc):
+        """When a bounty-target NPC is defeated, complete matching active bounties + reward."""
+        import re
+
+        from backend.database import Bounty
+
+        active_bounties = list(char.active_bounties or [])
+        completed_bounties = list(char.completed_bounties or [])
+        for b_id in list(active_bounties):
+            bounty = self.session.get(Bounty, b_id)
+            if not bounty or bounty.status != "active":
+                continue
+            target = bounty.target_npc_type.lower()
+            is_name_match = bool(re.search(r"\b" + re.escape(target) + r"\b", (npc.name or "").lower()))
+            is_faction_match = bool(npc.faction_id and target == npc.faction_id.lower())
+            if is_name_match or is_faction_match:
+                bounty.status = "completed"
+                char.brass_coins += bounty.reward_coins
+                completed_bounties.append(b_id)
+                active_bounties.remove(b_id)
+                self.session.add(bounty)
+        char.active_bounties = active_bounties
+        char.completed_bounties = completed_bounties
+        self.session.add(char)
+
+    def _resolve_combat_exchange(self, char, loc_id, update):
+        """Deterministic one-exchange combat resolution. Deals stat-based damage to the target
+        enemy and, if it survives, applies its retaliation to the player. Returns True if an
+        exchange happened (so the caller ignores the model's hp_change). Does NOT end combat —
+        that stays model-driven."""
+        import random
+
+        from backend.database import NPC
+
+        hostiles = self.session.exec(
+            select(NPC).where(NPC.location_id == loc_id, NPC.is_hostile == True)  # noqa: E712
+        ).all()
+        living = [n for n in hostiles if n.hp > 0]
+        if not living:
+            return False
+
+        target = None
+        name = update.get("enemy")
+        if name and str(name).strip():
+            nl = str(name).strip().lower()
+            target = next((n for n in living if nl in n.name.lower() or n.name.lower() in nl), None)
+        if not target:
+            target = living[0]
+
+        strength = (char.stats or {}).get("strength", 5) if char.stats else 5
+        player_dmg = max(1, strength * 2 + random.randint(0, 5) - (target.armor or 0))
+        old_hp = target.hp
+        target.hp = max(0, target.hp - player_dmg)
+        self.session.add(target)
+
+        if old_hp > 0 and target.hp == 0:
+            self._complete_matching_bounties(char, target)
+        else:
+            # The enemy is still standing and strikes back.
+            enemy_dmg = max(1, 8 + random.randint(0, 6) - (char.armor or 0))
+            char.hp = max(0, char.hp - enemy_dmg)
+            self.session.add(char)
+        return True
+
     def apply_combat_update(self, update: Dict[str, Any], char_id: int):
-        from backend.database import NPC, Bounty, Character, CombatSession
+        from backend.database import NPC, Character, CombatSession
         from backend.database import WorldState as DBWorldState
 
         # Get character to find location
@@ -802,11 +866,21 @@ class StateRepository:
                     combat_session.is_active = False
                     self.session.add(combat_session)
 
+        # Deterministic combat resolution — while combat is active, damage is computed from
+        # stats each exchange (the model only narrates), so hits always land (report: hp_change
+        # was always 0). Combat still ENDS only when the model sets is_combat_active=false.
+        resolved_exchange = False
+        if char and update.get("is_combat_active"):
+            resolved_exchange = self._resolve_combat_exchange(char, loc_id, update)
+
         # Update Player
         player_updates = update.get("player_updates", {})
         if player_updates:
             if char:
-                char.hp += player_updates.get("hp_change", 0)
+                # hp is resolved deterministically during combat; ignore the model's hp_change
+                # then (steam/status still apply).
+                if not resolved_exchange:
+                    char.hp += player_updates.get("hp_change", 0)
                 char.steam += player_updates.get("steam_change", 0)
                 char.hp = max(0, min(char.max_hp, char.hp))
                 char.steam = max(0, min(char.max_steam, char.steam))
@@ -829,28 +903,14 @@ class StateRepository:
             npc = self.session.get(NPC, npc_id)
             if npc:
                 old_hp = npc.hp
-                npc.hp += npc_u.get("hp_change", 0)
-                npc.hp = max(0, min(npc.max_hp, npc.hp))
-
-                # Bounty Check
-                if old_hp > 0 and npc.hp == 0 and char:
-                    active_bounties = list(char.active_bounties or [])
-                    completed_bounties = list(char.completed_bounties or [])
-                    for b_id in active_bounties:
-                        bounty = self.session.get(Bounty, b_id)
-                        import re
-                        is_name_match = bool(re.search(r'\b' + re.escape(bounty.target_npc_type.lower()) + r'\b', npc.name.lower())) if bounty else False
-                        is_faction_match = (npc.faction_id and bounty.target_npc_type.lower() == npc.faction_id.lower()) if bounty else False
-
-                        if bounty and bounty.status == "active" and (is_name_match or is_faction_match):
-                            bounty.status = "completed"
-                            char.brass_coins += bounty.reward_coins
-                            completed_bounties.append(b_id)
-                            active_bounties.remove(b_id)
-                            self.session.add(bounty)
-                    char.active_bounties = active_bounties
-                    char.completed_bounties = completed_bounties
-                    self.session.add(char)
+                # Damage is resolved deterministically per exchange (see _resolve_combat_exchange);
+                # the model's hp_change is ignored while combat is active so fights always have
+                # real stakes. Status effects from the model are still honored below.
+                if not resolved_exchange:
+                    npc.hp += npc_u.get("hp_change", 0)
+                    npc.hp = max(0, min(npc.max_hp, npc.hp))
+                    if old_hp > 0 and npc.hp == 0 and char:
+                        self._complete_matching_bounties(char, npc)
 
                 current_effects = set(npc.status_effects or [])
                 for eff in npc_u.get("status_effects_add", []):

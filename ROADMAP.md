@@ -100,7 +100,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
 
 ## Chunk E — Frontend audio (P2) · report #2
 
-- **E1 [NOT STARTED] (P2) Stop the audio toggle flicker.**
+- **E1 [COMPLETE] (P2) Stop the audio toggle flicker.**
   Goal: with audio enabled it stays on — no repeated ~half-second on/off flicker (#2). Acceptance:
   the audio-enabled state is stable across renders/turns (no effect re-running the toggle);
   frontend test or documented root-cause fix.

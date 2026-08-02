@@ -72,6 +72,7 @@ export interface WorldStateData {
   active_minigame?: any;
   is_combat_active?: boolean;
   combat_state?: any;
+  player_stats?: { hp?: number; max_hp?: number; steam?: number; max_steam?: number; [key: string]: any } | null;
 }
 
 export interface GetStateResponse {

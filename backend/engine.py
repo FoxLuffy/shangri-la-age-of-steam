@@ -173,6 +173,7 @@ class NarrativeEngine:
             '"combat_updates": {"is_combat_active":<bool>,"enemy":<str full name of who the player is fighting>,"player_updates":{"hp_change":<int>,"steam_change":<int>}}, '
             '"minigame_trigger": "hack|lockpick", '
             '"artifact_discovered": <full name of a legendary artifact the player just found, if any>, '
+            '"npc_dialogue": [{"name":<npc name>,"line":<the exact line this NPC spoke this turn>}], '
             '"main_quest_updates": {"advance_stage": true}, '
             '"active_npcs": [{"id":<str>,"name":<str>,"traits":[<str>],"location_id":<str id of where they physically are — omit for the current location>}] }\n'
             "Brass coins / currency changes go ONLY in empire_updates.brass_coins_change (a "
@@ -384,6 +385,9 @@ class NarrativeEngine:
 
             if state_updates.get("artifact_discovered"):
                 repository.discover_artifact_by_name(action.character_id, state_updates["artifact_discovered"])
+
+            if state_updates.get("npc_dialogue"):
+                repository.apply_npc_dialogue(state_updates["npc_dialogue"], loc_id)
 
             if "inventory_updates" in state_updates and isinstance(state_updates["inventory_updates"], list):
                 for inv_update in state_updates["inventory_updates"]:

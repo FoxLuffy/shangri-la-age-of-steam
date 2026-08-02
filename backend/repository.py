@@ -318,6 +318,32 @@ class StateRepository:
                 npc.in_earshot = npc.id in engaged
         return engaged
 
+    def apply_npc_dialogue(self, entries, location_id):
+        """Store each speaking NPC's latest line as their current_dialogue (D1: the 'Show
+        Dialogue' control). entries: [{"name": <str>, "line": <str>}]. Matches an existing NPC
+        by name (case-insensitive / containment) or creates one at the location."""
+        if not isinstance(entries, list):
+            return
+        for e in entries:
+            if not isinstance(e, dict):
+                continue
+            name = (e.get("name") or "").strip()
+            line = (e.get("line") or "").strip()
+            if not name or not line:
+                continue
+            target = name.lower()
+            npc = None
+            for existing in self.session.exec(select(DBNPC)).all():
+                en = (existing.name or "").strip().lower()
+                if en and (en == target or en in target or target in en):
+                    npc = existing
+                    break
+            if not npc:
+                npc = self.create_or_update_npc({"name": name}, location_id)
+            npc.current_dialogue = line
+            self.session.add(npc)
+        self.session.commit()
+
     def record_discoveries(self, character_id, location_id=None, npc_ids=None):
         """Explorer's Journal (C2): log the character's current location and any NPCs they've
         met. Idempotent — each id is stored once."""

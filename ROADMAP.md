@@ -38,7 +38,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   player and/or enemy per exchange, enemy HP reaches 0 to end the fight, and defeat/victory is
   reflected in `/state`; backend test with a scripted exchange.
 
-- **A4 [NOT STARTED] (P1) Dedicated combat pane + isolated combat chat (frontend).**
+- **A4 [COMPLETE] (P1) Dedicated combat pane + isolated combat chat (frontend).**
   Goal: combat opens its own pane like the minigame, with a separate input; the main chat is
   intentionally paused (not "locked out" with mis-placed health bars); on resolution a summary
   is posted back into the main narrative context. Acceptance: when `is_combat_active` becomes

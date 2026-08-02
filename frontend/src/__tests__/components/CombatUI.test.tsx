@@ -100,15 +100,17 @@ describe('CombatUI', () => {
     expect(screen.getByText('50/50')).toBeInTheDocument()
   })
 
-  it('shows tutorial box when tutorials are enabled', () => {
+  it('renders the docked combat pane header and turn indicator', () => {
     const worldState = {
       is_combat_active: true,
       player_stats: { hp: 100, steam: 100, max_steam: 100 },
       active_npcs: [{ id: 'npc_1', name: 'Enemy', hp: 50, max_hp: 100 }],
+      combat_state: { turn_order: [{ name: 'Enemy', type: 'npc' }], current_turn_index: 0 },
     }
     render(<CombatUI worldState={worldState} character={mockCharacter} />)
-    
-    expect(screen.getByText(/Combat HUD/)).toBeInTheDocument()
+
+    expect(screen.getByText(/In Combat/i)).toBeInTheDocument()
+    expect(screen.getByText(/Turn: Enemy/)).toBeInTheDocument()
   })
 
   it('hides tutorial box when tutorials are disabled', () => {

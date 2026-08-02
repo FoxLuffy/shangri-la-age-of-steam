@@ -10,6 +10,7 @@ interface ActionBarProps {
   isLoading: boolean;
   isMinigameActive: boolean;
   isMyTurn: boolean;
+  isCombat?: boolean;
   currentTurnActor: string;
   onSubmit: (actionText: string) => void;
 }
@@ -23,8 +24,7 @@ export default function ActionBar({
   setIsExploration,
   isLoading,
   isMinigameActive,
-  isMyTurn,
-  currentTurnActor,
+  isCombat = false,
   onSubmit
 }: ActionBarProps) {
   const moods = [
@@ -79,13 +79,13 @@ export default function ActionBar({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isMinigameActive ? "Focus on the minigame..." : !isMyTurn ? `Waiting for ${currentTurnActor} to act...` : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
+          placeholder={isMinigameActive ? "Focus on the minigame..." : isCombat ? "Your move — attack, use the environment, or flee..." : "Type your action (e.g., 'Inspect the copper pressure gauge' or 'Talk to Barnaby')..."}
           className="flex-1 bg-slate-900 border border-amber-800/50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-amber-500 text-amber-100 placeholder-slate-500 shadow-inner disabled:opacity-50"
-          disabled={isLoading || isMinigameActive || !isMyTurn}
+          disabled={isLoading || isMinigameActive}
         />
         <button
           type="submit"
-          disabled={isLoading || !input.trim() || isMinigameActive || !isMyTurn}
+          disabled={isLoading || !input.trim() || isMinigameActive}
           className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-bold px-6 py-3 rounded-lg text-sm transition-all shadow-lg flex items-center gap-2"
         >
           <span>SEND</span>

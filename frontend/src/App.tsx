@@ -3,7 +3,6 @@ import ChatInterface from './components/ChatInterface';
 import CharacterCreation from './components/CharacterCreation';
 import StatsPanel from './components/StatsPanel';
 import MinigamePanel from './components/MinigamePanel';
-import CombatUI from './components/CombatUI';
 import EmpireUI from './components/EmpireUI';
 import { fetchCharacter } from './api';
 import type { Character } from './api';
@@ -56,7 +55,6 @@ function MainApp() {
   const [worldState, setWorldState] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const [showCombat, setShowCombat] = useState(false);
   const [showMinigame, setShowMinigame] = useState(false);
   const [showEmpire, setShowEmpire] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -209,7 +207,6 @@ function MainApp() {
             Logout
           </button>
         </div>
-        {showCombat && <CombatUI worldState={worldState} character={character} />}
         {showEmpire && <EmpireUI worldState={worldState} character={character} onClose={() => setShowEmpire(false)} />}
         {showSettings && <SettingsMenu character={character} onClose={() => setShowSettings(false)} onUpdateCharacter={setCharacter} />}
         {showMarket && <MarketUI character={character} onClose={() => setShowMarket(false)} onUpdateCharacter={setCharacter} />}
@@ -241,7 +238,6 @@ function MainApp() {
         <ChatInterface
           characterId={character.id}
           onStateUpdate={setWorldState}
-          onOpenCombat={() => setShowCombat(true)}
           onOpenMinigame={() => setShowMinigame(true)}
         />
         {showMinigame && activeMinigame && (

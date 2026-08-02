@@ -22,6 +22,7 @@ import BulletinBoard from './BulletinBoard';
 import BountyBoard from './BountyBoard';
 import { audioManager } from '../utils/AudioManager';
 import { ArtifactJournal } from './ArtifactJournal';
+import CombatUI from './CombatUI';
 import { recordActionAndMaybeAutosave, autosaveBeforeTravel, resetAutosaveCounter } from '../utils/autosave';
 
 
@@ -255,6 +256,26 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
     window.addEventListener('saos_system_action', handleSystemAction);
     return () => window.removeEventListener('saos_system_action', handleSystemAction);
   }, [isLoading]);
+
+  // Post a concise combat result to the main log when a fight ends (report #11: results are
+  // sent back to the main context).
+  const prevCombatRef = useRef(false);
+  useEffect(() => {
+    const active = !!worldStateData?.state?.is_combat_active;
+    if (prevCombatRef.current && !active) {
+      const alive = (worldStateData?.state?.player_stats?.hp ?? 1) > 0;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `combat-end-${Date.now()}`,
+          sender: 'system',
+          content: alive ? '⚔️ The fight is over — you are still standing.' : '⚔️ You have fallen in combat…',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    }
+    prevCombatRef.current = active;
+  }, [worldStateData]);
 
   const isMyTurn = useMemo(() => {
     if (!combatState || !combatState.is_active) return true;
@@ -644,6 +665,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Side: Interactive Narration Stream */}
         <div className="flex-1 flex flex-col p-4 overflow-hidden border-r border-slate-800">
+          <CombatUI worldState={worldStateData?.state} />
           <NarrativeStream
             messages={messages}
             isLoading={isLoading}
@@ -661,6 +683,7 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
             isLoading={isLoading}
             isMinigameActive={isMinigameActive}
             isMyTurn={isMyTurn}
+            isCombat={!!worldStateData?.state?.is_combat_active}
             currentTurnActor={currentTurnActor}
             onSubmit={(val) => submitAction(val, false)}
           />

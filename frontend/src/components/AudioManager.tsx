@@ -12,6 +12,7 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
   const musicOscRef = useRef<OscillatorNode | null>(null);
   const musicGainRef = useRef<GainNode | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const hissIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     const audioEnabled = localStorage.getItem('saos_audio_enabled') !== 'false';
@@ -47,7 +48,7 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
       hGain.connect(ctx.destination);
       hissGainRef.current = hGain;
 
-      setInterval(() => {
+      hissIntervalRef.current = window.setInterval(() => {
         if (!audioCtxRef.current) return;
         const noiseSource = ctx.createBufferSource();
         noiseSource.buffer = buffer;
@@ -74,16 +75,32 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
       setIsPlaying(true);
     };
 
+    // Tear down EVERYTHING: without clearing the ambient/music intervals they keep firing
+    // against a closed context and, across remounts, stack into overlapping bursts — the
+    // reported "audio switches on for half a second constantly" flicker.
+    const stopAudio = () => {
+      if (hissIntervalRef.current) {
+        clearInterval(hissIntervalRef.current);
+        hissIntervalRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+      }
+      setIsPlaying(false);
+    };
+
     window.addEventListener('click', startAudio);
     window.addEventListener('keydown', startAudio);
-    
+
     const checkInterval = setInterval(() => {
       const enabled = localStorage.getItem('saos_audio_enabled') !== 'false';
       if (!enabled && audioCtxRef.current) {
-        audioCtxRef.current.close();
-        audioCtxRef.current = null;
-        setIsPlaying(false);
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        stopAudio();
       }
     }, 1000);
 
@@ -91,10 +108,7 @@ export default function AudioManager({ locationId, mood }: { locationId?: string
       window.removeEventListener('click', startAudio);
       window.removeEventListener('keydown', startAudio);
       clearInterval(checkInterval);
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close();
-        audioCtxRef.current = null;
-      }
+      stopAudio();
     };
   }, []);
 

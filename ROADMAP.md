@@ -87,7 +87,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
 
 ## Chunk D — NPC interaction polish (P2) · reports #1, #6
 
-- **D1 [NOT STARTED] (P2) Fix or remove the "Show Dialogue" control.**
+- **D1 [COMPLETE] (P2) Fix or remove the "Show Dialogue" control.**
   Goal: the Active-NPC "Show Dialogue" button shows meaningful, updating dialogue, or is removed
   (#6). Acceptance: expanding it shows the NPC's current line and it updates across turns; or the
   control is gone; frontend test.

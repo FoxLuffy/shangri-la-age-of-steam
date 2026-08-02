@@ -92,7 +92,7 @@ Severity: **P0** = broken/regression, fix first · **P1** = major gap · **P2** 
   (#6). Acceptance: expanding it shows the NPC's current line and it updates across turns; or the
   control is gone; frontend test.
 
-- **D2 [NOT STARTED] (P2) Eavesdrop / overhear nearby (not-engaged) NPCs.**
+- **D2 [COMPLETE] (P2) Eavesdrop / overhear nearby (not-engaged) NPCs.**
   Goal: let the player overhear NPCs who are present-but-not-engaged (the "Nearby" earshot group),
   answering report #1's first half. Acceptance: an "eavesdrop/listen" action surfaces snippets
   from Nearby NPCs without engaging them (they stay `in_earshot=False`); backend test. Builds on

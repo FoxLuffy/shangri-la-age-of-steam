@@ -243,8 +243,12 @@ class NarrativeEngine:
 
             repository = StateRepository(session)
             state = repository.get_latest_state(action.character_id)
-            # NPCs the player names this turn come within earshot / into active engagement.
-            repository.engage_named_npcs(action.action_text, state)
+            # NPCs the player names this turn come within earshot / into active engagement —
+            # unless they are merely eavesdropping, which must NOT engage anyone (D2).
+            from backend.prompt_utils import is_eavesdrop_action
+
+            if not is_eavesdrop_action(action.action_text):
+                repository.engage_named_npcs(action.action_text, state)
             # Explorer's Journal: log the visited location + NPCs met (C2).
             repository.record_discoveries(
                 action.character_id,

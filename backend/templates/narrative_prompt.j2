@@ -61,6 +61,13 @@ You are the Narrator for "Shangri-la: Age of Steam," a text-driven RPG. Your goa
 {% endfor %}
 {% endif %}
 
+{% if eavesdrop %}
+{% set overheard = npc_contexts | rejectattr('in_earshot') | list %}
+**EAVESDROPPING:** The player is trying to overhear the Nearby NPCs without joining them. Surface a brief, diegetic snippet of what {% if overheard %}{{ overheard | map(attribute='name') | join(' and ') }}{% else %}the people nearby{% endif %} are saying among themselves — muffled, partial, caught in passing. Do NOT have them address the player or notice the eavesdropping, and do NOT bring them into the active conversation (they remain "nearby", not engaged).
+{% for npc in overheard %}{% if npc.current_dialogue %}
+- {{ npc.name }} was last heard: "{{ npc.current_dialogue }}"{% endif %}{% endfor %}
+{% endif %}
+
 {% if ghost_echoes %}
 **Ghost Echoes (Recent Actions of Others Here):**
 {% for echo in ghost_echoes %}

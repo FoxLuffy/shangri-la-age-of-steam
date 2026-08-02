@@ -6,6 +6,25 @@ from backend.models import Location, PlayerAction, WorldState
 from jinja2 import Template
 from sqlmodel import select
 
+_EAVESDROP_PHRASES = (
+    "eavesdrop",
+    "eaves drop",
+    "listen in",
+    "listen quietly",
+    "overhear",
+    "strain to hear",
+    "strain to listen",
+    "eavesdropping",
+)
+
+
+def is_eavesdrop_action(text: str) -> bool:
+    """True when the player is trying to overhear nearby NPCs without engaging them (D2)."""
+    if not text:
+        return False
+    t = text.lower()
+    return any(p in t for p in _EAVESDROP_PHRASES)
+
 
 def get_dynamic_narration(
     action: Optional[PlayerAction] = None, location: Optional[Location] = None, world_state: Optional[WorldState] = None
@@ -71,6 +90,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
                 "status_effects": getattr(npc, "status_effects", []) or [],
                 "custom_system_prompt": custom_prompt if custom_prompt else None,
                 "in_earshot": bool(getattr(npc, "in_earshot", False)),
+                "current_dialogue": getattr(npc, "current_dialogue", None),
             }
         )
 
@@ -124,6 +144,7 @@ def build_narrative_prompt(state: WorldState, action: PlayerAction, ghost_echoes
         season=getattr(state, "season", "Brass Festival"),
         main_quest=getattr(state, "main_quest", None),
         active_bounty=getattr(state, "active_bounty", None),
+        eavesdrop=is_eavesdrop_action(getattr(action, "action_text", "")),
     )
 
     if hasattr(action, "mood") and action.mood:

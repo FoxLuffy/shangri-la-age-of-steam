@@ -289,21 +289,16 @@ export default function WorldMap({ locations, currentLocationId, characterId, on
         if (progress < 1) {
           requestAnimationFrame(travelAnim);
         } else {
+          // Airship travel does its server-side move, but the SINGLE authoritative UI travel
+          // is onLocationSelect (handleLocationSwitch) which sends /chat with the destination
+          // and refetches. Previously the airship also dispatched a saos_system_action that
+          // re-submitted /chat at the STALE current location, flipping the character back to
+          // the start at the end of the narration (reported). Removed that racy path.
           if (useAirship && airship) {
-            navigateAirship(characterId, hoveredNodeId).then((res) => {
-                if (res.narration) {
-                    window.dispatchEvent(new CustomEvent('saos_system_action', { detail: `Airship Fast Travel: ${res.narration}` }));
-                }
-                onLocationSelect(hoveredNodeId);
-                onClose();
-            }).catch(e => {
-                console.error("Airship travel failed", e);
-                onClose();
-            });
-          } else {
-            onLocationSelect(hoveredNodeId);
-            onClose(); // Close modal after travel animation
+            navigateAirship(characterId, hoveredNodeId).catch((e) => console.error('Airship travel failed', e));
           }
+          onLocationSelect(hoveredNodeId);
+          onClose();
         }
       };
       

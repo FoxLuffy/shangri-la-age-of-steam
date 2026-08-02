@@ -69,10 +69,36 @@ def test_journal_endpoint_returns_populated_sections():
         session.add(char)
         session.commit()
         session.refresh(char)
+        cid = char.id
 
-        data = asyncio.run(get_journal(char.id, session))
-        assert [p["name"] for p in data["places"]] == ["The Rusty Anchor Tavern"]
-        assert [p["name"] for p in data["people"]] == ["Silas"]
-        by_id = {a["id"]: a for a in data["artifacts"]}
-        assert by_id[1]["discovered"] is True
-        assert by_id[2]["discovered"] is False
+    data = asyncio.run(get_journal(cid))
+    assert [p["name"] for p in data["places"]] == ["The Rusty Anchor Tavern"]
+    assert [p["name"] for p in data["people"]] == ["Silas"]
+    by_id = {a["id"]: a for a in data["artifacts"]}
+    assert by_id[1]["discovered"] is True
+    assert by_id[2]["discovered"] is False
+
+
+def test_journal_and_artifacts_routes_work_through_fastapi():
+    """Regression: these routes previously used Depends(get_session) on a @contextmanager,
+    which yielded the context-manager object instead of a Session and 500'd at runtime
+    (unit tests that call the function with a real Session missed it). Exercise the real
+    routes through the app."""
+    from backend.main import app
+    from fastapi.testclient import TestClient
+
+    _fresh()
+    with Session(engine) as session:
+        session.add(Artifact(id=1, name="Aether Compass", description="d", stat_bonus={}, rarity="Rare"))
+        char = Character(name="Explorer", location_id="1", visited_locations=[], met_npcs=[], discovered_artifacts=[])
+        session.add(char)
+        session.commit()
+        session.refresh(char)
+        cid = char.id
+
+    client = TestClient(app)
+    assert client.get("/gameplay/artifacts").status_code == 200
+    r = client.get(f"/gameplay/journal?character_id={cid}")
+    assert r.status_code == 200, r.text
+    assert "artifacts" in r.json()
+    assert client.get(f"/gameplay/characters/{cid}").status_code == 200

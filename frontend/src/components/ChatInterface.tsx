@@ -424,7 +424,8 @@ export default function ChatInterface({ characterId, onStateUpdate, onOpenCombat
         current_location_id: newLocId,
         is_exploration: true,
         context_type: 'Exploration',
-        client_id: clientId
+        client_id: clientId,
+        character_id: characterId
       }, (chunk) => {
         setMessages((prev) =>
           prev.map((msg) =>
